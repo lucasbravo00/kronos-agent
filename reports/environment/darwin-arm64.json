@@ -1,0 +1,129 @@
+{
+  "timestamp_utc": "2026-10-31T18:02:05+00:00",
+  "label": "darwin-arm64",
+  "network": true,
+  "os": {
+    "system": "Darwin",
+    "release": "25.3.0",
+    "version": "Darwin Kernel Version 25.3.0: Wed Jan 28 20:49:24 PST 2026; root:xnu-12377.81.4~5/RELEASE_ARM64_T8132",
+    "pretty": "macOS 26.3 (25D125)"
+  },
+  "arch": "arm64",
+  "cpu": {
+    "brand": "Apple M4",
+    "logical": 10,
+    "physical": 10,
+    "perf_cores": 4,
+    "eff_cores": 6
+  },
+  "ram_gb": 16.0,
+  "swap_gb": 7.0,
+  "disk_free_gb": {
+    "repo": 50.12,
+    "data_dir": 50.12,
+    "weights_dir": 50.12
+  },
+  "paths": {
+    "repo": "~/realprojects/kronos-agent",
+    "data_dir": "~/realprojects/kronos-agent/data",
+    "weights_dir": "~/realprojects/kronos-agent/weights"
+  },
+  "python": {
+    "version": "3.12.12",
+    "implementation": "CPython",
+    "executable_redacted": "~/realprojects/kronos-agent/.venv/bin/python3",
+    "uv_managed": true
+  },
+  "uv_version": "uv 0.11.23 (3cdf50e09 2026-06-19 aarch64-apple-darwin)",
+  "packages": {
+    "torch": "2.14.1",
+    "numpy": "2.2.6",
+    "pandas": "2.2.2",
+    "huggingface_hub": "0.33.1",
+    "safetensors": "0.6.2",
+    "einops": "0.8.1",
+    "httpx": "0.28.1",
+    "pyyaml": "6.0.3"
+  },
+  "torch_runtime": {
+    "threads": 2,
+    "interop_threads": 1,
+    "deterministic": true,
+    "torch_version": "2.14.1",
+    "mps_available": true,
+    "cuda_available": false,
+    "hf_offline": true,
+    "get_num_threads": 2,
+    "deterministic_algorithms_enabled": true,
+    "parallel": {
+      "backend": "OpenMP",
+      "hardware_concurrency": 10,
+      "openmp": true,
+      "mkl": false,
+      "mkldnn": false,
+      "accelerate": true
+    },
+    "build": {
+      "BLAS_INFO": "accelerate",
+      "LAPACK_INFO": "accelerate",
+      "USE_OPENMP": "ON",
+      "USE_MKL": "OFF",
+      "USE_MKLDNN": "OFF",
+      "USE_CUDA": "OFF"
+    }
+  },
+  "hf_hub_offline": "1",
+  "manifests": {
+    "kronos_source": {
+      "ok": true,
+      "checked": 27,
+      "problems": 0
+    },
+    "weights": {
+      "NeoQuasar/Kronos-Tokenizer-2k": {
+        "status": "absent",
+        "policy": "needs_owner_approval",
+        "checked": 0,
+        "problems": 2
+      },
+      "NeoQuasar/Kronos-Tokenizer-base": {
+        "status": "ok",
+        "policy": "download_allowed",
+        "checked": 2,
+        "problems": 0
+      },
+      "NeoQuasar/Kronos-base": {
+        "status": "absent",
+        "policy": "needs_owner_approval",
+        "checked": 0,
+        "problems": 2
+      },
+      "NeoQuasar/Kronos-mini": {
+        "status": "absent",
+        "policy": "needs_owner_approval",
+        "checked": 0,
+        "problems": 2
+      },
+      "NeoQuasar/Kronos-small": {
+        "status": "ok",
+        "policy": "download_allowed",
+        "checked": 2,
+        "problems": 0
+      }
+    }
+  },
+  "clock": {
+    "local_utc_iso": "2026-10-31T18:02:05.861+00:00",
+    "bingx_server_time_ms": 1793469726121,
+    "offset_ms": 37.9,
+    "round_trip_ms": 443.5
+  },
+  "git": {
+    "is_repository": false,
+    "commit": null,
+    "branch": null,
+    "dirty": false,
+    "remotes_count": 0
+  },
+  "params_version": "4dcb783980a9"
+}

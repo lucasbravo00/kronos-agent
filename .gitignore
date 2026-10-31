@@ -1,0 +1,24 @@
+# secrets (SPEC rule 4)
+.env
+.env.*
+# local weights and data: documented in README, verified by manifests/
+/weights/
+/data/
+*.safetensors
+# python / uv
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+/build/
+/dist/
+# Claude Code personal settings
+.claude/settings.local.json
+# OS
+.DS_Store
+# runtime
+/logs/
+# another session defines the owner's criterion here (not part of this tree yet)
+/research/strategy/

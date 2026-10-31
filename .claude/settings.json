@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(.env)",
+      "Read(.env.*)",
+      "Edit(.env)",
+      "Edit(.env.*)",
+      "Edit(/third_party/**)",
+      "Edit(/docs/SPEC.md)",
+      "WebFetch(domain:open-api-vst.bingx.com)",
+      "Bash(env)",
+      "Bash(printenv)",
+      "Bash(printenv *)",
+      "Bash(env *)",
+      "Bash(uv run --env-file*)",
+      "Bash(uv run * --env-file*)"
+    ]
+  }
+}

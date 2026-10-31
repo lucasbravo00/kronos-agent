@@ -1,0 +1,61 @@
+[project]
+name = "kronos-agent"
+version = "0.1.0"
+description = "Research system: Kronos candle forecasts modulating a volume-profile rebound criterion on BTC-USDT perpetual, BingX demo account only. Not financial advice."
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  # Pins of third_party/kronos/requirements.txt at the vendored commit (keeps the upstream fixtures meaningful)
+  "torch==2.14.1",
+  "einops==0.8.1",
+  "huggingface_hub==0.33.1",
+  "safetensors==0.6.2",
+  "pandas==2.2.2",
+  "tqdm==4.67.1",
+  "matplotlib==3.9.3",
+  "numpy>=1.26,<2.3",
+  # Project
+  "pyyaml>=6.0.2,<7",
+  "httpx>=0.28.1,<0.29",
+]
+
+[project.scripts]
+kronos-agent = "kronos_agent.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8,<10", "ruff>=0.6"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/kronos_agent"]
+
+[tool.uv]
+environments = [
+  "sys_platform == 'darwin' and platform_machine == 'arm64'",
+  "sys_platform == 'linux' and platform_machine == 'x86_64'",
+]
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers --strict-config"
+markers = [
+  "weights: needs verified local weights under weights/ (skips with a reason otherwise)",
+  "network: needs internet to PUBLIC hosts only; opt-in with KRONOS_AGENT_NETWORK_TESTS=1",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+# never rewrite the vendored tree (hard rule 4) or another session's research folder
+extend-exclude = ["third_party", "research"]

@@ -1,0 +1,659 @@
+{
+ "upstream": "https://github.com/shiyu-coder/Kronos",
+ "commit": "67b630e67f6a18c9e9be918d9b4337c960db1e9a",
+ "tree": "2a7aada0cadce7cab6071b9bf4fdd55216dcb16e",
+ "commit_date": "2026-04-13T12:38:49Z",
+ "license": "MIT",
+ "fetched_on": "2026-10-30",
+ "vendoring_rule": "LICENSE, README.md, requirements.txt, .gitignore and everything under model/, finetune/, finetune_csv/ (except finetune_csv/data/ and finetune_csv/examples/) and tests/; examples/, figures/ and webui/ are not vendored",
+ "blob_count": 92,
+ "total_bytes": 16778881,
+ "vendored_count": 27,
+ "vendored_bytes": 357211,
+ "files": [
+  {
+   "path": ".gitignore",
+   "size": 619,
+   "git_blob_sha1": "68871c9720b677547ba8d4e3110b0a35d2a5e7f0",
+   "sha256": "75f33054b0717c2055c8cc8a9ffb0b28fd669813edf9b1447a9cac71c3a4fcf3",
+   "vendored": true
+  },
+  {
+   "path": "LICENSE",
+   "size": 1062,
+   "git_blob_sha1": "88b04125e828241d8aada64bfe7f700bb03bcef8",
+   "sha256": "acb2d194d378204e5f2be4dcd24d39ecac437903620c790c3315a96dab388fdc",
+   "vendored": true
+  },
+  {
+   "path": "README.md",
+   "size": 16657,
+   "git_blob_sha1": "faffa1578cf0172f6b88f5db8a9b1205668ffef1",
+   "sha256": "b815b608192afa4b805a11bcbb66268f3e3db55736218964944318da7865357e",
+   "vendored": true
+  },
+  {
+   "path": "examples/get_akshare_date_2024-2025_x.py",
+   "size": 22761,
+   "git_blob_sha1": "070ecf891cf08e21f7b7ade018db6cb8ac80fbad",
+   "sha256": "847bf9c04514cb36a5ae140d8f6fc02822bde1ed76257333ba72a653654a7236",
+   "vendored": false
+  },
+  {
+   "path": "examples/get_date_new.py",
+   "size": 24268,
+   "git_blob_sha1": "28199609516e2ed7f6cbb1b36289a04cfd652637",
+   "sha256": "bf18d3558f20892148fe69172edd58c827a85d940615c89b83419434e96dabb9",
+   "vendored": false
+  },
+  {
+   "path": "examples/prediction_akshare_2024-2025.py",
+   "size": 22647,
+   "git_blob_sha1": "6b83eb2b53d02ad24fb5d0b52fc852b1b209b5f4",
+   "sha256": "e4cdc6e03ceafed0a64cafa2542f4ba1cfa48361eabb50b36e946a91c4d6ee8c",
+   "vendored": false
+  },
+  {
+   "path": "examples/prediction_batch_example.py",
+   "size": 2312,
+   "git_blob_sha1": "29a74334b52d654558d6c9ad9c119fc8aabacf22",
+   "sha256": "4d2eba046eb9ebcccf193372dce081fa01431c6a9c18ca9bf9ce485c4956586c",
+   "vendored": false
+  },
+  {
+   "path": "examples/prediction_cn_markets_day.py",
+   "size": 6514,
+   "git_blob_sha1": "93b28f9f1962a5a7ebfdf074c96ede3ca9470ee0",
+   "sha256": "3b9537275028e062b64263827421df4eece6f7276d040c8ffabd68e00bf5236c",
+   "vendored": false
+  },
+  {
+   "path": "examples/prediction_example.py",
+   "size": 2457,
+   "git_blob_sha1": "880f22b86343c0fb776efa46d183d7a8c5089061",
+   "sha256": "fd113d9466d42a0c07aeeec55c8dcbbdc3c0319727c9fc9bb89cd234c4c3ca01",
+   "vendored": false
+  },
+  {
+   "path": "examples/prediction_new.py",
+   "size": 52593,
+   "git_blob_sha1": "3646d9802803f5f96420eaa66a8aaab50cbb9bdb",
+   "sha256": "7585ae2eb117e635d624ec4c95269985cff494984e77939771e96852c7a58025",
+   "vendored": false
+  },
+  {
+   "path": "examples/prediction_new_GUI.py",
+   "size": 65400,
+   "git_blob_sha1": "2eab61811ffd91b4eebd1d3b54ba02561b9088ca",
+   "sha256": "8af93c21a37c8611aa1939d0173f79349041e87fd972469c1ac0ae6353f4cdeb",
+   "vendored": false
+  },
+  {
+   "path": "examples/prediction_wo_vol_example.py",
+   "size": 1918,
+   "git_blob_sha1": "3e5624e121aff62b7bf901a1699ff227c4ccd267",
+   "sha256": "c388097dae8af34014fd7006d4b7cd69b7657937b0fd2833e2ae0557404cfe10",
+   "vendored": false
+  },
+  {
+   "path": "examples/run_backtest_kronos.py",
+   "size": 16811,
+   "git_blob_sha1": "2e34157f6e5c79cb25d564e6df2ad50e599d7230",
+   "sha256": "3bb7865d4b9f87cce16fe6a4be7d660f51176ac6a635139a3110089836f0aa83",
+   "vendored": false
+  },
+  {
+   "path": "examples/yuce/000021_comprehensive_analysis_report.json",
+   "size": 1793,
+   "git_blob_sha1": "956297b01d27f718773820802426ef2c3465ad01",
+   "sha256": "2766b78ab57a57bd2b8c3057c6397299b276f4e0145876909858ca68834e6759",
+   "vendored": false
+  },
+  {
+   "path": "examples/yuce/000021_optimized_prediction.png",
+   "size": 877297,
+   "git_blob_sha1": "1599c3e3730d1ac97034230c705d25fafef20638",
+   "sha256": "531a03e19120d9a69fb8e4380341f1c2a9cc6b7b98ddd543989ed7fbe71106c5",
+   "vendored": false
+  },
+  {
+   "path": "examples/yuce/002354_comprehensive_analysis_report.json",
+   "size": 1796,
+   "git_blob_sha1": "6b4c3c9bfe39139bc6e4d1740d6be6b7eefc0b3b",
+   "sha256": "37e98f985f88b75839097c48e5db9f5065f9fce9c77ef90b073c9fa64fc86704",
+   "vendored": false
+  },
+  {
+   "path": "examples/yuce/002354_optimized_prediction.png",
+   "size": 962962,
+   "git_blob_sha1": "5d1120db7d497a0110d070f9a906315ed93c11e9",
+   "sha256": "8d85805a3001d717a1ffbd6ca8afa492e62760b2ca3061cfbbff850bea3b3f89",
+   "vendored": false
+  },
+  {
+   "path": "examples/yuce/300207_comprehensive_analysis_report.json",
+   "size": 2022,
+   "git_blob_sha1": "2e028ef69e33615c0be04630180b058969db76ad",
+   "sha256": "62f479820c239f01be909a08e1cffcbcdaa6441ae236e10413bd6d6696714af6",
+   "vendored": false
+  },
+  {
+   "path": "examples/yuce/300207_optimized_prediction.png",
+   "size": 794966,
+   "git_blob_sha1": "53b33cae1e6c5cf05be9a8a15faa06916a227479",
+   "sha256": "d932e80b049511934ac261b8868146a522acb8da3d2f0387931c42f79adb43e6",
+   "vendored": false
+  },
+  {
+   "path": "examples/yuce/600580_comprehensive_analysis_report.json",
+   "size": 2937,
+   "git_blob_sha1": "b153ba0fde8857ebfbb7bd244bbffea1ea31cf5f",
+   "sha256": "2578ddb7c39ade879f277ad87070ae619cc4d0e3eec7086279a2a2df4e9225ff",
+   "vendored": false
+  },
+  {
+   "path": "examples/yuce/600580_optimized_prediction.png",
+   "size": 910964,
+   "git_blob_sha1": "2b18657648d873e764eaeb09d436779be23268a5",
+   "sha256": "eeedf79aa21322dd64febdd4b3911519bdd871673ade2710cea08e185942fab8",
+   "vendored": false
+  },
+  {
+   "path": "examples/yuce/historical_backtest.py",
+   "size": 14807,
+   "git_blob_sha1": "72bb53432c07a45e132440420eca4b4ba349d5a5",
+   "sha256": "0f8dbd415b1621d844bca702c73f42f3f482ce325846a3e3e71be8a86be5db77",
+   "vendored": false
+  },
+  {
+   "path": "examples/yuce/market_analysis_report.json",
+   "size": 1084,
+   "git_blob_sha1": "a1f14841beadd29542162b326d669658334d2148",
+   "sha256": "0a5f35048ae70a83fe2e8d463c9cec190576cd6828bba4f33779b8423d88b689",
+   "vendored": false
+  },
+  {
+   "path": "figures/backtest_result_example.png",
+   "size": 499292,
+   "git_blob_sha1": "055a2e47f752a9a866e3eaefe2a51f33f055b867",
+   "sha256": "7b86fea2ac1a8d9a1c698039e64ae397d5453179557466a91da37431f331126c",
+   "vendored": false
+  },
+  {
+   "path": "figures/logo.png",
+   "size": 871803,
+   "git_blob_sha1": "12851cea19bb548e94a87ea44499848d0c4e1923",
+   "sha256": "b4a3bb66fed73a24f74b74f15f0798d5edf1b9729ee826a0cad8e5088dedda61",
+   "vendored": false
+  },
+  {
+   "path": "figures/overview.png",
+   "size": 1254487,
+   "git_blob_sha1": "afc0b523c05e5b6e1b6a962608032cd460289a96",
+   "sha256": "f5b4556a39883fdd82b35515a686899a4c94495f70ab8f3fc7a7ac1e3104cc50",
+   "vendored": false
+  },
+  {
+   "path": "figures/prediction_example.png",
+   "size": 193945,
+   "git_blob_sha1": "9d000e093feab78ae53892d969e5435a1d0f2b97",
+   "sha256": "24ddc86256158658582687fc7cef4761f1dbb130ab8161e04957c8d178d323f9",
+   "vendored": false
+  },
+  {
+   "path": "finetune/config.py",
+   "size": 6247,
+   "git_blob_sha1": "04cc3ee312ef4bc4f77d13e02cb8a8be6bf5a2e0",
+   "sha256": "9368111b74a20d133c3daa591ef6db39eba97aa6ee7fb27481cb08217b489d7a",
+   "vendored": true
+  },
+  {
+   "path": "finetune/dataset.py",
+   "size": 5434,
+   "git_blob_sha1": "ae4f7242b4f36e3eb74c744714c2815422028d7f",
+   "sha256": "774a37a3003ff2de31c078da53f4dcbd068fc45c56ada0d7b5a4beff4381b225",
+   "vendored": true
+  },
+  {
+   "path": "finetune/qlib_data_preprocess.py",
+   "size": 5645,
+   "git_blob_sha1": "7fe6147be522302dd3e85aa80a71f0047df72402",
+   "sha256": "d699ca8e1ffcf0110670c1a89c1795ad77ffd0ad11851d24a9a9984c56fd221b",
+   "vendored": true
+  },
+  {
+   "path": "finetune/qlib_test.py",
+   "size": 15140,
+   "git_blob_sha1": "97aebe419d67f9b884fbd508d0685174fa487946",
+   "sha256": "027c04211af371d6ac8408a0f17f4249fdef068c6ba23a8fd46a16ca71b4e875",
+   "vendored": true
+  },
+  {
+   "path": "finetune/train_predictor.py",
+   "size": 10026,
+   "git_blob_sha1": "47eddc91f58fd72db97ecc65da5372997b56e04a",
+   "sha256": "b0d31d94da98e96636326674cef7ebc01c72d0de8a1b9e5b27123fd258529790",
+   "vendored": true
+  },
+  {
+   "path": "finetune/train_tokenizer.py",
+   "size": 11455,
+   "git_blob_sha1": "60186e1ea7e6af179648a10af3ba507b1d7addca",
+   "sha256": "2e1ae7e569de6fc03e4219a796aaf2d276663c44f61497495eee30261e3f0e98",
+   "vendored": true
+  },
+  {
+   "path": "finetune/utils/__init__.py",
+   "size": 0,
+   "git_blob_sha1": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+   "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "vendored": true
+  },
+  {
+   "path": "finetune/utils/training_utils.py",
+   "size": 3830,
+   "git_blob_sha1": "8756322adc2784445aedb4063be56e16e92bed18",
+   "sha256": "4339a9dde41a7fb2a949414c9c3e5d2c551a0e10c6b87e4b83e2444bf92a30e1",
+   "vendored": true
+  },
+  {
+   "path": "finetune_csv/README.md",
+   "size": 3959,
+   "git_blob_sha1": "f9e58a900c38b6e9796137474d1f072b9b7e773b",
+   "sha256": "97742b2bd0657d1bfc3c6827b8c8856ba04b08d5b8d869320be83f2752a0fac6",
+   "vendored": true
+  },
+  {
+   "path": "finetune_csv/README_CN.md",
+   "size": 3650,
+   "git_blob_sha1": "4f70653bece67181ce313ac514aa9c056f9e4bda",
+   "sha256": "6ec258ce8ba96cf04762a4794535356c82a58169ba31209f5457dca91e1a5705",
+   "vendored": true
+  },
+  {
+   "path": "finetune_csv/config_loader.py",
+   "size": 11688,
+   "git_blob_sha1": "6bddcaeea0de0fdcbbe826c3d1d669d1232ac351",
+   "sha256": "42de95078c9445dc9bbc2374c98ce2f0e5b2b420bc80bb0806a8cc666744cd15",
+   "vendored": true
+  },
+  {
+   "path": "finetune_csv/configs/config_ali09988_candle-5min.yaml",
+   "size": 2132,
+   "git_blob_sha1": "14774d2c67e98d11a741d2d7f66696a1a81b4c90",
+   "sha256": "623b4cfeba27c92f5567e488e421aed23b119cd32279a2b08b1f3627752855e3",
+   "vendored": true
+  },
+  {
+   "path": "finetune_csv/data/HK_ali_09988_kline_5min_all.csv",
+   "size": 5852037,
+   "git_blob_sha1": "00eaebdd4863fa3749c986570554ad5a03bf49dc",
+   "sha256": "65725aeebc3de8f59725f9b717b8621a1ce80b014288a6d64e05ac7a303f527f",
+   "vendored": false
+  },
+  {
+   "path": "finetune_csv/examples/HK_ali_09988_kline_5min_all_historical_20250919_073929.png",
+   "size": 485286,
+   "git_blob_sha1": "f5bc0e3ccaafacc9132ce5ed95c486caf5421790",
+   "sha256": "46fa743520e9564b778c5c0ac6fabfb70d792ed56a95d487181c305e4ff8e409",
+   "vendored": false
+  },
+  {
+   "path": "finetune_csv/examples/HK_ali_09988_kline_5min_all_historical_20250919_073944.png",
+   "size": 484003,
+   "git_blob_sha1": "199d9806ec71deb2d546c0b719871652d19e8abd",
+   "sha256": "3664566e7f8962066dd71cf1bd32b54cd791e94563a51595921af27280cf250d",
+   "vendored": false
+  },
+  {
+   "path": "finetune_csv/examples/HK_ali_09988_kline_5min_all_historical_20250919_074012.png",
+   "size": 339080,
+   "git_blob_sha1": "41c571aa67fea10336d87e674d5fe5ebb2463a78",
+   "sha256": "96845dba507340f83dbbeacc61b4772757fa7043b953841eab6bd62563ad09a4",
+   "vendored": false
+  },
+  {
+   "path": "finetune_csv/examples/HK_ali_09988_kline_5min_all_historical_20250919_074042.png",
+   "size": 459975,
+   "git_blob_sha1": "67f2e14ba01855eada7d076ad427e8af3f61d68f",
+   "sha256": "37633a5e9dfe0413589afb72dd0ca01b1649c2811b62daf240b0138b5bdde0ee",
+   "vendored": false
+  },
+  {
+   "path": "finetune_csv/examples/HK_ali_09988_kline_5min_all_historical_20250919_074251.png",
+   "size": 543005,
+   "git_blob_sha1": "b6f88499947d15b45f693e70c9884c3e444288fb",
+   "sha256": "0f0f24910675a4576820a17b70f109e821dd44d2324438411441e319a7d54dac",
+   "vendored": false
+  },
+  {
+   "path": "finetune_csv/finetune_base_model.py",
+   "size": 19127,
+   "git_blob_sha1": "d21c22dbf6f5c9b21256ee419ad6f69c1ece64c3",
+   "sha256": "42c89111582b932f8b2d099f2748d84c7a7b5843be101167b4b15b0d978ece30",
+   "vendored": true
+  },
+  {
+   "path": "finetune_csv/finetune_tokenizer.py",
+   "size": 13741,
+   "git_blob_sha1": "e160f12e4d23f141938d2a7ca5959d24a117e24d",
+   "sha256": "4177a6c2cb537b2221490957b6c691e13990547c8e70c5b759fce859d59266c3",
+   "vendored": true
+  },
+  {
+   "path": "finetune_csv/train_sequential.py",
+   "size": 15358,
+   "git_blob_sha1": "533f66a137622cdcba1f4eb5b652de3659c18a70",
+   "sha256": "6a2a8c95284767f85a5d9cced71dcc0e2fc42c6e8cae6be1bff81f059e83679e",
+   "vendored": true
+  },
+  {
+   "path": "model/__init__.py",
+   "size": 412,
+   "git_blob_sha1": "718d07a21b53b7eff4a6564e6dfcae8ee7e8c6b1",
+   "sha256": "f8f856ca3fedadcaac97e196be23d1aeda1c3c9ffe8903d66d43ea3bcac6240c",
+   "vendored": true
+  },
+  {
+   "path": "model/kronos.py",
+   "size": 30133,
+   "git_blob_sha1": "ce4494ee0b3ec8751b09d5488c93bde995e008e0",
+   "sha256": "0a5f90282e2039c2de0771473419715c845def154896dbd0f5747837e6241032",
+   "vendored": true
+  },
+  {
+   "path": "model/module.py",
+   "size": 23426,
+   "git_blob_sha1": "f2a05158b48a56e9235426f6583e384360d761f9",
+   "sha256": "a07edbadc0e96804c8158c021bbc6063bb7cc43b34d7fc470d5c8ff2005a409f",
+   "vendored": true
+  },
+  {
+   "path": "requirements.txt",
+   "size": 129,
+   "git_blob_sha1": "598a3dedc6fd70f9fe9e5a79c706b4f891569fb3",
+   "sha256": "b68eaa2f945d6a5726e3642ce5d6c82014b33a09c3c1bd6302f2c530db22593e",
+   "vendored": true
+  },
+  {
+   "path": "tests/data/generate_regression_output.py",
+   "size": 2814,
+   "git_blob_sha1": "3a2e7e82d3d3e7bb49a511bf5f17511c1489a642",
+   "sha256": "66e29271b0ab2d5a5ee2464598b3d44e60a0a97f71f2887951b1fe59288bb826",
+   "vendored": true
+  },
+  {
+   "path": "tests/data/regression_input.csv",
+   "size": 147854,
+   "git_blob_sha1": "37ed89da1dd39adce345694521ea93adc16266bb",
+   "sha256": "aa5efe0121b7cc098db1a169ed38f9878681ef14a93c85d54a618fd073048899",
+   "vendored": true
+  },
+  {
+   "path": "tests/data/regression_output_256.csv",
+   "size": 674,
+   "git_blob_sha1": "f2d726fd7bb1a6603ecaf90e50ecd60b1df6844b",
+   "sha256": "5064d09ef7fe186b9c2aeed9dfdf234721b4b182a8305d92db9d3d5d6b37f29e",
+   "vendored": true
+  },
+  {
+   "path": "tests/data/regression_output_512.csv",
+   "size": 673,
+   "git_blob_sha1": "cdeebf176b2a4ca53a744cff6672896f51619cad",
+   "sha256": "bb69a96cbfcf385ba433b8db7e9630b45a4b3032d091d12a7b0bac5996bad18b",
+   "vendored": true
+  },
+  {
+   "path": "tests/test_kronos_regression.py",
+   "size": 5326,
+   "git_blob_sha1": "7fccbffd79ddbbc014dadeac9d63f829a87ae944",
+   "sha256": "527e74d137c40e2567477754cda43c649552287bf11ab27a1e31ff0e3706a0c4",
+   "vendored": true
+  },
+  {
+   "path": "webui/README.md",
+   "size": 4120,
+   "git_blob_sha1": "571d93eb51b188e206206c4fec688be1a648159d",
+   "sha256": "c7bc1a545ddacd8b94c31af2baae4b55d470952300d9bd96bb3c1d8e1d32baa6",
+   "vendored": false
+  },
+  {
+   "path": "webui/app.py",
+   "size": 30464,
+   "git_blob_sha1": "d240a3729d324799bef30f48cfbcdb436a453fff",
+   "sha256": "7c2ef7fd28097674805a39dcfdf5918e4030b1f1e9cdda905ed4b7d2d63672f8",
+   "vendored": false
+  },
+  {
+   "path": "webui/prediction_results/prediction_20250826_163800.json",
+   "size": 53680,
+   "git_blob_sha1": "5c3f7badb2b9d2234f5e8d94fab525b209a2a10d",
+   "sha256": "bb9a1478ac36303264550920c7a75b42c92dc08784f0a114f8ffb44e4f913e57",
+   "vendored": false
+  },
+  {
+   "path": "webui/prediction_results/prediction_20250826_164030.json",
+   "size": 53423,
+   "git_blob_sha1": "1f5433659052c0eedc0e9f66be9fbfe0d5b9c007",
+   "sha256": "59c8501626e9efe8a3f74f8b9c59f06611b461c039e565868d44989d6d2f9035",
+   "vendored": false
+  },
+  {
+   "path": "webui/prediction_results/prediction_20250826_164422.json",
+   "size": 53885,
+   "git_blob_sha1": "cc55ba7dfd4750fc12a8d3ba0552f7a100bea796",
+   "sha256": "c9ef045e6afc79b85d4249fc9d31cd4e5be4b4ff8b5da9daf27aa3e9c03e056c",
+   "vendored": false
+  },
+  {
+   "path": "webui/prediction_results/prediction_20250826_170831.json",
+   "size": 54467,
+   "git_blob_sha1": "72f74f21dd36a0950c7530085f91ed7339a6044d",
+   "sha256": "9691103cc9a701417d8b07a404f549ddd5fdea5e6e2f5cd0008902779a4af21b",
+   "vendored": false
+  },
+  {
+   "path": "webui/prediction_results/prediction_20250826_171720.json",
+   "size": 54467,
+   "git_blob_sha1": "c4e1bfb5d4b440cc5d091ef862318d146c1b23ac",
+   "sha256": "2967bfbf1066f113010db2949672957e59a280123403eaf2ca98197148114caf",
+   "vendored": false
+  },
+  {
+   "path": "webui/prediction_results/prediction_20250826_171913.json",
+   "size": 54467,
+   "git_blob_sha1": "6c7873a06cb4f3c9d8b3278006a7c8136888c453",
+   "sha256": "df3a2676d0b247ac5d25435ea37a5bb299ec0750bcea4aad1e21ff8279a00f12",
+   "vendored": false
+  },
+  {
+   "path": "webui/prediction_results/prediction_20250826_172031.json",
+   "size": 54357,
+   "git_blob_sha1": "671b155269de0e5bb982c8150e21b985227ad119",
+   "sha256": "529ced845fc285d5eea7f9cf7772361fb9d3608af590b9752665b53db9376fd9",
+   "vendored": false
+  },
+  {
+   "path": "webui/prediction_results/prediction_20250826_172153.json",
+   "size": 54647,
+   "git_blob_sha1": "e94ba88ced4981feb04f09342fd3104d983b8e0e",
+   "sha256": "7f043bc02cd116a56d8d805df0a42b9112733c257709aa2bd66e466ab62f43b1",
+   "vendored": false
+  },
+  {
+   "path": "webui/prediction_results/prediction_20250826_172740.json",
+   "size": 54979,
+   "git_blob_sha1": "4be2fef6a61850a05d443560d564d52e312b16b1",
+   "sha256": "1cc8b60771abe2dc928c434c8d695bad38d624e83092fba7b40915476180b584",
+   "vendored": false
+  },
+  {
+   "path": "webui/prediction_results/prediction_20250826_173322.json",
+   "size": 54983,
+   "git_blob_sha1": "3b4e3198f5ecd3ec62d790d73a59915b9d0b132d",
+   "sha256": "b8f30a82a5fa5ddda34b369e927f0933a52281e39ec04eb0dbeda752e379f000",
+   "vendored": false
+  },
+  {
+   "path": "webui/prediction_results/prediction_20250826_173455.json",
+   "size": 54937,
+   "git_blob_sha1": "1ae7835b36be30bae2bf6d3ba5014dc98bea2cde",
+   "sha256": "061db8899d1139acbb9b19e407d55a24617ddee157a7ca7e4a47219603302ba6",
+   "vendored": false
+  },
+  {
+   "path": "webui/prediction_results/prediction_20250826_174410.json",
+   "size": 54826,
+   "git_blob_sha1": "1c53b1e27aac1d0b970d0bfec6a3d24e2810c208",
+   "sha256": "f88f4d5525e536a421220775e243484c770298fd4abd12bfb934250a1686eea2",
+   "vendored": false
+  },
+  {
+   "path": "webui/prediction_results/prediction_20250826_174809.json",
+   "size": 54826,
+   "git_blob_sha1": "88c7bccb045694a1e78073aadfdce96324c2cce7",
+   "sha256": "4d442c5296dfbb526f588614a97fe9d2c0af19bbe1cbd756be91aa19129f0804",
+   "vendored": false
+  },
+  {
+   "path": "webui/prediction_results/prediction_20250826_175057.json",
+   "size": 54821,
+   "git_blob_sha1": "db15fdc3819db126e84432d5ee9a17fb30ad44ea",
+   "sha256": "92f7ab4f2bf500d244986dcffa5f58332474b5aff884181497b9e8a637ac6029",
+   "vendored": false
+  },
+  {
+   "path": "webui/prediction_results/prediction_20250826_175135.json",
+   "size": 54636,
+   "git_blob_sha1": "d2097d1a864a1dcd17c3f93b5b4b55bcb2682b68",
+   "sha256": "a0be9971233a491e2481ff8ab7a49a9da2026e7a73951fff76e88f981c4bfffe",
+   "vendored": false
+  },
+  {
+   "path": "webui/prediction_results/prediction_20250826_175909.json",
+   "size": 53086,
+   "git_blob_sha1": "bfdb7916ab095a0f5aba01520e37a623cfd628f3",
+   "sha256": "a2efbdfdf1c3c357e1da4e24f124eef41045ee2cede72b221fe8f5aafaec78bb",
+   "vendored": false
+  },
+  {
+   "path": "webui/prediction_results/prediction_20250826_180308.json",
+   "size": 53086,
+   "git_blob_sha1": "1ef1dc3b8558caf585368d8b61d1cd22332d84ba",
+   "sha256": "6412df92947aca2423e9641de071e6aa6908db8573f16b3475ac4f8876a6dd6f",
+   "vendored": false
+  },
+  {
+   "path": "webui/prediction_results/prediction_20250826_180632.json",
+   "size": 53810,
+   "git_blob_sha1": "71095bf9d57f03f7e12e49edcd25be742c0337cb",
+   "sha256": "987c174145e8ac31676bfa7d36ebcba54e26f02109ee56f2833f356edd63b5c7",
+   "vendored": false
+  },
+  {
+   "path": "webui/prediction_results/prediction_20250826_180745.json",
+   "size": 53701,
+   "git_blob_sha1": "0025d1e32a0b8571e891305c6c0f565562d6a84b",
+   "sha256": "c3587af841cfb65747135d2657a08112000e7ec4e962d517693099d3d61feb2c",
+   "vendored": false
+  },
+  {
+   "path": "webui/prediction_results/prediction_20250826_180806.json",
+   "size": 53488,
+   "git_blob_sha1": "1e42b136627e23dc743af5f6d778af19bfec1183",
+   "sha256": "506ca9cdb780c6366b3d0d6bb30fea81b963177bfaab9e5ca1a139a704f8da7b",
+   "vendored": false
+  },
+  {
+   "path": "webui/prediction_results/prediction_20250826_181012.json",
+   "size": 53498,
+   "git_blob_sha1": "48dacc20c25d483326ea9645c7affd95af22c573",
+   "sha256": "2ba2cb4d3b399c73dc153e6cee796194a8a3243080b2d8291c8453c7b3307b14",
+   "vendored": false
+  },
+  {
+   "path": "webui/prediction_results/prediction_20250826_181139.json",
+   "size": 53617,
+   "git_blob_sha1": "590c834ebe65fcf66dd2890bfc60a73cfcc1deab",
+   "sha256": "de5a8a0ae4a40174f29ebff89f5c82839ee993bbb6dd1b99e4078b3027ae4210",
+   "vendored": false
+  },
+  {
+   "path": "webui/prediction_results/prediction_20250826_181240.json",
+   "size": 53765,
+   "git_blob_sha1": "337c03bca75cf0b285b34d5d08202b373cc0d244",
+   "sha256": "080d04640bccbaa02d703b3c2e1e5d234f6bfd774b9229329b6c95519d630000",
+   "vendored": false
+  },
+  {
+   "path": "webui/prediction_results/prediction_20250826_181434.json",
+   "size": 52890,
+   "git_blob_sha1": "0b370d85136a4489b69aeb953113d2b169205149",
+   "sha256": "11bfdcef6f0e3aadd5930e4dd0bc17aca47d893d8edb50f34ed73e585afc1c58",
+   "vendored": false
+  },
+  {
+   "path": "webui/prediction_results/prediction_20250826_181513.json",
+   "size": 53442,
+   "git_blob_sha1": "e2b098dd66eec153cf0e25901d3d9d0d923e6315",
+   "sha256": "c6519d65e75a198f83ee49e6027dc30bab41c8f2c636e30bc4840cba03b4d3ad",
+   "vendored": false
+  },
+  {
+   "path": "webui/prediction_results/prediction_20250826_181612.json",
+   "size": 53591,
+   "git_blob_sha1": "5e1305643534f94dbb61848d84ae22b6c5321725",
+   "sha256": "ef7dc400ac99a57ca76cb3a81771cc7267bd4db57373d00df912b17e5f6d37da",
+   "vendored": false
+  },
+  {
+   "path": "webui/prediction_results/prediction_20250826_181648.json",
+   "size": 53650,
+   "git_blob_sha1": "e3eea8ddc2e5371598e1a11f3a5430b27a09aa9e",
+   "sha256": "058a8108e68751920d9fb119c3745369d721381ca3056659daa2b4cb3ea5b6dc",
+   "vendored": false
+  },
+  {
+   "path": "webui/prediction_results/prediction_20250826_181800.json",
+   "size": 53657,
+   "git_blob_sha1": "27569fd4a6546ea8a9ce8d5963563967d949dbf2",
+   "sha256": "1846f0fcae78c1c00942b7c1206ea16d6d2b11ed135c6fe7e127a0e0fad92409",
+   "vendored": false
+  },
+  {
+   "path": "webui/prediction_results/prediction_20250826_181932.json",
+   "size": 53459,
+   "git_blob_sha1": "84d0d1d2ce77d1eb4c642a6582180c770017bf7e",
+   "sha256": "58b3bb971ed95fac095ee380a4947739026ce5ef331f74eb06dc8ce2e7473598",
+   "vendored": false
+  },
+  {
+   "path": "webui/requirements.txt",
+   "size": 111,
+   "git_blob_sha1": "8a47f81c615820f67b05b145e7d1a1efee152cf3",
+   "sha256": "1104212a070bb3076eb31d6a2aa2c0bd11608343c2869833b93651d86abef767",
+   "vendored": false
+  },
+  {
+   "path": "webui/run.py",
+   "size": 2608,
+   "git_blob_sha1": "64a7b1670991c8d14ede78362aafdc5b2d895a0e",
+   "sha256": "b60179095e4b15be60281dbc7daf2e202d5fff2e0a67676b2aa8118be9a68d31",
+   "vendored": false
+  },
+  {
+   "path": "webui/start.sh",
+   "size": 1007,
+   "git_blob_sha1": "0d832b3729072269ea598a0f3b52907a97f5faf2",
+   "sha256": "09b4dbbd1e4b94e57661ea202a6b7fd896510c89802f512bac6b94f68dba55f3",
+   "vendored": false
+  },
+  {
+   "path": "webui/templates/index.html",
+   "size": 45997,
+   "git_blob_sha1": "dd24a49e5d347cf68d6d2f57af5f02c75e5be519",
+   "sha256": "94995c6cf0b5e83053736b11024cc7103d67b8ae73e6bfa2d4091ea59ebc4e99",
+   "vendored": false
+  }
+ ]
+}

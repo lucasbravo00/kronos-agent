@@ -1,0 +1,67 @@
+{
+ "schema_version": 1,
+ "source": "Hugging Face API (model tree with LFS object ids) and raw config.json files, read on 2026-10-29",
+ "note": "state_dict_numel counts every tensor stored in model.safetensors (persistent buffers included).",
+ "repos": [
+  {
+   "repo_id": "NeoQuasar/Kronos-Tokenizer-base",
+   "role": "tokenizer",
+   "revision": "0e0117387f39004a9016484a186a908917e22426",
+   "policy": "download_allowed",
+   "state_dict_numel": 3958258,
+   "expected_config": {"attn_dropout_p": 0.0, "beta": 0.05, "d_in": 6, "d_model": 256, "ff_dim": 512, "ffn_dropout_p": 0.0, "gamma": 1.1, "gamma0": 1.0, "group_size": 4, "n_dec_layers": 4, "n_enc_layers": 4, "n_heads": 4, "resid_dropout_p": 0.0, "s1_bits": 10, "s2_bits": 10, "zeta": 0.05},
+   "files": [
+    {"name": "config.json", "size": 301, "sha256": "2366e7ccfec76cbc19cf3c4c1b9c5d901be336ca1e83f2d2292c9bff381b77a2"},
+    {"name": "model.safetensors", "size": 15842368, "sha256": "59d85f6af76a2c3b8240ea06cb21db4213b4eeca053f246b23e29cf832fc6bee"}
+   ]
+  },
+  {
+   "repo_id": "NeoQuasar/Kronos-small",
+   "role": "model",
+   "revision": "901c26c1332695a2a8f243eb2f37243a37bea320",
+   "policy": "download_allowed",
+   "state_dict_numel": 24741696,
+   "expected_config": {"attn_dropout_p": 0.1, "d_model": 512, "ff_dim": 1024, "ffn_dropout_p": 0.25, "learn_te": true, "n_heads": 8, "n_layers": 8, "resid_dropout_p": 0.25, "s1_bits": 10, "s2_bits": 10, "token_dropout_p": 0.1},
+   "files": [
+    {"name": "config.json", "size": 228, "sha256": "5e0f6a605d5f81b5c9b559fe5cf716a1acb041c744e6f41bd05b097b7a685396"},
+    {"name": "model.safetensors", "size": 98980656, "sha256": "b082dfcbd8e8c142a725c8bbb99781802f38fec81210e13479effb32b3c3e020"}
+   ]
+  },
+  {
+   "repo_id": "NeoQuasar/Kronos-base",
+   "role": "model",
+   "revision": "2b554741eca47781b64468546e77fef3e85130e6",
+   "policy": "needs_owner_approval",
+   "state_dict_numel": 102311008,
+   "expected_config": {"attn_dropout_p": 0.0, "d_model": 832, "ff_dim": 2048, "ffn_dropout_p": 0.2, "learn_te": true, "n_heads": 16, "n_layers": 12, "resid_dropout_p": 0.2, "s1_bits": 10, "s2_bits": 10, "token_dropout_p": 0.0},
+   "files": [
+    {"name": "config.json", "size": 228, "sha256": null},
+    {"name": "model.safetensors", "size": 409264008, "sha256": "abff193acab6db1a0368e9773e75799d11403b6d054ee6d5f0a11aeabc5f4b83"}
+   ]
+  },
+  {
+   "repo_id": "NeoQuasar/Kronos-mini",
+   "role": "model",
+   "revision": "f4e68697d9d5aed55cef5c96aabc3376bcad9f81",
+   "policy": "needs_owner_approval",
+   "state_dict_numel": 4108192,
+   "expected_config": {"attn_dropout_p": 0.0, "d_model": 256, "ff_dim": 512, "ffn_dropout_p": 0.2, "learn_te": true, "n_heads": 4, "n_layers": 4, "resid_dropout_p": 0.2, "s1_bits": 10, "s2_bits": 10, "token_dropout_p": 0.0},
+   "files": [
+    {"name": "config.json", "size": 225, "sha256": null},
+    {"name": "model.safetensors", "size": 16440776, "sha256": "a7d5f37e2e9fbd9891f7d7d4f72574512dd1f704fee14223e0a8cd0fbf54197c"}
+   ]
+  },
+  {
+   "repo_id": "NeoQuasar/Kronos-Tokenizer-2k",
+   "role": "tokenizer",
+   "revision": "26966d0035065a0cae0ebad7af8ece35bc1fb51c",
+   "policy": "needs_owner_approval",
+   "state_dict_numel": 3958259,
+   "expected_config": {"attn_dropout_p": 0.0, "beta": 0.05, "d_in": 6, "d_model": 256, "ff_dim": 512, "ffn_dropout_p": 0.0, "gamma": 1.1, "gamma0": 1.0, "group_size": 5, "n_dec_layers": 4, "n_enc_layers": 4, "n_heads": 4, "resid_dropout_p": 0.0, "s1_bits": 10, "s2_bits": 10, "zeta": 0.05},
+   "files": [
+    {"name": "config.json", "size": 301, "sha256": null},
+    {"name": "model.safetensors", "size": 15842376, "sha256": "b97ec46b3b72160509e289183eaf7bdf5f0dac5bb9b49522f6d46638a99a8717"}
+   ]
+  }
+ ]
+}

@@ -1,0 +1,350 @@
+{
+ "schema_version": 1,
+ "kind": "kronos_forecast_benchmark",
+ "label": "darwin-arm64",
+ "generated_at": "2026-10-31T18:01:56+00:00",
+ "platform": {
+  "system": "darwin",
+  "machine": "arm64",
+  "python": "3.12.12",
+  "cpu_count": 10
+ },
+ "runtime": {
+  "device": "cpu",
+  "threads": 2,
+  "interop_threads": 1,
+  "deterministic": true,
+  "torch_version": "2.14.1",
+  "hf_offline": true,
+  "mps_available": true,
+  "cuda_available": false
+ },
+ "threads": 2,
+ "model": {
+  "name": "small",
+  "repo_id": "NeoQuasar/Kronos-small",
+  "tokenizer_repo_id": "NeoQuasar/Kronos-Tokenizer-base",
+  "max_context": 512,
+  "weights_sha256": {
+   "NeoQuasar/Kronos-small/config.json": "5e0f6a605d5f81b5c9b559fe5cf716a1acb041c744e6f41bd05b097b7a685396",
+   "NeoQuasar/Kronos-small/model.safetensors": "b082dfcbd8e8c142a725c8bbb99781802f38fec81210e13479effb32b3c3e020",
+   "NeoQuasar/Kronos-Tokenizer-base/config.json": "2366e7ccfec76cbc19cf3c4c1b9c5d901be336ca1e83f2d2292c9bff381b77a2",
+   "NeoQuasar/Kronos-Tokenizer-base/model.safetensors": "59d85f6af76a2c3b8240ea06cb21db4213b4eeca053f246b23e29cf832fc6bee"
+  },
+  "load_seconds": 0.22756320900225546,
+  "load_wall_seconds": 0.31512120900151785,
+  "hub_messages": [
+   "Loading weights from local directory",
+   "Loading weights from local directory"
+  ]
+ },
+ "input": {
+  "source": "upstream_fixture",
+  "file": "third_party/kronos/tests/data/regression_input.csv",
+  "timestamps": "regular 5-minute grid from the fixture's first timestamp (the fixture itself has session gaps)",
+  "amount": "provided by the fixture",
+  "rows": 512,
+  "columns": [
+   "open",
+   "high",
+   "low",
+   "close",
+   "volume",
+   "amount"
+  ],
+  "step_seconds": 300.0,
+  "first_timestamp": "2024-06-18T11:15:00",
+  "last_timestamp": "2024-06-20T05:50:00",
+  "horizon": 8
+ },
+ "fan": {
+  "method": "predict_batch([context] * K, [x_ts] * K, [y_ts] * K, pred_len=N, sample_count=1)",
+  "trajectories": 20,
+  "horizon": 8,
+  "temperature": 1.0,
+  "top_p": 0.9,
+  "top_k": 0,
+  "repeats": 3,
+  "warmup_seconds": 5.9489074160010205,
+  "seconds": [
+   5.853527541999938,
+   5.857005332996778,
+   5.86072362500272
+  ],
+  "median_seconds": 5.857005332996778,
+  "min_seconds": 5.853527541999938,
+  "max_seconds": 5.86072362500272,
+  "seconds_per_trajectory_candle": 0.03660628333122986,
+  "model_elapsed_seconds": [
+   5.851491624998744,
+   5.855131292002625,
+   5.858775125001557
+  ],
+  "seed_salts": [
+   "r0",
+   "r1",
+   "r2"
+  ],
+  "reference_seed": {
+   "salt": "r0",
+   "canonical": "kronos-agent/seed/v1/bench/BTC-USDT/2026-10-29T16:00:00Z/r0",
+   "torch_seed": 4008650148565282086,
+   "numpy_seed": 2097959620
+  },
+  "fan_fingerprint": "d1ef554661f69efa37277404af908ca8352df3938d2e58b240852dc79de9933f",
+  "fan_shape": [
+   20,
+   8,
+   6
+  ],
+  "finite": true
+ },
+ "determinism": {
+  "same_seed_identical": true,
+  "same_seed_max_abs_diff": 0.0,
+  "same_seed_repeat_seconds": 5.854038999998011,
+  "different_seed_differs": true,
+  "different_seed_salt": "r1",
+  "note": "same machine, same build, same thread count and same seeds reproduce a fan bit for bit; other thread counts, devices or architectures are not guaranteed to (recorded, not required)"
+ },
+ "mean_path": {
+  "method": "predictor.predict(sample_count=20)",
+  "sample_count": 20,
+  "seconds": 5.849755499999446,
+  "shape": [
+   8,
+   6
+  ],
+  "is_fan": false,
+  "note": "predict(sample_count=K) averages K sampled paths and returns ONE path; it is timed for comparison only, the fan is built with predict_batch and sample_count=1"
+ },
+ "peak_rss_mb": 978.59375,
+ "fixture_replica": {
+  "note": "offline replica of the upstream greedy regression test (seed 123, top_k=1, top_p=1.0, T=1.0, raw fixture timestamps, predictor.predict); the platform that generated the fixtures is unknown, so the comparison is report-only (decision D-007)",
+  "rtol": 1e-05,
+  "report_only": true,
+  "contexts": {
+   "512": {
+    "context_len": 512,
+    "pred_len": 8,
+    "shape": [
+     8,
+     6
+    ],
+    "finite": true,
+    "max_abs_diff": 0.3125,
+    "max_rel_diff": 4.016827696261367e-07,
+    "passes_rtol_1e-5": true,
+    "seconds": 0.2964502499962691
+   },
+   "256": {
+    "context_len": 256,
+    "pred_len": 8,
+    "shape": [
+     8,
+     6
+    ],
+    "finite": true,
+    "max_abs_diff": 0.25,
+    "max_rel_diff": 6.187336779989271e-07,
+    "passes_rtol_1e-5": true,
+    "seconds": 0.16440950000105659
+   }
+  }
+ },
+ "threads_sweep": [
+  {
+   "threads": 1,
+   "device": "cpu",
+   "error": null,
+   "deterministic": true,
+   "torch_version": "2.14.1",
+   "load_seconds": 0.24133345799782546,
+   "load_wall_seconds": 0.37202624999918044,
+   "hub_messages": [
+    "Loading weights from local directory",
+    "Loading weights from local directory"
+   ],
+   "warmup_seconds": 7.6965345419957885,
+   "seconds": [
+    7.56012308299978,
+    7.566276040997764,
+    7.583975458001078
+   ],
+   "median_seconds": 7.566276040997764,
+   "min_seconds": 7.56012308299978,
+   "max_seconds": 7.583975458001078,
+   "seconds_per_trajectory_candle": 0.04728922525623602,
+   "model_elapsed_seconds": [
+    7.558223041000019,
+    7.56439825000416,
+    7.582126374996733
+   ],
+   "seed_salts": [
+    "r0",
+    "r1",
+    "r2"
+   ],
+   "reference_seed": {
+    "salt": "r0",
+    "canonical": "kronos-agent/seed/v1/bench/BTC-USDT/2026-10-29T16:00:00Z/r0",
+    "torch_seed": 4008650148565282086,
+    "numpy_seed": 2097959620
+   },
+   "fan_fingerprint": "d1ef554661f69efa37277404af908ca8352df3938d2e58b240852dc79de9933f",
+   "fan_shape": [
+    20,
+    8,
+    6
+   ],
+   "finite": true,
+   "peak_rss_mb": 925.390625,
+   "identical_to_reference_fan": true
+  },
+  {
+   "threads": 2,
+   "device": "cpu",
+   "error": null,
+   "deterministic": true,
+   "torch_version": "2.14.1",
+   "load_seconds": 0.2523826670003473,
+   "load_wall_seconds": 0.34449716699600685,
+   "hub_messages": [
+    "Loading weights from local directory",
+    "Loading weights from local directory"
+   ],
+   "warmup_seconds": 5.885581042006379,
+   "seconds": [
+    5.897041250005714,
+    5.875991499997326,
+    5.866581999995105
+   ],
+   "median_seconds": 5.875991499997326,
+   "min_seconds": 5.866581999995105,
+   "max_seconds": 5.897041250005714,
+   "seconds_per_trajectory_candle": 0.03672494687498329,
+   "model_elapsed_seconds": [
+    5.895068541998626,
+    5.874065957999846,
+    5.864693790994352
+   ],
+   "seed_salts": [
+    "r0",
+    "r1",
+    "r2"
+   ],
+   "reference_seed": {
+    "salt": "r0",
+    "canonical": "kronos-agent/seed/v1/bench/BTC-USDT/2026-10-29T16:00:00Z/r0",
+    "torch_seed": 4008650148565282086,
+    "numpy_seed": 2097959620
+   },
+   "fan_fingerprint": "d1ef554661f69efa37277404af908ca8352df3938d2e58b240852dc79de9933f",
+   "fan_shape": [
+    20,
+    8,
+    6
+   ],
+   "finite": true,
+   "peak_rss_mb": 959.296875,
+   "identical_to_reference_fan": true
+  },
+  {
+   "threads": 10,
+   "device": "cpu",
+   "error": null,
+   "deterministic": true,
+   "torch_version": "2.14.1",
+   "load_seconds": 0.24096241700317478,
+   "load_wall_seconds": 0.3345554589977837,
+   "hub_messages": [
+    "Loading weights from local directory",
+    "Loading weights from local directory"
+   ],
+   "warmup_seconds": 4.820732084001065,
+   "seconds": [
+    4.772540375000972,
+    4.779801458003931,
+    4.78363124999305
+   ],
+   "median_seconds": 4.779801458003931,
+   "min_seconds": 4.772540375000972,
+   "max_seconds": 4.78363124999305,
+   "seconds_per_trajectory_candle": 0.029873759112524566,
+   "model_elapsed_seconds": [
+    4.770548041997245,
+    4.777775125003245,
+    4.781647208998038
+   ],
+   "seed_salts": [
+    "r0",
+    "r1",
+    "r2"
+   ],
+   "reference_seed": {
+    "salt": "r0",
+    "canonical": "kronos-agent/seed/v1/bench/BTC-USDT/2026-10-29T16:00:00Z/r0",
+    "torch_seed": 4008650148565282086,
+    "numpy_seed": 2097959620
+   },
+   "fan_fingerprint": "bf2ef3595ca2bc7bdbc4ae6765bc9f023aedb43ee709b961251ef7899ab4afc3",
+   "fan_shape": [
+    20,
+    8,
+    6
+   ],
+   "finite": true,
+   "peak_rss_mb": 960.828125,
+   "identical_to_reference_fan": false
+  }
+ ],
+ "mps": {
+  "threads": 2,
+  "device": "mps",
+  "error": null,
+  "deterministic": true,
+  "torch_version": "2.14.1",
+  "load_seconds": 0.3093231660022866,
+  "load_wall_seconds": 0.40368704199499916,
+  "hub_messages": [
+   "Loading weights from local directory",
+   "Loading weights from local directory"
+  ],
+  "warmup_seconds": 4.379162874996837,
+  "seconds": [
+   3.796801707998384,
+   3.7964542499976233,
+   3.7945379590019
+  ],
+  "median_seconds": 3.7964542499976233,
+  "min_seconds": 3.7945379590019,
+  "max_seconds": 3.796801707998384,
+  "seconds_per_trajectory_candle": 0.023727839062485146,
+  "model_elapsed_seconds": [
+   3.793967124998744,
+   3.7944356670050183,
+   3.7926512909980374
+  ],
+  "seed_salts": [
+   "r0",
+   "r1",
+   "r2"
+  ],
+  "reference_seed": {
+   "salt": "r0",
+   "canonical": "kronos-agent/seed/v1/bench/BTC-USDT/2026-10-29T16:00:00Z/r0",
+   "torch_seed": 4008650148565282086,
+   "numpy_seed": 2097959620
+  },
+  "fan_fingerprint": "f1b83bbe0f80ffdf202da2ac0869c3debbfd248fc915fdaf19b6636b29e7e98d",
+  "fan_shape": [
+   20,
+   8,
+   6
+  ],
+  "finite": true,
+  "peak_rss_mb": 550.78125,
+  "identical_to_reference_fan": false,
+  "note": "MPS is not a reference device (SPEC section 16); informational only"
+ }
+}

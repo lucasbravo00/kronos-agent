@@ -1,0 +1,61 @@
+# Versioned strategy and model parameters (SPEC sections 4, 9 and 12d).
+# Any change is an experiment (SPEC rule 8): record it in the experiment ledger BEFORE looking
+# at validation data. Values below are the SPEC's initial values (the simplest ones); explore
+# one variable at a time. Question numbers refer to the step-1 batch in docs/DECISIONS.md.
+schema_version: 1
+symbol: BTC-USDT          # BingX USDT-M perpetual; same symbol on the public and the demo host
+timeframe: 1h             # decisions at every closed 1 h candle, UTC-aligned
+
+criterion:
+  atr_period: 14                     # fixed in the first round
+  atr_method: wilder                 # wilder (RMA, TradingView default) | sma   [question 6c]
+  profile_window_candles: 100        # W; 100 = owner's VPVR, 168 = 7 days (range 100-168)
+  profile_rows: 75                   # rows over the window's price range (range 50-100)
+  profile_row_mode: range_rows       # range_rows | fixed_bp (never fixed USD)
+  profile_smoothing_sigma_rows: 2    # Gaussian sigma in rows (range 0-4); 0 = owner's VPVR
+  profile_min_prominence_pct: 10     # HVN/LVN prominence, % of the profile maximum (range 5-20)
+  profile_source_timeframe: 1h       # candles the profile is built from: 1h (reference) | 5m | 1m   [question 5]
+  profile_split_up_down: false       # owner's VPVR splits up/down volume; levels use the total
+  value_area_pct: 70                 # VAH/VAL around the POC
+  level_poc: true
+  level_hvn: true
+  level_vah_val: false               # computed always; used as a rebound level only when true
+  level_lvn: false                   # starts OFF: zones price tends to cross
+  target_level_types: active         # active | all   [question 7]
+  arrival_k_atr: 0.5                 # close within k*ATR of a level (range 0.25-1.0)
+  arrival_by: close                  # close | wick
+  decel_n_candles: 3                 # candles of decreasing volume into the extreme (range 2-4)
+  decel_rule: strictly_decreasing    # strictly_decreasing | net_decrease   [question 6a]
+  swing_window_candles: 12           # defines the "previous extreme" (range 6-24)
+  divergence_rule: extreme_candle_volume   # extreme_candle_volume | three_candle_sum   [question 6b]
+  prior_move_m_candles: 6            # direction = opposite of the sign of the m-candle return (range 3-12)
+  stop_s_atr: 0.5                    # stop s*ATR beyond the level (range 0.25-1.0)
+  time_stop_t_candles: 8             # time stop (range 4-16); should resemble the horizon N   [question 13]
+  min_rr_r: 1.0                      # below it the event is "not tradable" (range 0.75-2.0)
+  side: both                         # long | short | both; always reported per side
+  session_filter: "off"              # "off" | utc_sessions
+  volatility_filter: "off"           # "off" | atr_percentile
+  entry: market                      # market | limit (limit needs an explicit fill model)
+
+kronos:
+  model: small                       # small | base | mini (tokenizer pairing and max_context enforced in code)
+  max_context: 512                   # 512 for small/base, 2048 for mini (not stored in the HF config)
+  horizon_n: 4                       # N candles; 8 is the first variant
+  temperature: 1.0                   # T (range 0.6-1.2)
+  top_p: 0.9
+  top_k: 0                           # MUST stay 0: upstream ignores top_p when top_k > 0
+  trajectories: 20                   # built with predict_batch([df]*20, sample_count=1) (range 20-50)
+  device: cpu                        # comparable inference is CPU only
+  threads: 2                         # fixed on every machine (torch.set_num_threads)
+  amount_policy: volume_x_mean_ohlc  # volume_x_mean_ohlc | binance_quote_volume | zeros   [question 9]
+  seed_salt: ""                      # appended to the seed string; empty by default
+  finetune_recipe: null              # recorded in step 6
+  retrain_frequency: monthly         # weekly ... quarterly
+  history: all                       # all | 2y
+  train_timeframe: 1h                # 1h | 15m
+
+costs:                               # SPEC sections 5 and 7; taker 0.0005 / maker 0.0002 verified live
+  taker_fee_bp: 5.0
+  spread_bp: 0.5
+  slippage_bp: 0.5                   # backtest fill at next open + slippage
+  funding_interval_hours: 8          # verified live; read fundingIntervalHours from premiumIndex at runtime
