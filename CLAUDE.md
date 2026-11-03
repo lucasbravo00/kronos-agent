@@ -276,8 +276,11 @@ operational summary plus the facts that are easy to get wrong.
 
 ## Git
 
-- Exactly one commit (the initial skeleton) until the owner says otherwise. Never push. Show
-  `git status` in step summaries.
+- Remote: a private GitHub repository (`origin`), created and pushed on 2026-11-03 on the
+  owner's request (gate 7), with a second commit holding steps 2-6. Commit and push only when
+  the owner asks; every push still needs their approval. Show `git status` in step summaries.
+- Code provenance does not rely on the commit: `provenance.py` records the source tree sha256,
+  which identifies the code whatever the number of commits.
 
 ## Commands
 

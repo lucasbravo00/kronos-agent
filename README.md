@@ -11,9 +11,14 @@ the edge survives a live market. A well-measured "no" is a valid result.
 
 > **Research project. Demo account (virtual funds) only. Nothing here is financial advice.**
 
-Status: step 1 of 8 (environment, skeleton, safe clients, tests, weight verification) done on
-2026-10-31; the owner's design-question batch is still open and the defaults recorded in
-`docs/DECISIONS.md` apply. Measured on the development machine (darwin-arm64, Apple M4, CPU,
+Status (2026-11-03): steps 1 and 2 are done; steps 3 to 5 depended on the discarded criterion
+(D-042) and wait for the owner's new strategy; step 6, the retraining, is designed
+(`docs/RETRAINING.md`) and its measurement step ran (`reports/finetune/timing-2.md`, D-055), but
+no model has been trained yet and no test of the budget has been spent. The owner answered the
+step-1 design questions (D-051; the table at the top of `docs/DECISIONS.md`).
+
+Step 1 (environment, skeleton, safe clients, tests, weight verification) was done on
+2026-10-31. Measured on the development machine (darwin-arm64, Apple M4, CPU,
 2 threads, torch 2.14.1; `reports/environment/`): a Kronos-small fan of 20 trajectories x 8
 candles takes 5.86 s (median of 3 after a warm-up), the model loads in 0.23 s, the benchmark
 process peaks at 979 MiB, and the same seed reproduces the fan bit for bit. See `docs/SPEC.md`
