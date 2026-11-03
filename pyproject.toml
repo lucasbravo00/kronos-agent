@@ -1,7 +1,7 @@
 [project]
 name = "kronos-agent"
 version = "0.1.0"
-description = "Research system: Kronos candle forecasts modulating a volume-profile rebound criterion on BTC-USDT perpetual, BingX demo account only. Not financial advice."
+description = "Research project: retraining and evaluating Kronos candle forecasts for BTC-USDT perpetual, BingX demo account only. Not financial advice."
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [

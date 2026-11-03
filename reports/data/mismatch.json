@@ -1,0 +1,1626 @@
+{
+ "code": {
+  "commit": "3cda6c6b125e573dd764f1dc1bd1510602da7711",
+  "dirty": true,
+  "source_tree_sha256": "25c1e652e814de3ac4a5948cee4b5315cecebe57a01ada1784b985fcc4a24472"
+ },
+ "comparators": {
+  "alignment/lag_0": "lag_minus_2 .. lag_plus_2: the same correlation out of alignment; lag 0 must be larger than every one of them or the report fails",
+  "alignment/lag_minus_1": "lag_0: the aligned correlation (returns/pearson), which must be the largest of the five lags or the report fails",
+  "alignment/lag_minus_2": "lag_0: the aligned correlation (returns/pearson), which must be the largest of the five lags or the report fails",
+  "alignment/lag_plus_1": "lag_0: the aligned correlation (returns/pearson), which must be the largest of the five lags or the report fails",
+  "alignment/lag_plus_2": "lag_0: the aligned correlation (returns/pearson), which must be the largest of the five lags or the report fails",
+  "amount/abs_e_bp_max": "0 bp: an exact proxy; its effect on the model input is dz_* against dz_volume_* (the cross-venue difference of the volume channel)",
+  "amount/abs_e_bp_median": "0 bp: an exact proxy; its effect on the model input is dz_* against dz_volume_* (the cross-venue difference of the volume channel)",
+  "amount/abs_e_bp_p90": "0 bp: an exact proxy; its effect on the model input is dz_* against dz_volume_* (the cross-venue difference of the volume channel)",
+  "amount/abs_e_bp_p99": "0 bp: an exact proxy; its effect on the model input is dz_* against dz_volume_* (the cross-venue difference of the volume channel)",
+  "amount/dz_max_difference": "0: the proxy moves the model input as much as the venue does",
+  "amount/dz_median_difference": "0: the proxy moves the model input as much as the venue does",
+  "amount/dz_proxy_max_max": "dz_volume_*: the same dz for the volume channel between the Binance and BingX windows at the same hours",
+  "amount/dz_proxy_max_mean": "dz_volume_*: the same dz for the volume channel between the Binance and BingX windows at the same hours",
+  "amount/dz_proxy_median_mean": "dz_volume_*: the same dz for the volume channel between the Binance and BingX windows at the same hours",
+  "amount/dz_volume_max_max": "the comparator of the dz_proxy statistics",
+  "amount/dz_volume_max_mean": "the comparator of the dz_proxy statistics",
+  "amount/dz_volume_median_mean": "the comparator of the dz_proxy statistics",
+  "amount/e_bp_mean": "0 bp: an exact proxy; its effect on the model input is dz_* against dz_volume_* (the cross-venue difference of the volume channel)",
+  "amount/e_bp_median": "0 bp: an exact proxy; its effect on the model input is dz_* against dz_volume_* (the cross-venue difference of the volume channel)",
+  "kronos/a_f_share": "the owner's two-seed floor of 88 % (SPEC section 5, external reference)",
+  "kronos/a_x_minus_a_f": "0, with the pre-registered reading and the minimum detectable difference at 80 % power",
+  "kronos/a_x_share": "a_f_share: the agreement of two seeds on the same BingX window",
+  "kronos/a_xd_minus_a_f": "0, with the pre-registered reading and the minimum detectable difference at 80 % power",
+  "kronos/a_xd_share": "a_f_share: the agreement of two seeds on the same BingX window",
+  "kronos/p_up_f_abs_delta_mean": "the comparator of the other p_up pairs",
+  "kronos/p_up_f_correlation": "the comparator of the other p_up pairs",
+  "kronos/p_up_x_abs_delta_mean": "p_up_f_*: the floor pair (the same BingX window under two seeds)",
+  "kronos/p_up_x_correlation": "p_up_f_*: the floor pair (the same BingX window under two seeds)",
+  "kronos/p_up_xd_abs_delta_mean": "p_up_f_*: the floor pair (the same BingX window under two seeds)",
+  "kronos/p_up_xd_correlation": "p_up_f_*: the floor pair (the same BingX window under two seeds)",
+  "prices/abs_return_bp_median": "the comparator of the price differences (the typical hourly move)",
+  "prices/close_abs_bp_max": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+  "prices/close_abs_bp_mean": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+  "prices/close_abs_bp_median": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+  "prices/close_abs_bp_p90": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+  "prices/close_abs_bp_p99": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+  "prices/close_equal_share": "SPEC section 5 (external reference): since 2024-07-26 no 1h candle of the demo account equals the real one",
+  "prices/close_signed_bp_mean": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+  "prices/close_signed_bp_median": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+  "prices/high_abs_bp_max": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+  "prices/high_abs_bp_mean": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+  "prices/high_abs_bp_median": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+  "prices/high_abs_bp_p90": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+  "prices/high_abs_bp_p99": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+  "prices/high_equal_share": "SPEC section 5 (external reference): since 2024-07-26 no 1h candle of the demo account equals the real one",
+  "prices/high_signed_bp_mean": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+  "prices/high_signed_bp_median": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+  "prices/low_abs_bp_max": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+  "prices/low_abs_bp_mean": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+  "prices/low_abs_bp_median": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+  "prices/low_abs_bp_p90": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+  "prices/low_abs_bp_p99": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+  "prices/low_equal_share": "SPEC section 5 (external reference): since 2024-07-26 no 1h candle of the demo account equals the real one",
+  "prices/low_signed_bp_mean": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+  "prices/low_signed_bp_median": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+  "prices/open_abs_bp_max": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+  "prices/open_abs_bp_mean": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+  "prices/open_abs_bp_median": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+  "prices/open_abs_bp_p90": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+  "prices/open_abs_bp_p99": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+  "prices/open_equal_share": "SPEC section 5 (external reference): since 2024-07-26 no 1h candle of the demo account equals the real one",
+  "prices/open_signed_bp_mean": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+  "prices/open_signed_bp_median": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+  "prices/tick_bp_median": "the comparator of the price differences (the price grid)",
+  "returns/binance_std_bp": "the comparator of diff_std_bp and diff_mad_bp (the scale of the hourly return)",
+  "returns/diff_mad_bp": "binance_std_bp: the standard deviation of r_binance itself",
+  "returns/diff_mad_ratio": "1: a venue difference as large as the hourly return itself",
+  "returns/diff_std_bp": "binance_std_bp: the standard deviation of r_binance itself",
+  "returns/diff_std_ratio": "1: a venue difference as large as the hourly return itself",
+  "returns/pearson": "alignment/lag_minus_1 and alignment/lag_plus_1: the correlation of the same returns one hour out of alignment",
+  "returns/spearman": "alignment/lag_minus_1 and alignment/lag_plus_1: the correlation of the same returns one hour out of alignment",
+  "volume/median_ratio": "none: descriptive, the two venues may count volume in different units",
+  "volume/spearman": "spearman_lag_minus_1 and spearman_lag_plus_1: the same correlation one hour out of alignment",
+  "volume/spearman_lag_minus_1": "the comparator of volume/spearman",
+  "volume/spearman_lag_plus_1": "the comparator of volume/spearman"
+ },
+ "config_sha256": "a28566165d67787d156bdab6cb773b77b93eb8ae788a17e2795e0f4de5aa91bf",
+ "data": {
+  "stores": [
+   {
+    "csv_sha256": "9a04ce60f1f5ddf6c3e93cc4cc1064b2203d37f2858c30a755c71c049bb05f14",
+    "read_from": "2024-04-27T10:00Z",
+    "read_to": "2026-08-01T00:00Z",
+    "relpath": "candles/binance/1h.csv",
+    "rows_read": 19814
+   },
+   {
+    "csv_sha256": "9c47de782cd66b7b89c6554f5cc9285b8c7e5b362f5fdf38e551ef30d15afeee",
+    "read_from": "2024-04-27T10:00Z",
+    "read_to": "2026-08-01T00:00Z",
+    "relpath": "candles/bingx/1h.csv",
+    "rows_read": 19814
+   }
+  ]
+ },
+ "data_md_sha256": "ddfca5a24e0c43bda78ea9bdc60331ebc2e65a40aabec187552956ee8d55a306",
+ "expected_chance_misses": 2.7,
+ "figures": [
+  {
+   "name": "return_scatter",
+   "relpath": "figures/mismatch_return_scatter.png",
+   "sha256": "52542e9ea50bc1215e919af05a2b22ba05ec726af737b72eb5a8df6323aa2272"
+  },
+  {
+   "name": "price_differences",
+   "relpath": "figures/mismatch_price_differences.png",
+   "sha256": "e8c2c52c82bafc33eb3b9559dbefbe91f830dc73aecb0a7cf3ecb00b9121ae7b"
+  },
+  {
+   "name": "agreement",
+   "relpath": "figures/mismatch_agreement.png",
+   "sha256": "2c24143b1e8a2c66db46db56be9f9b33e2edea35832a426b92d788f7624995c0"
+  }
+ ],
+ "generated_at": "2026-11-02T16:17:31Z",
+ "overlap_start": "2024-04-27T10:00Z",
+ "samples": {
+  "amount": {
+   "hours": {
+    "binance_hours": 19814,
+    "exclusions": [
+     {
+      "hours": 1,
+      "ranges": [
+       [
+        "2024-10-28T20:00Z",
+        "2024-10-28T21:00Z"
+       ]
+      ],
+      "reason": "zero quote volume (e_t undefined)"
+     }
+    ],
+    "range": [
+     "2024-04-27T10:00Z",
+     "2026-08-01T00:00Z"
+    ],
+    "used": 19813
+   },
+   "sample_hours": {
+    "requested": 291,
+    "skipped": 0,
+    "skipped_hours": [],
+    "used": 291
+   }
+  },
+  "hours": {
+   "eligible": 19814,
+   "excluded": 0,
+   "exclusions": [],
+   "range": [
+    "2024-04-27T10:00Z",
+    "2026-08-01T00:00Z"
+   ],
+   "used": 19814
+  },
+  "kronos": {
+   "design": "primary",
+   "eligible": 291,
+   "excluded": 0,
+   "excluded_hours": [],
+   "used": 291
+  },
+  "returns": {
+   "joined_hours": 19814,
+   "lost": 1,
+   "lost_ranges": [
+    [
+     "2024-04-27T10:00Z",
+     "2024-04-27T11:00Z"
+    ]
+   ],
+   "lost_reason": "the hour t - 1h is missing in a source (no return at t)",
+   "used": 19813
+  },
+  "volume": {
+   "hours": 19814,
+   "ratio_exclusions": [
+    {
+     "hours": 1,
+     "ranges": [
+      [
+       "2024-10-28T20:00Z",
+       "2024-10-28T21:00Z"
+      ]
+     ],
+     "reason": "zero Binance volume (median_ratio undefined)"
+    }
+   ],
+   "ratio_hours": 19813,
+   "zero_binance_volume_hours": 1
+  }
+ },
+ "sections": {
+  "alignment": {
+   "comparators": {
+    "lag_0": "lag_minus_2 .. lag_plus_2: the same correlation out of alignment; lag 0 must be larger than every one of them or the report fails",
+    "lag_minus_1": "lag_0: the aligned correlation (returns/pearson), which must be the largest of the five lags or the report fails",
+    "lag_minus_2": "lag_0: the aligned correlation (returns/pearson), which must be the largest of the five lags or the report fails",
+    "lag_plus_1": "lag_0: the aligned correlation (returns/pearson), which must be the largest of the five lags or the report fails",
+    "lag_plus_2": "lag_0: the aligned correlation (returns/pearson), which must be the largest of the five lags or the report fails"
+   },
+   "convention": "lag k pairs r_binance(t) with r_bingx(t + k h); k > 0: BingX later",
+   "descriptive": {},
+   "lag0_is_largest": true,
+   "pairs": {
+    "lag_0": 19813,
+    "lag_minus_1": 19812,
+    "lag_minus_2": 19811,
+    "lag_plus_1": 19812,
+    "lag_plus_2": 19811
+   },
+   "seeds": {
+    "alignment/lag_0": "mismatch/alignment/lag_0",
+    "alignment/lag_minus_1": "mismatch/alignment/lag_minus_1",
+    "alignment/lag_minus_2": "mismatch/alignment/lag_minus_2",
+    "alignment/lag_plus_1": "mismatch/alignment/lag_plus_1",
+    "alignment/lag_plus_2": "mismatch/alignment/lag_plus_2"
+   },
+   "statistics": {
+    "lag_0": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": null,
+     "key": "mismatch/alignment/lag_0",
+     "low": null,
+     "method": "point_only",
+     "n": 19813,
+     "n_blocks": 119,
+     "n_eff": null,
+     "n_resamples": 0,
+     "point": 0.999840455782765,
+     "reason": "lag 0 is returns/pearson (the same rows): its interval is reported there",
+     "seed": 3986934788
+    },
+    "lag_minus_1": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 0.00621384561540105,
+     "key": "mismatch/alignment/lag_minus_1",
+     "low": -0.04029475775783719,
+     "method": "percentile_block_bootstrap",
+     "n": 19812,
+     "n_blocks": 119,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": -0.016647213433802578,
+     "reason": null,
+     "seed": 822718675
+    },
+    "lag_minus_2": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 0.016275372391990364,
+     "key": "mismatch/alignment/lag_minus_2",
+     "low": -0.02026789842561982,
+     "method": "percentile_block_bootstrap",
+     "n": 19811,
+     "n_blocks": 119,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": -0.0008775360273925289,
+     "reason": null,
+     "seed": 2698116680
+    },
+    "lag_plus_1": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 0.0072008712718343165,
+     "key": "mismatch/alignment/lag_plus_1",
+     "low": -0.03683583332509977,
+     "method": "percentile_block_bootstrap",
+     "n": 19812,
+     "n_blocks": 119,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": -0.016046758527470506,
+     "reason": null,
+     "seed": 901879774
+    },
+    "lag_plus_2": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 0.017432367353568567,
+     "key": "mismatch/alignment/lag_plus_2",
+     "low": -0.0185314810866874,
+     "method": "percentile_block_bootstrap",
+     "n": 19811,
+     "n_blocks": 119,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": -0.0008431263675995574,
+     "reason": null,
+     "seed": 266852171
+    }
+   },
+   "statistics_with_intervals": 4
+  },
+  "amount": {
+   "comparators": {
+    "abs_e_bp_max": "0 bp: an exact proxy; its effect on the model input is dz_* against dz_volume_* (the cross-venue difference of the volume channel)",
+    "abs_e_bp_median": "0 bp: an exact proxy; its effect on the model input is dz_* against dz_volume_* (the cross-venue difference of the volume channel)",
+    "abs_e_bp_p90": "0 bp: an exact proxy; its effect on the model input is dz_* against dz_volume_* (the cross-venue difference of the volume channel)",
+    "abs_e_bp_p99": "0 bp: an exact proxy; its effect on the model input is dz_* against dz_volume_* (the cross-venue difference of the volume channel)",
+    "dz_max_difference": "0: the proxy moves the model input as much as the venue does",
+    "dz_median_difference": "0: the proxy moves the model input as much as the venue does",
+    "dz_proxy_max_max": "dz_volume_*: the same dz for the volume channel between the Binance and BingX windows at the same hours",
+    "dz_proxy_max_mean": "dz_volume_*: the same dz for the volume channel between the Binance and BingX windows at the same hours",
+    "dz_proxy_median_mean": "dz_volume_*: the same dz for the volume channel between the Binance and BingX windows at the same hours",
+    "dz_volume_max_max": "the comparator of the dz_proxy statistics",
+    "dz_volume_max_mean": "the comparator of the dz_proxy statistics",
+    "dz_volume_median_mean": "the comparator of the dz_proxy statistics",
+    "e_bp_mean": "0 bp: an exact proxy; its effect on the model input is dz_* against dz_volume_* (the cross-venue difference of the volume channel)",
+    "e_bp_median": "0 bp: an exact proxy; its effect on the model input is dz_* against dz_volume_* (the cross-venue difference of the volume channel)"
+   },
+   "descriptive": {
+    "abs_e_bp_max": 123.85763140487671,
+    "abs_e_bp_median": 4.410382012567382,
+    "abs_e_bp_p90": 15.262705731859503,
+    "abs_e_bp_p99": 36.81104276971512,
+    "dz_proxy_max_max": 0.0736546516418457,
+    "dz_volume_max_max": 4.23507833480835
+   },
+   "normalisation": "the pinned predictor's: float32, per-window mean and population std, (x - mean) / (std + 1e-5), clipped at +-5",
+   "samples": {
+    "hours": {
+     "binance_hours": 19814,
+     "exclusions": [
+      {
+       "hours": 1,
+       "ranges": [
+        [
+         "2024-10-28T20:00Z",
+         "2024-10-28T21:00Z"
+        ]
+       ],
+       "reason": "zero quote volume (e_t undefined)"
+      }
+     ],
+     "range": [
+      "2024-04-27T10:00Z",
+      "2026-08-01T00:00Z"
+     ],
+     "used": 19813
+    },
+    "sample_hours": {
+     "requested": 291,
+     "skipped": 0,
+     "skipped_hours": [],
+     "used": 291
+    }
+   },
+   "seeds": {
+    "amount/dz_max_difference": "mismatch/amount/dz_max_difference",
+    "amount/dz_median_difference": "mismatch/amount/dz_median_difference",
+    "amount/dz_proxy_max_mean": "mismatch/amount/dz_proxy_max_mean",
+    "amount/dz_proxy_median_mean": "mismatch/amount/dz_proxy_median_mean",
+    "amount/dz_volume_max_mean": "mismatch/amount/dz_volume_max_mean",
+    "amount/dz_volume_median_mean": "mismatch/amount/dz_volume_median_mean",
+    "amount/e_bp_mean": "mismatch/amount/e_bp_mean",
+    "amount/e_bp_median": "mismatch/amount/e_bp_median"
+   },
+   "statistics": {
+    "dz_max_difference": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": -1.7155169100891765,
+     "key": "mismatch/amount/dz_max_difference",
+     "low": -2.118033282918632,
+     "method": "percentile_block_bootstrap",
+     "n": 291,
+     "n_blocks": 28,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": -1.9115253729918569,
+     "reason": null,
+     "seed": 689051611
+    },
+    "dz_median_difference": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": -0.11381778456753015,
+     "key": "mismatch/amount/dz_median_difference",
+     "low": -0.14201859945747902,
+     "method": "percentile_block_bootstrap",
+     "n": 291,
+     "n_blocks": 28,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": -0.1274515987598718,
+     "reason": null,
+     "seed": 1428231461
+    },
+    "dz_proxy_max_mean": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 0.028722324194916115,
+     "key": "mismatch/amount/dz_proxy_max_mean",
+     "low": 0.022546232130756346,
+     "method": "percentile_block_bootstrap",
+     "n": 291,
+     "n_blocks": 28,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 0.025557956335061194,
+     "reason": null,
+     "seed": 2584682750
+    },
+    "dz_proxy_median_mean": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 0.0007301275072938488,
+     "key": "mismatch/amount/dz_proxy_median_mean",
+     "low": 0.0005108899171580392,
+     "method": "percentile_block_bootstrap",
+     "n": 291,
+     "n_blocks": 28,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 0.0006161341215627864,
+     "reason": null,
+     "seed": 1421396029
+    },
+    "dz_volume_max_mean": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 2.12087022029795,
+     "key": "mismatch/amount/dz_volume_max_mean",
+     "low": 1.7452178217858685,
+     "method": "percentile_block_bootstrap",
+     "n": 291,
+     "n_blocks": 28,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 1.937083329326918,
+     "reason": null,
+     "seed": 2029717066
+    },
+    "dz_volume_median_mean": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 0.14249874451734215,
+     "key": "mismatch/amount/dz_volume_median_mean",
+     "low": 0.11425558149228703,
+     "method": "percentile_block_bootstrap",
+     "n": 291,
+     "n_blocks": 28,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 0.12806773288143458,
+     "reason": null,
+     "seed": 14810209
+    },
+    "e_bp_mean": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 0.38367200257644807,
+     "key": "mismatch/amount/e_bp_mean",
+     "low": 0.04625147321221438,
+     "method": "percentile_block_bootstrap",
+     "n": 19813,
+     "n_blocks": 119,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 0.2181626240398011,
+     "reason": null,
+     "seed": 1871235763
+    },
+    "e_bp_median": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 0.18725033975502958,
+     "key": "mismatch/amount/e_bp_median",
+     "low": -0.016487662253095167,
+     "method": "percentile_block_bootstrap",
+     "n": 19813,
+     "n_blocks": 119,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 0.07771453658156346,
+     "reason": null,
+     "seed": 693564706
+    }
+   },
+   "statistics_with_intervals": 8
+  },
+  "kronos": {
+   "autocorrelation": {
+    "a_f": {
+     "reason": null,
+     "values": {
+      "1": 0.0057778895314727,
+      "2": 0.03760455955075017,
+      "3": -0.048129746039728395,
+      "4": -0.020303076020450832,
+      "5": 0.007523593998826612,
+      "6": -0.021430223786773853,
+      "7": -0.10316452937725241,
+      "8": -0.04694761545553591
+     }
+    },
+    "a_x": {
+     "reason": null,
+     "values": {
+      "1": -0.07751665957207671,
+      "2": 0.05511911536820416,
+      "3": -0.010335978420240801,
+      "4": 0.09647472622257068,
+      "5": -0.07235464609184719,
+      "6": 0.01721467924061948,
+      "7": 0.01635925986389573,
+      "8": 0.058570290094986086
+     }
+    },
+    "a_xd": {
+     "reason": null,
+     "values": {
+      "1": -0.09615090244245261,
+      "2": 0.04389190794432142,
+      "3": -0.09862384460129894,
+      "4": 0.07673878615202445,
+      "5": 0.009535571535764282,
+      "6": 0.04829181801915201,
+      "7": -0.018911396597108106,
+      "8": 0.015171952690018019
+     }
+    }
+   },
+   "comparators": {
+    "a_f_share": "the owner's two-seed floor of 88 % (SPEC section 5, external reference)",
+    "a_x_minus_a_f": "0, with the pre-registered reading and the minimum detectable difference at 80 % power",
+    "a_x_share": "a_f_share: the agreement of two seeds on the same BingX window",
+    "a_xd_minus_a_f": "0, with the pre-registered reading and the minimum detectable difference at 80 % power",
+    "a_xd_share": "a_f_share: the agreement of two seeds on the same BingX window",
+    "p_up_f_abs_delta_mean": "the comparator of the other p_up pairs",
+    "p_up_f_correlation": "the comparator of the other p_up pairs",
+    "p_up_x_abs_delta_mean": "p_up_f_*: the floor pair (the same BingX window under two seeds)",
+    "p_up_x_correlation": "p_up_f_*: the floor pair (the same BingX window under two seeds)",
+    "p_up_xd_abs_delta_mean": "p_up_f_*: the floor pair (the same BingX window under two seeds)",
+    "p_up_xd_correlation": "p_up_f_*: the floor pair (the same BingX window under two seeds)"
+   },
+   "descriptive": {},
+   "design": "primary",
+   "fans": {
+    "computed": 873,
+    "config_id": "b2723b9626339a08",
+    "elapsed_s_all": 10787.288099101279,
+    "elapsed_s_computed": 10787.288099101279,
+    "reused": 0,
+    "summaries": 873
+   },
+   "gate3": {
+    "approval_tolerance": 1.25,
+    "cpu_seconds_limit": 3600,
+    "fans_cpu_seconds": 21574.576198202558,
+    "invocation": {
+     "approved_cpu_hours": 1.53,
+     "dropped": [],
+     "estimate": {
+      "config_id": "b2723b9626339a08",
+      "cpu_hours": 1.5528815481242781,
+      "cpu_seconds": 5590.3735732474015,
+      "dropped": 0,
+      "gate3_cpu_seconds": 3600,
+      "needs_owner_approval": true,
+      "pending": 873,
+      "seconds_per_fan": 3.2018176249985117,
+      "stored": 0,
+      "tasks": 873,
+      "threads": 2,
+      "wall_seconds": 698.7966966559252,
+      "workers": 4,
+      "workers_requested": 4
+     },
+     "ratio": 1.0149552602119465,
+     "rebuilt_from_stored_fans": false
+    },
+    "records": [
+     {
+      "approved_cpu_hours": 1.53,
+      "config_id": "b2723b9626339a08",
+      "design": "primary",
+      "dropped": [],
+      "estimate": {
+       "config_id": "b2723b9626339a08",
+       "cpu_hours": 1.5528815481242781,
+       "cpu_seconds": 5590.3735732474015,
+       "dropped": 0,
+       "gate3_cpu_seconds": 3600,
+       "needs_owner_approval": true,
+       "pending": 873,
+       "seconds_per_fan": 3.2018176249985117,
+       "stored": 0,
+       "tasks": 873,
+       "threads": 2,
+       "wall_seconds": 698.7966966559252,
+       "workers": 4,
+       "workers_requested": 4
+      },
+      "given_at": "2026-11-02T15:31:59Z",
+      "measured_cpu_hours": 1.5528815481242781,
+      "ratio": 1.0149552602119465,
+      "schema_version": 1,
+      "study": "mismatch",
+      "tolerance": 1.25
+     }
+    ],
+    "records_file": "mismatch.gate3.jsonl"
+   },
+   "owner_reference": 0.88,
+   "readings": {
+    "a_x_minus_a_f": {
+     "interval_position": "contains 0",
+     "minimum_detectable_difference": {
+      "formula": "(z_0.975 + z_0.80) x (high - low) / (2 z_0.975) of the 95 % interval",
+      "reason": null,
+      "standard_error": 0.030347833308689943,
+      "value": 0.0850220411993821
+     },
+     "reading": "not distinguishable",
+     "rule": "interval entirely above 0: 'the data effect is smaller than seed noise'; entirely below 0: 'the data effect is larger than seed noise'; containing 0 or no interval: 'not distinguishable'"
+    },
+    "a_xd_minus_a_f": {
+     "interval_position": "entirely below 0",
+     "minimum_detectable_difference": {
+      "formula": "(z_0.975 + z_0.80) x (high - low) / (2 z_0.975) of the 95 % interval",
+      "reason": null,
+      "standard_error": 0.024607177991527444,
+      "value": 0.06893910612053804
+     },
+     "reading": "the sources shift the signal beyond seed noise",
+     "rule": "interval entirely below 0: 'the sources shift the signal beyond seed noise' (SPEC section 5: say so); entirely above 0: 'the cross-source pair agrees more often than the two-seed floor'; containing 0 or no interval: 'not distinguishable'"
+    },
+    "planned_mdd": "about 9 points at 291 hours (docs/DATA.md)"
+   },
+   "samples": {
+    "design": "primary",
+    "eligible": 291,
+    "excluded": 0,
+    "excluded_hours": [],
+    "used": 291
+   },
+   "seeds": {
+    "kronos/a_f_share": "mismatch/kronos/a_f_share",
+    "kronos/a_x_minus_a_f": "mismatch/kronos/a_x_minus_a_f",
+    "kronos/a_x_share": "mismatch/kronos/a_x_share",
+    "kronos/a_xd_minus_a_f": "mismatch/kronos/a_xd_minus_a_f",
+    "kronos/a_xd_share": "mismatch/kronos/a_xd_share",
+    "kronos/p_up_f_abs_delta_mean": "mismatch/kronos/p_up_f_abs_delta_mean",
+    "kronos/p_up_f_correlation": "mismatch/kronos/p_up_f_correlation",
+    "kronos/p_up_x_abs_delta_mean": "mismatch/kronos/p_up_x_abs_delta_mean",
+    "kronos/p_up_x_correlation": "mismatch/kronos/p_up_x_correlation",
+    "kronos/p_up_xd_abs_delta_mean": "mismatch/kronos/p_up_xd_abs_delta_mean",
+    "kronos/p_up_xd_correlation": "mismatch/kronos/p_up_xd_correlation"
+   },
+   "statistics": {
+    "a_f_share": {
+     "confidence": 0.95,
+     "deff": 0.7214643665546389,
+     "failed_resamples": 0,
+     "high": 0.890467504432036,
+     "key": "mismatch/kronos/a_f_share",
+     "low": 0.8231409091397908,
+     "method": "percentile_block_bootstrap",
+     "n": 291,
+     "n_blocks": 28,
+     "n_eff": 403.346323796522,
+     "n_resamples": 1000,
+     "point": 0.8591065292096219,
+     "reason": null,
+     "seed": 1503576664
+    },
+    "a_x_minus_a_f": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 0.0,
+     "key": "mismatch/kronos/a_x_minus_a_f",
+     "low": -0.11896132058771458,
+     "method": "percentile_block_bootstrap",
+     "n": 291,
+     "n_blocks": 28,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": -0.0584192439862542,
+     "reason": null,
+     "seed": 3210576418
+    },
+    "a_x_share": {
+     "confidence": 0.95,
+     "deff": 1.3254478330141406,
+     "failed_resamples": 0,
+     "high": 0.856655574516496,
+     "key": "mismatch/kronos/a_x_share",
+     "low": 0.7467938311688311,
+     "method": "percentile_block_bootstrap",
+     "n": 291,
+     "n_blocks": 28,
+     "n_eff": 219.54843695224892,
+     "n_resamples": 1000,
+     "point": 0.8006872852233677,
+     "reason": null,
+     "seed": 2843995200
+    },
+    "a_xd_minus_a_f": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": -0.07419661458333335,
+     "key": "mismatch/kronos/a_xd_minus_a_f",
+     "low": -0.17065497983245423,
+     "method": "percentile_block_bootstrap",
+     "n": 291,
+     "n_blocks": 28,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": -0.12371134020618546,
+     "reason": null,
+     "seed": 2023060122
+    },
+    "a_xd_share": {
+     "confidence": 0.95,
+     "deff": 0.8941144658530847,
+     "failed_resamples": 0,
+     "high": 0.7849133005580654,
+     "key": "mismatch/kronos/a_xd_share",
+     "low": 0.6879194630872483,
+     "method": "percentile_block_bootstrap",
+     "n": 291,
+     "n_blocks": 28,
+     "n_eff": 325.46168428485674,
+     "n_resamples": 1000,
+     "point": 0.7353951890034365,
+     "reason": null,
+     "seed": 2751589770
+    },
+    "p_up_f_abs_delta_mean": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 0.12118563287461369,
+     "key": "mismatch/kronos/p_up_f_abs_delta_mean",
+     "low": 0.09929308807389793,
+     "method": "percentile_block_bootstrap",
+     "n": 291,
+     "n_blocks": 28,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 0.10979381443298969,
+     "reason": null,
+     "seed": 1466434529
+    },
+    "p_up_f_correlation": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 0.8676979553132901,
+     "key": "mismatch/kronos/p_up_f_correlation",
+     "low": 0.8062889111340878,
+     "method": "percentile_block_bootstrap",
+     "n": 291,
+     "n_blocks": 28,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 0.8386528109520205,
+     "reason": null,
+     "seed": 4179904446
+    },
+    "p_up_x_abs_delta_mean": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 0.13951063049853374,
+     "key": "mismatch/kronos/p_up_x_abs_delta_mean",
+     "low": 0.10873218343317496,
+     "method": "percentile_block_bootstrap",
+     "n": 291,
+     "n_blocks": 28,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 0.12405498281786942,
+     "reason": null,
+     "seed": 4154588383
+    },
+    "p_up_x_correlation": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 0.8430486667190099,
+     "key": "mismatch/kronos/p_up_x_correlation",
+     "low": 0.7222623718588485,
+     "method": "percentile_block_bootstrap",
+     "n": 291,
+     "n_blocks": 28,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 0.7829209742557313,
+     "reason": null,
+     "seed": 4177145996
+    },
+    "p_up_xd_abs_delta_mean": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 0.16622673934863572,
+     "key": "mismatch/kronos/p_up_xd_abs_delta_mean",
+     "low": 0.1456925883758259,
+     "method": "percentile_block_bootstrap",
+     "n": 291,
+     "n_blocks": 28,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 0.15549828178694158,
+     "reason": null,
+     "seed": 763559339
+    },
+    "p_up_xd_correlation": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 0.7453383452026138,
+     "key": "mismatch/kronos/p_up_xd_correlation",
+     "low": 0.6332429350507945,
+     "method": "percentile_block_bootstrap",
+     "n": 291,
+     "n_blocks": 28,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 0.6930306310318931,
+     "reason": null,
+     "seed": 4158634033
+    }
+   },
+   "statistics_with_intervals": 11,
+   "status": "run",
+   "zero_signals": {
+    "binance": 0,
+    "bingx": 0,
+    "bingx_floor": 0
+   }
+  },
+  "prices": {
+   "comparators": {
+    "abs_return_bp_median": "the comparator of the price differences (the typical hourly move)",
+    "close_abs_bp_max": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+    "close_abs_bp_mean": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+    "close_abs_bp_median": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+    "close_abs_bp_p90": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+    "close_abs_bp_p99": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+    "close_equal_share": "SPEC section 5 (external reference): since 2024-07-26 no 1h candle of the demo account equals the real one",
+    "close_signed_bp_mean": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+    "close_signed_bp_median": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+    "high_abs_bp_max": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+    "high_abs_bp_mean": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+    "high_abs_bp_median": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+    "high_abs_bp_p90": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+    "high_abs_bp_p99": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+    "high_equal_share": "SPEC section 5 (external reference): since 2024-07-26 no 1h candle of the demo account equals the real one",
+    "high_signed_bp_mean": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+    "high_signed_bp_median": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+    "low_abs_bp_max": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+    "low_abs_bp_mean": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+    "low_abs_bp_median": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+    "low_abs_bp_p90": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+    "low_abs_bp_p99": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+    "low_equal_share": "SPEC section 5 (external reference): since 2024-07-26 no 1h candle of the demo account equals the real one",
+    "low_signed_bp_mean": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+    "low_signed_bp_median": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+    "open_abs_bp_max": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+    "open_abs_bp_mean": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+    "open_abs_bp_median": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+    "open_abs_bp_p90": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+    "open_abs_bp_p99": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+    "open_equal_share": "SPEC section 5 (external reference): since 2024-07-26 no 1h candle of the demo account equals the real one",
+    "open_signed_bp_mean": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+    "open_signed_bp_median": "tick_bp_median, abs_return_bp_median and SPEC 0.05 bp: one 0.1 USDT tick in bp of the Binance close, the median |1h return| of Binance in bp, and SPEC section 5's demo-vs-real median close difference of 0.05 bp (external reference)",
+    "tick_bp_median": "the comparator of the price differences (the price grid)"
+   },
+   "descriptive": {
+    "close_abs_bp_max": 9.976123427933171,
+    "close_abs_bp_p90": 2.7212168751051338,
+    "close_abs_bp_p99": 5.089670192204222,
+    "high_abs_bp_max": 32.03971655953832,
+    "high_abs_bp_p90": 3.2473651758021775,
+    "high_abs_bp_p99": 6.718192472592819,
+    "low_abs_bp_max": 81.79600886917993,
+    "low_abs_bp_p90": 3.5421565305452463,
+    "low_abs_bp_p99": 7.681525130849711,
+    "open_abs_bp_max": 10.004873063171756,
+    "open_abs_bp_p90": 2.691456485847691,
+    "open_abs_bp_p99": 5.018084966154755,
+    "tick_bp_median": 0.01184640426106431
+   },
+   "external_references": {
+    "demo_vs_real_median_bp": 0.05
+   },
+   "samples": {
+    "hours": 19814,
+    "returns_hours": 19813
+   },
+   "seeds": {
+    "prices/abs_return_bp_median": "mismatch/prices/abs_return_bp_median",
+    "prices/close_abs_bp_mean": "mismatch/prices/close_abs_bp_mean",
+    "prices/close_abs_bp_median": "mismatch/prices/close_abs_bp_median",
+    "prices/close_equal_share": "mismatch/prices/close_equal_share",
+    "prices/close_signed_bp_mean": "mismatch/prices/close_signed_bp_mean",
+    "prices/close_signed_bp_median": "mismatch/prices/close_signed_bp_median",
+    "prices/high_abs_bp_mean": "mismatch/prices/high_abs_bp_mean",
+    "prices/high_abs_bp_median": "mismatch/prices/high_abs_bp_median",
+    "prices/high_equal_share": "mismatch/prices/high_equal_share",
+    "prices/high_signed_bp_mean": "mismatch/prices/high_signed_bp_mean",
+    "prices/high_signed_bp_median": "mismatch/prices/high_signed_bp_median",
+    "prices/low_abs_bp_mean": "mismatch/prices/low_abs_bp_mean",
+    "prices/low_abs_bp_median": "mismatch/prices/low_abs_bp_median",
+    "prices/low_equal_share": "mismatch/prices/low_equal_share",
+    "prices/low_signed_bp_mean": "mismatch/prices/low_signed_bp_mean",
+    "prices/low_signed_bp_median": "mismatch/prices/low_signed_bp_median",
+    "prices/open_abs_bp_mean": "mismatch/prices/open_abs_bp_mean",
+    "prices/open_abs_bp_median": "mismatch/prices/open_abs_bp_median",
+    "prices/open_equal_share": "mismatch/prices/open_equal_share",
+    "prices/open_signed_bp_mean": "mismatch/prices/open_signed_bp_mean",
+    "prices/open_signed_bp_median": "mismatch/prices/open_signed_bp_median"
+   },
+   "statistics": {
+    "abs_return_bp_median": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 22.17388574088669,
+     "key": "mismatch/prices/abs_return_bp_median",
+     "low": 19.934134195512044,
+     "method": "percentile_block_bootstrap",
+     "n": 19813,
+     "n_blocks": 119,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 21.02525450326631,
+     "reason": null,
+     "seed": 2206238734
+    },
+    "close_abs_bp_mean": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 1.3050289470661385,
+     "key": "mismatch/prices/close_abs_bp_mean",
+     "low": 0.9650131881784534,
+     "method": "percentile_block_bootstrap",
+     "n": 19814,
+     "n_blocks": 119,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 1.128846696138275,
+     "reason": null,
+     "seed": 4099004520
+    },
+    "close_abs_bp_median": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 0.8660965955530792,
+     "key": "mismatch/prices/close_abs_bp_median",
+     "low": 0.5931069093398923,
+     "method": "percentile_block_bootstrap",
+     "n": 19814,
+     "n_blocks": 119,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 0.7128100114134861,
+     "reason": null,
+     "seed": 685887938
+    },
+    "close_equal_share": {
+     "confidence": 0.95,
+     "deff": 1.7413182299320096,
+     "failed_resamples": 0,
+     "high": 0.00843532800933523,
+     "key": "mismatch/prices/close_equal_share",
+     "low": 0.00536481141687082,
+     "method": "percentile_block_bootstrap",
+     "n": 19814,
+     "n_blocks": 119,
+     "n_eff": 11378.735752840332,
+     "n_resamples": 1000,
+     "point": 0.006914303018068032,
+     "reason": null,
+     "seed": 1654599334
+    },
+    "close_signed_bp_mean": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 0.486819908186221,
+     "key": "mismatch/prices/close_signed_bp_mean",
+     "low": 0.050354051886630995,
+     "method": "percentile_block_bootstrap",
+     "n": 19814,
+     "n_blocks": 119,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 0.27144314049344015,
+     "reason": null,
+     "seed": 643030139
+    },
+    "close_signed_bp_median": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 0.33832064999154216,
+     "key": "mismatch/prices/close_signed_bp_median",
+     "low": 0.09191246733981764,
+     "method": "percentile_block_bootstrap",
+     "n": 19814,
+     "n_blocks": 119,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 0.20387880058284502,
+     "reason": null,
+     "seed": 3553273686
+    },
+    "high_abs_bp_mean": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 1.5847007003331974,
+     "key": "mismatch/prices/high_abs_bp_mean",
+     "low": 1.3072905264902555,
+     "method": "percentile_block_bootstrap",
+     "n": 19814,
+     "n_blocks": 119,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 1.437830108137405,
+     "reason": null,
+     "seed": 1565925904
+    },
+    "high_abs_bp_median": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 1.1174851621891098,
+     "key": "mismatch/prices/high_abs_bp_median",
+     "low": 0.8792241961755259,
+     "method": "percentile_block_bootstrap",
+     "n": 19814,
+     "n_blocks": 119,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 0.9790499121632301,
+     "reason": null,
+     "seed": 4231607267
+    },
+    "high_equal_share": {
+     "confidence": 0.95,
+     "deff": 1.2048741815199469,
+     "failed_resamples": 0,
+     "high": 0.011840352827951012,
+     "key": "mismatch/prices/high_equal_share",
+     "low": 0.0088737818116425,
+     "method": "percentile_block_bootstrap",
+     "n": 19814,
+     "n_blocks": 119,
+     "n_eff": 16444.870596367724,
+     "n_resamples": 1000,
+     "point": 0.010396689209649743,
+     "reason": null,
+     "seed": 1510329728
+    },
+    "high_signed_bp_mean": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 0.09441007917488495,
+     "key": "mismatch/prices/high_signed_bp_mean",
+     "low": -0.35273363053408174,
+     "method": "percentile_block_bootstrap",
+     "n": 19814,
+     "n_blocks": 119,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": -0.13369998394627108,
+     "reason": null,
+     "seed": 3840055790
+    },
+    "high_signed_bp_median": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 0.129841178145088,
+     "key": "mismatch/prices/high_signed_bp_median",
+     "low": -0.16462568208534226,
+     "method": "percentile_block_bootstrap",
+     "n": 19814,
+     "n_blocks": 119,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 0.0,
+     "reason": null,
+     "seed": 4106019317
+    },
+    "low_abs_bp_mean": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 1.7140058411196701,
+     "key": "mismatch/prices/low_abs_bp_mean",
+     "low": 1.4612433674386278,
+     "method": "percentile_block_bootstrap",
+     "n": 19814,
+     "n_blocks": 119,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 1.5877154216491658,
+     "reason": null,
+     "seed": 281062014
+    },
+    "low_abs_bp_median": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 1.2482277339979988,
+     "key": "mismatch/prices/low_abs_bp_median",
+     "low": 0.9461189063774639,
+     "method": "percentile_block_bootstrap",
+     "n": 19814,
+     "n_blocks": 119,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 1.0828572859467853,
+     "reason": null,
+     "seed": 3180974428
+    },
+    "low_equal_share": {
+     "confidence": 0.95,
+     "deff": 1.5341847139225255,
+     "failed_resamples": 0,
+     "high": 0.012568356676689168,
+     "key": "mismatch/prices/low_equal_share",
+     "low": 0.008974415153745325,
+     "method": "percentile_block_bootstrap",
+     "n": 19814,
+     "n_blocks": 119,
+     "n_eff": 12915.002880807338,
+     "n_resamples": 1000,
+     "point": 0.010749974765317452,
+     "reason": null,
+     "seed": 1049281342
+    },
+    "low_signed_bp_mean": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 0.9853967421093726,
+     "key": "mismatch/prices/low_signed_bp_mean",
+     "low": 0.5143442055940273,
+     "method": "percentile_block_bootstrap",
+     "n": 19814,
+     "n_blocks": 119,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 0.7505114208634764,
+     "reason": null,
+     "seed": 254536233
+    },
+    "low_signed_bp_median": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 0.7563224744700046,
+     "key": "mismatch/prices/low_signed_bp_median",
+     "low": 0.4158119012460359,
+     "method": "percentile_block_bootstrap",
+     "n": 19814,
+     "n_blocks": 119,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 0.5734819365322046,
+     "reason": null,
+     "seed": 3086044661
+    },
+    "open_abs_bp_mean": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 1.2888170754259003,
+     "key": "mismatch/prices/open_abs_bp_mean",
+     "low": 0.9638958913637887,
+     "method": "percentile_block_bootstrap",
+     "n": 19814,
+     "n_blocks": 119,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 1.1165411276465056,
+     "reason": null,
+     "seed": 1166847590
+    },
+    "open_abs_bp_median": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 0.853022072062092,
+     "key": "mismatch/prices/open_abs_bp_median",
+     "low": 0.5925341015748385,
+     "method": "percentile_block_bootstrap",
+     "n": 19814,
+     "n_blocks": 119,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 0.7017223366942524,
+     "reason": null,
+     "seed": 1866605977
+    },
+    "open_equal_share": {
+     "confidence": 0.95,
+     "deff": 1.6792145093891928,
+     "failed_resamples": 0,
+     "high": 0.007823202100402256,
+     "key": "mismatch/prices/open_equal_share",
+     "low": 0.0049453319103282805,
+     "method": "percentile_block_bootstrap",
+     "n": 19814,
+     "n_blocks": 119,
+     "n_eff": 11799.56455188519,
+     "n_resamples": 1000,
+     "point": 0.006359140002018775,
+     "reason": null,
+     "seed": 2211459000
+    },
+    "open_signed_bp_mean": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 0.49522883168773074,
+     "key": "mismatch/prices/open_signed_bp_mean",
+     "low": 0.052654568988991075,
+     "method": "percentile_block_bootstrap",
+     "n": 19814,
+     "n_blocks": 119,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 0.27018916335876786,
+     "reason": null,
+     "seed": 2500434025
+    },
+    "open_signed_bp_median": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 0.3514405788929118,
+     "key": "mismatch/prices/open_signed_bp_median",
+     "low": 0.09578318310358387,
+     "method": "percentile_block_bootstrap",
+     "n": 19814,
+     "n_blocks": 119,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 0.2038980760850208,
+     "reason": null,
+     "seed": 1842980507
+    }
+   },
+   "statistics_with_intervals": 21
+  },
+  "returns": {
+   "comparators": {
+    "binance_std_bp": "the comparator of diff_std_bp and diff_mad_bp (the scale of the hourly return)",
+    "diff_mad_bp": "binance_std_bp: the standard deviation of r_binance itself",
+    "diff_mad_ratio": "1: a venue difference as large as the hourly return itself",
+    "diff_std_bp": "binance_std_bp: the standard deviation of r_binance itself",
+    "diff_std_ratio": "1: a venue difference as large as the hourly return itself",
+    "pearson": "alignment/lag_minus_1 and alignment/lag_plus_1: the correlation of the same returns one hour out of alignment",
+    "spearman": "alignment/lag_minus_1 and alignment/lag_plus_1: the correlation of the same returns one hour out of alignment"
+   },
+   "derived": {
+    "one_minus_pearson": {
+     "derived_from": "mismatch/returns/pearson",
+     "high": 0.00017739884226797287,
+     "low": 0.00014238946752676007,
+     "note": "1 - rho; its interval is the transform of rho's interval",
+     "point": 0.0001595442172349637
+    },
+    "one_minus_spearman": {
+     "derived_from": "mismatch/returns/spearman",
+     "high": 0.0003625202327212085,
+     "low": 0.0002961684577041934,
+     "note": "1 - rho; its interval is the transform of rho's interval",
+     "point": 0.00032758550869593783
+    }
+   },
+   "descriptive": {},
+   "samples": {
+    "joined_hours": 19814,
+    "lost": 1,
+    "lost_ranges": [
+     [
+      "2024-04-27T10:00Z",
+      "2024-04-27T11:00Z"
+     ]
+    ],
+    "lost_reason": "the hour t - 1h is missing in a source (no return at t)",
+    "used": 19813
+   },
+   "seeds": {
+    "returns/binance_std_bp": "mismatch/returns/binance_std_bp",
+    "returns/diff_mad_bp": "mismatch/returns/diff_mad_bp",
+    "returns/diff_mad_ratio": "mismatch/returns/diff_mad_ratio",
+    "returns/diff_std_bp": "mismatch/returns/diff_std_bp",
+    "returns/diff_std_ratio": "mismatch/returns/diff_std_ratio",
+    "returns/pearson": "mismatch/returns/pearson",
+    "returns/spearman": "mismatch/returns/spearman"
+   },
+   "statistics": {
+    "binance_std_bp": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 53.08478301126981,
+     "key": "mismatch/returns/binance_std_bp",
+     "low": 46.66688129977039,
+     "method": "percentile_block_bootstrap",
+     "n": 19813,
+     "n_blocks": 119,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 49.64681528914534,
+     "reason": null,
+     "seed": 792268434
+    },
+    "diff_mad_bp": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 0.4825703632981466,
+     "key": "mismatch/returns/diff_mad_bp",
+     "low": 0.44921057493043726,
+     "method": "percentile_block_bootstrap",
+     "n": 19813,
+     "n_blocks": 119,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 0.4640713940516389,
+     "reason": null,
+     "seed": 1667700374
+    },
+    "diff_mad_ratio": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 0.01000778648377001,
+     "key": "mismatch/returns/diff_mad_ratio",
+     "low": 0.0087574858423138,
+     "method": "percentile_block_bootstrap",
+     "n": 19813,
+     "n_blocks": 119,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 0.009347455448025533,
+     "reason": null,
+     "seed": 3820709873
+    },
+    "diff_std_bp": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 0.9277153387702964,
+     "key": "mismatch/returns/diff_std_bp",
+     "low": 0.8506122622895851,
+     "method": "percentile_block_bootstrap",
+     "n": 19813,
+     "n_blocks": 119,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 0.8885844336221772,
+     "reason": null,
+     "seed": 2243571943
+    },
+    "diff_std_ratio": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 0.018936187922464712,
+     "key": "mismatch/returns/diff_std_ratio",
+     "low": 0.01694437956690106,
+     "method": "percentile_block_bootstrap",
+     "n": 19813,
+     "n_blocks": 119,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 0.01789811548730811,
+     "reason": null,
+     "seed": 799659171
+    },
+    "pearson": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 0.9998576105324732,
+     "key": "mismatch/returns/pearson",
+     "low": 0.999822601157732,
+     "method": "percentile_block_bootstrap",
+     "n": 19813,
+     "n_blocks": 119,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 0.999840455782765,
+     "reason": null,
+     "seed": 1230863463
+    },
+    "spearman": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 0.9997038315422958,
+     "key": "mismatch/returns/spearman",
+     "low": 0.9996374797672788,
+     "method": "percentile_block_bootstrap",
+     "n": 19813,
+     "n_blocks": 119,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 0.9996724144913041,
+     "reason": null,
+     "seed": 2029013995
+    }
+   },
+   "statistics_with_intervals": 7
+  },
+  "volume": {
+   "comparators": {
+    "median_ratio": "none: descriptive, the two venues may count volume in different units",
+    "spearman": "spearman_lag_minus_1 and spearman_lag_plus_1: the same correlation one hour out of alignment",
+    "spearman_lag_minus_1": "the comparator of volume/spearman",
+    "spearman_lag_plus_1": "the comparator of volume/spearman"
+   },
+   "descriptive": {
+    "median_ratio": 0.11574153508126128
+   },
+   "samples": {
+    "hours": 19814,
+    "ratio_exclusions": [
+     {
+      "hours": 1,
+      "ranges": [
+       [
+        "2024-10-28T20:00Z",
+        "2024-10-28T21:00Z"
+       ]
+      ],
+      "reason": "zero Binance volume (median_ratio undefined)"
+     }
+    ],
+    "ratio_hours": 19813,
+    "zero_binance_volume_hours": 1
+   },
+   "seeds": {
+    "volume/spearman": "mismatch/volume/spearman",
+    "volume/spearman_lag_minus_1": "mismatch/volume/spearman_lag_minus_1",
+    "volume/spearman_lag_plus_1": "mismatch/volume/spearman_lag_plus_1"
+   },
+   "statistics": {
+    "spearman": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 0.8558570423722658,
+     "key": "mismatch/volume/spearman",
+     "low": 0.806986497170624,
+     "method": "percentile_block_bootstrap",
+     "n": 19814,
+     "n_blocks": 119,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 0.8307496358824692,
+     "reason": null,
+     "seed": 146803900
+    },
+    "spearman_lag_minus_1": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 0.6427422885753825,
+     "key": "mismatch/volume/spearman_lag_minus_1",
+     "low": 0.5957447032119924,
+     "method": "percentile_block_bootstrap",
+     "n": 19813,
+     "n_blocks": 119,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 0.6198270050021566,
+     "reason": null,
+     "seed": 3806692758
+    },
+    "spearman_lag_plus_1": {
+     "confidence": 0.95,
+     "deff": null,
+     "failed_resamples": 0,
+     "high": 0.6192768213728622,
+     "key": "mismatch/volume/spearman_lag_plus_1",
+     "low": 0.5709785651737022,
+     "method": "percentile_block_bootstrap",
+     "n": 19813,
+     "n_blocks": 119,
+     "n_eff": null,
+     "n_resamples": 1000,
+     "point": 0.5960964997917297,
+     "reason": null,
+     "seed": 3887619733
+    }
+   },
+   "statistics_with_intervals": 3
+  }
+ },
+ "seeds": {
+  "bootstrap": {
+   "alignment/lag_0": "mismatch/alignment/lag_0",
+   "alignment/lag_minus_1": "mismatch/alignment/lag_minus_1",
+   "alignment/lag_minus_2": "mismatch/alignment/lag_minus_2",
+   "alignment/lag_plus_1": "mismatch/alignment/lag_plus_1",
+   "alignment/lag_plus_2": "mismatch/alignment/lag_plus_2",
+   "amount/dz_max_difference": "mismatch/amount/dz_max_difference",
+   "amount/dz_median_difference": "mismatch/amount/dz_median_difference",
+   "amount/dz_proxy_max_mean": "mismatch/amount/dz_proxy_max_mean",
+   "amount/dz_proxy_median_mean": "mismatch/amount/dz_proxy_median_mean",
+   "amount/dz_volume_max_mean": "mismatch/amount/dz_volume_max_mean",
+   "amount/dz_volume_median_mean": "mismatch/amount/dz_volume_median_mean",
+   "amount/e_bp_mean": "mismatch/amount/e_bp_mean",
+   "amount/e_bp_median": "mismatch/amount/e_bp_median",
+   "kronos/a_f_share": "mismatch/kronos/a_f_share",
+   "kronos/a_x_minus_a_f": "mismatch/kronos/a_x_minus_a_f",
+   "kronos/a_x_share": "mismatch/kronos/a_x_share",
+   "kronos/a_xd_minus_a_f": "mismatch/kronos/a_xd_minus_a_f",
+   "kronos/a_xd_share": "mismatch/kronos/a_xd_share",
+   "kronos/p_up_f_abs_delta_mean": "mismatch/kronos/p_up_f_abs_delta_mean",
+   "kronos/p_up_f_correlation": "mismatch/kronos/p_up_f_correlation",
+   "kronos/p_up_x_abs_delta_mean": "mismatch/kronos/p_up_x_abs_delta_mean",
+   "kronos/p_up_x_correlation": "mismatch/kronos/p_up_x_correlation",
+   "kronos/p_up_xd_abs_delta_mean": "mismatch/kronos/p_up_xd_abs_delta_mean",
+   "kronos/p_up_xd_correlation": "mismatch/kronos/p_up_xd_correlation",
+   "prices/abs_return_bp_median": "mismatch/prices/abs_return_bp_median",
+   "prices/close_abs_bp_mean": "mismatch/prices/close_abs_bp_mean",
+   "prices/close_abs_bp_median": "mismatch/prices/close_abs_bp_median",
+   "prices/close_equal_share": "mismatch/prices/close_equal_share",
+   "prices/close_signed_bp_mean": "mismatch/prices/close_signed_bp_mean",
+   "prices/close_signed_bp_median": "mismatch/prices/close_signed_bp_median",
+   "prices/high_abs_bp_mean": "mismatch/prices/high_abs_bp_mean",
+   "prices/high_abs_bp_median": "mismatch/prices/high_abs_bp_median",
+   "prices/high_equal_share": "mismatch/prices/high_equal_share",
+   "prices/high_signed_bp_mean": "mismatch/prices/high_signed_bp_mean",
+   "prices/high_signed_bp_median": "mismatch/prices/high_signed_bp_median",
+   "prices/low_abs_bp_mean": "mismatch/prices/low_abs_bp_mean",
+   "prices/low_abs_bp_median": "mismatch/prices/low_abs_bp_median",
+   "prices/low_equal_share": "mismatch/prices/low_equal_share",
+   "prices/low_signed_bp_mean": "mismatch/prices/low_signed_bp_mean",
+   "prices/low_signed_bp_median": "mismatch/prices/low_signed_bp_median",
+   "prices/open_abs_bp_mean": "mismatch/prices/open_abs_bp_mean",
+   "prices/open_abs_bp_median": "mismatch/prices/open_abs_bp_median",
+   "prices/open_equal_share": "mismatch/prices/open_equal_share",
+   "prices/open_signed_bp_mean": "mismatch/prices/open_signed_bp_mean",
+   "prices/open_signed_bp_median": "mismatch/prices/open_signed_bp_median",
+   "returns/binance_std_bp": "mismatch/returns/binance_std_bp",
+   "returns/diff_mad_bp": "mismatch/returns/diff_mad_bp",
+   "returns/diff_mad_ratio": "mismatch/returns/diff_mad_ratio",
+   "returns/diff_std_bp": "mismatch/returns/diff_std_bp",
+   "returns/diff_std_ratio": "mismatch/returns/diff_std_ratio",
+   "returns/pearson": "mismatch/returns/pearson",
+   "returns/spearman": "mismatch/returns/spearman",
+   "volume/spearman": "mismatch/volume/spearman",
+   "volume/spearman_lag_minus_1": "mismatch/volume/spearman_lag_minus_1",
+   "volume/spearman_lag_plus_1": "mismatch/volume/spearman_lag_plus_1"
+  },
+  "kronos": {
+   "seed_salt": "",
+   "seed_scheme": "kronos-agent/seed/v1",
+   "seed_symbol": "BTC-USDT",
+   "streams": {
+    "binance": "binance/forecast",
+    "bingx": "bingx/forecast",
+    "bingx_floor": "bingx/mismatch-floor"
+   }
+  }
+ },
+ "series": {
+  "amount": {
+   "relpath": "studies/mismatch_amount.csv",
+   "rows": 19814,
+   "sha256": "0d14886725be33118985d0d69054ae5676309f66ee17f8e9260a5fd490ac0afd"
+  },
+  "amount_windows": {
+   "relpath": "studies/mismatch_amount_windows.csv",
+   "rows": 291,
+   "sha256": "8a82ecb5c1cd5fe7f2ff7abf51a72492ddbfae2e05e5848705bda940dc0f3437"
+  },
+  "hours": {
+   "relpath": "studies/mismatch_hours.csv",
+   "rows": 19814,
+   "sha256": "5464d340f9ee52306212fd569df00cce65ea7f50db3f93b4acb677c7b3e5c083"
+  },
+  "kronos": {
+   "relpath": "studies/mismatch_kronos.csv",
+   "rows": 291,
+   "sha256": "caff32aeaf25721416e53ac628a081644eda066e0771166b2391a6d265a783c7"
+  }
+ },
+ "statistics_with_intervals": 54,
+ "study": "mismatch",
+ "tests_consumed": 0
+}

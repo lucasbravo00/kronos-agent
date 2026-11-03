@@ -97,12 +97,19 @@ def hourly_candles(
 
 
 def by_open_time(open_ms: int, start: int, end: int) -> bool:
-    """The bound semantic the pager assumes: ``startTime <= open <= endTime``, no rounding."""
-    return start <= open_ms <= end
+    """The bounds observed live: ``startTime`` inclusive at an exact boundary (2026-10-31) and an
+    ``endTime`` exactly at a candle's open excluding that candle (2026-11-01, D-041), no
+    rounding: ``startTime <= open < endTime``."""
+    return start <= open_ms < end
 
 
 def start_time_exclusive(open_ms: int, start: int, end: int) -> bool:
-    return start < open_ms <= end
+    return start < open_ms < end
+
+
+def end_time_inclusive(open_ms: int, start: int, end: int) -> bool:
+    """What step 1 assumed before D-041: an ``endTime`` at a candle's open includes it."""
+    return start <= open_ms <= end
 
 
 def end_time_rounded_up(open_ms: int, start: int, end: int) -> bool:
@@ -117,8 +124,9 @@ class FakeBingX:
     """Mock handler with the verified klines semantics: newest first, ``limit`` capped at 1000 at ``endTime``.
 
     ``selects(open_ms, startTime, endTime)`` picks the candles a klines request returns. The
-    default (both bounds inclusive by open time) is what the pager assumes and what the live module
-    observed on 2026-10-31; the alternatives above model what BingX could do instead.
+    default (``startTime`` inclusive, an ``endTime`` exactly at a candle's open excluding it) is
+    what the live modules observed on 2026-10-31 and 2026-11-01 (D-041); the alternatives above
+    model what BingX could do instead.
     """
 
     def __init__(
@@ -265,7 +273,7 @@ def test_closed_klines_uses_given_server_time_without_requesting_it():
         SYMBOL,
         "1h",
         candles[0]["time"],
-        candles[-1]["time"],
+        candles[-1]["time"] + HOUR_MS,  # half-open: up to the last candle's close
         server_time_ms=candles[-1]["time"] + HOUR_MS,
     )
     assert opens(result) == [c["time"] for c in candles]
@@ -276,7 +284,8 @@ def test_klines_returns_ascending_and_keeps_raw_strings():
     candles = hourly_candles(6)
     fake = FakeBingX(candles)
     client, _ = make_client(fake)
-    result = client.klines(SYMBOL, "1h", candles[0]["time"], candles[-1]["time"])
+    # the backfill's form: one millisecond before the next boundary (an exact one excludes)
+    result = client.klines(SYMBOL, "1h", candles[0]["time"], candles[-1]["time"] + HOUR_MS - 1)
     assert opens(result) == sorted(opens(result)) == [c["time"] for c in candles]
     assert isinstance(result[0].open, str) and result[0].open == candles[0]["open"]
     assert result[0].as_floats() == (
@@ -471,9 +480,9 @@ def test_backwards_pagination_capped_at_1000_is_contiguous_and_ascending():
     candles = hourly_candles(2500)
     fake = FakeBingX(candles)
     client, _ = make_client(fake)
-    start, end = candles[0]["time"], candles[-1]["time"]
+    start, end = candles[0]["time"], candles[-1]["time"] + HOUR_MS
 
-    result = client.closed_klines(SYMBOL, "1h", start, end, server_time_ms=end + 2 * HOUR_MS)
+    result = client.closed_klines(SYMBOL, "1h", start, end, server_time_ms=end + HOUR_MS)
 
     assert len(result) == 2500
     assert opens(result) == [c["time"] for c in candles]
@@ -489,10 +498,8 @@ def test_pagination_stops_on_an_empty_page_when_history_starts_late():
     candles = hourly_candles(50)
     fake = FakeBingX(candles)
     client, _ = make_client(fake)
-    start = candles[0]["time"] - 10 * HOUR_MS
-    result = client.closed_klines(
-        SYMBOL, "1h", start, candles[-1]["time"], server_time_ms=candles[-1]["time"] + HOUR_MS
-    )
+    start, end = candles[0]["time"] - 10 * HOUR_MS, candles[-1]["time"] + HOUR_MS
+    result = client.closed_klines(SYMBOL, "1h", start, end, server_time_ms=end)
     assert opens(result) == [c["time"] for c in candles]
     assert len(fake.klines_requests()) == 2
 
@@ -534,11 +541,36 @@ def test_start_candle_alone_on_the_next_page_is_still_fetched():
     candles = hourly_candles(1001)
     fake = FakeBingX(candles)
     client, _ = make_client(fake)
-    start, end = candles[0]["time"], candles[-1]["time"]
-    result = client.closed_klines(SYMBOL, "1h", start, end, server_time_ms=end + HOUR_MS)
+    start, end = candles[0]["time"], candles[-1]["time"] + HOUR_MS
+    result = client.closed_klines(SYMBOL, "1h", start, end, server_time_ms=end)
     assert opens(result) == [c["time"] for c in candles]
     page_ends = [int(r.url.params["endTime"]) for r in fake.klines_requests()]
     assert page_ends == [end, start + HOUR_MS - 1]
+
+
+@pytest.mark.parametrize("selects", [by_open_time, end_time_inclusive], ids=["D-041", "inclusive"])
+def test_closed_klines_is_half_open_whatever_the_exchange_does_at_end_time(selects):
+    # tests-docs-2: an end exactly at a candle's open excludes that candle, as the exchange does
+    # (D-041) and whatever it does; an end off the grid (the live window's D - 1 ms) keeps it
+    candles = hourly_candles(10)
+    fake = FakeBingX(candles, selects=selects)
+    client, _ = make_client(fake)
+    start, last = candles[0]["time"], candles[-1]["time"]
+    server_time = last + HOUR_MS
+    every = [c["time"] for c in candles]
+    for end, expected in (
+        (last, every[:-1]),
+        (last + 1, every),
+        (last + HOUR_MS - 1, every),
+        (last + HOUR_MS, every),
+    ):
+        result = client.closed_klines(SYMBOL, "1h", start, end, server_time_ms=server_time)
+        assert opens(result) == expected, end
+        assert opens(client.fetch_twice(SYMBOL, "1h", start, end, server_time_ms=server_time)) == (
+            expected
+        )
+    if selects is by_open_time:  # the raw page of the observed semantic
+        assert opens(client.klines(SYMBOL, "1h", start, last)) == every[:-1]
 
 
 def test_pagination_refuses_to_loop_when_the_server_ignores_end_time():
@@ -847,8 +879,8 @@ def test_fetch_twice_raises_on_mismatch_and_returns_on_match():
     candles = hourly_candles(10)
     fake = FakeBingX(candles)
     client, _ = make_client(fake)
-    start, end = candles[0]["time"], candles[-1]["time"]
-    server_time = end + HOUR_MS
+    start, end = candles[0]["time"], candles[-1]["time"] + HOUR_MS
+    server_time = end
 
     result = client.fetch_twice(SYMBOL, "1h", start, end, server_time_ms=server_time)
     assert opens(result) == [c["time"] for c in candles]

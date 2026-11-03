@@ -17,6 +17,8 @@ REPO_ROOT: Path = Path(__file__).resolve().parents[2]
 
 WEIGHTS_DIR_ENV = "KRONOS_AGENT_WEIGHTS_DIR"
 DATA_DIR_ENV = "KRONOS_AGENT_DATA_DIR"
+REPORTS_DIR_ENV = "KRONOS_AGENT_REPORTS_DIR"
+LEDGER_SUBDIR = "ledger"
 LABEL_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
 
 
@@ -50,7 +52,14 @@ def vendored_kronos_dir() -> Path:
 
 
 def reports_dir() -> Path:
-    return REPO_ROOT / "reports"
+    """Reports root (``reports/`` by default; relocatable, as the test suite relocates it)."""
+    return _dir_from_env(REPORTS_DIR_ENV, REPO_ROOT / "reports")
+
+
+def ledger_dir() -> Path:
+    """The experiment ledger's directory, ``<reports root>/ledger`` (``kronos_agent.ledger``):
+    tracked and published with the reports, relocated with them."""
+    return reports_dir() / LEDGER_SUBDIR
 
 
 def redact_home(text: str) -> str:

@@ -1,0 +1,998 @@
+{
+ "code": {
+  "commit": "3cda6c6b125e573dd764f1dc1bd1510602da7711",
+  "dirty": true,
+  "source_tree_sha256": "d2461f46a3a871dc6300089c99eed75d6a92fc862ec2a563b7173b14c072a7fd"
+ },
+ "comparators": {
+  "first_open": "the date observed",
+  "history_days_observed": "the observed retention of the real market",
+  "usable": "eligible: every decision hour of the segment"
+ },
+ "config_sha256": "15e6461de3cba1bd99f8c545c1387d06e0cc7707cc54dc8b876736e87f27a87d",
+ "data_md_sha256": "de4bea1bd26247abd3c9c9da3b7e1e8a2ad032485a6fa07024db425bed56b5f8",
+ "expected_chance_misses": 0.0,
+ "generated_at": "2026-11-02T14:51:15Z",
+ "now": "2026-11-02T14:51:13.865Z",
+ "retention_warnings": [],
+ "samples": {
+  "candles/binance/1h.csv": {
+   "context_512h": {
+    "before_training": {
+     "eligible": 24,
+     "unusable_ranges": [
+      [
+       "2019-12-31T00:00Z",
+       "2020-01-01T00:00Z"
+      ]
+     ],
+     "usable": 0
+    },
+    "embargo_1": {
+     "eligible": 520,
+     "unusable_ranges": [],
+     "usable": 520
+    },
+    "embargo_2": {
+     "eligible": 520,
+     "unusable_ranges": [],
+     "usable": 520
+    },
+    "sealed": {
+     "eligible": null,
+     "reason": "not counted: decision hours at or after the sealed start stay closed (gate 6)",
+     "usable": null
+    },
+    "training": {
+     "eligible": 38912,
+     "unusable_ranges": [
+      [
+       "2020-01-01T00:00Z",
+       "2020-01-21T08:00Z"
+      ]
+     ],
+     "usable": 38424
+    },
+    "validation": {
+     "eligible": 17744,
+     "unusable_ranges": [],
+     "usable": 17744
+    }
+   }
+  },
+  "candles/binance/1m.csv": {
+   "context_512h": {
+    "before_training": {
+     "eligible": 24,
+     "unusable_ranges": [
+      [
+       "2019-12-31T00:00Z",
+       "2020-01-01T00:00Z"
+      ]
+     ],
+     "usable": 0
+    },
+    "embargo_1": {
+     "eligible": 520,
+     "unusable_ranges": [],
+     "usable": 520
+    },
+    "embargo_2": {
+     "eligible": 520,
+     "unusable_ranges": [],
+     "usable": 520
+    },
+    "sealed": {
+     "eligible": null,
+     "reason": "not counted: decision hours at or after the sealed start stay closed (gate 6)",
+     "usable": null
+    },
+    "training": {
+     "eligible": 38912,
+     "unusable_ranges": [
+      [
+       "2020-01-01T00:00Z",
+       "2020-01-21T08:00Z"
+      ]
+     ],
+     "usable": 38424
+    },
+    "validation": {
+     "eligible": 17744,
+     "unusable_ranges": [],
+     "usable": 17744
+    }
+   }
+  },
+  "candles/bingx/15m.csv": {
+   "context_512h": {
+    "before_training": {
+     "eligible": 0,
+     "unusable_ranges": [],
+     "usable": 0
+    },
+    "embargo_1": {
+     "eligible": 520,
+     "unusable_ranges": [
+      [
+       "2024-06-09T08:00Z",
+       "2024-07-01T00:00Z"
+      ]
+     ],
+     "usable": 0
+    },
+    "embargo_2": {
+     "eligible": 520,
+     "unusable_ranges": [
+      [
+       "2026-07-10T08:00Z",
+       "2026-08-01T00:00Z"
+      ]
+     ],
+     "usable": 0
+    },
+    "sealed": {
+     "eligible": null,
+     "reason": "not counted: decision hours at or after the sealed start stay closed (gate 6)",
+     "usable": null
+    },
+    "training": {
+     "eligible": 38912,
+     "unusable_ranges": [
+      [
+       "2020-01-01T00:00Z",
+       "2024-06-09T08:00Z"
+      ]
+     ],
+     "usable": 0
+    },
+    "validation": {
+     "eligible": 17744,
+     "unusable_ranges": [
+      [
+       "2024-07-01T00:00Z",
+       "2026-07-10T08:00Z"
+      ]
+     ],
+     "usable": 0
+    }
+   }
+  },
+  "candles/bingx/1h.csv": {
+   "context_512h": {
+    "before_training": {
+     "eligible": 0,
+     "unusable_ranges": [],
+     "usable": 0
+    },
+    "embargo_1": {
+     "eligible": 520,
+     "unusable_ranges": [],
+     "usable": 520
+    },
+    "embargo_2": {
+     "eligible": 520,
+     "unusable_ranges": [],
+     "usable": 520
+    },
+    "sealed": {
+     "eligible": null,
+     "reason": "not counted: decision hours at or after the sealed start stay closed (gate 6)",
+     "usable": null
+    },
+    "training": {
+     "eligible": 38912,
+     "unusable_ranges": [
+      [
+       "2020-01-01T00:00Z",
+       "2024-05-18T18:00Z"
+      ]
+     ],
+     "usable": 518
+    },
+    "validation": {
+     "eligible": 17744,
+     "unusable_ranges": [],
+     "usable": 17744
+    }
+   }
+  },
+  "candles/bingx/1m.csv": {
+   "context_512h": {
+    "before_training": {
+     "eligible": 0,
+     "unusable_ranges": [],
+     "usable": 0
+    },
+    "embargo_1": {
+     "eligible": 520,
+     "unusable_ranges": [
+      [
+       "2024-06-09T08:00Z",
+       "2024-07-01T00:00Z"
+      ]
+     ],
+     "usable": 0
+    },
+    "embargo_2": {
+     "eligible": 520,
+     "unusable_ranges": [],
+     "usable": 520
+    },
+    "sealed": {
+     "eligible": null,
+     "reason": "not counted: decision hours at or after the sealed start stay closed (gate 6)",
+     "usable": null
+    },
+    "training": {
+     "eligible": 38912,
+     "unusable_ranges": [
+      [
+       "2020-01-01T00:00Z",
+       "2024-06-09T08:00Z"
+      ]
+     ],
+     "usable": 0
+    },
+    "validation": {
+     "eligible": 17744,
+     "unusable_ranges": [
+      [
+       "2024-07-01T00:00Z",
+       "2025-08-22T00:00Z"
+      ]
+     ],
+     "usable": 7736
+    }
+   }
+  },
+  "candles/bingx/5m.csv": {
+   "context_512h": {
+    "before_training": {
+     "eligible": 0,
+     "unusable_ranges": [],
+     "usable": 0
+    },
+    "embargo_1": {
+     "eligible": 520,
+     "unusable_ranges": [
+      [
+       "2024-06-09T08:00Z",
+       "2024-07-01T00:00Z"
+      ]
+     ],
+     "usable": 0
+    },
+    "embargo_2": {
+     "eligible": 520,
+     "unusable_ranges": [
+      [
+       "2026-07-10T08:00Z",
+       "2026-08-01T00:00Z"
+      ]
+     ],
+     "usable": 0
+    },
+    "sealed": {
+     "eligible": null,
+     "reason": "not counted: decision hours at or after the sealed start stay closed (gate 6)",
+     "usable": null
+    },
+    "training": {
+     "eligible": 38912,
+     "unusable_ranges": [
+      [
+       "2020-01-01T00:00Z",
+       "2024-06-09T08:00Z"
+      ]
+     ],
+     "usable": 0
+    },
+    "validation": {
+     "eligible": 17744,
+     "unusable_ranges": [
+      [
+       "2024-07-01T00:00Z",
+       "2026-07-10T08:00Z"
+      ]
+     ],
+     "usable": 0
+    }
+   }
+  }
+ },
+ "sealed_start": "2026-08-01T00:00Z",
+ "seeds": {},
+ "statistics_with_intervals": 0,
+ "stores": [
+  {
+   "built": true,
+   "csv_sha256": "25343cdae9cf6451500902d33810326c40fe909b18486bd0411cbf2ede172f91",
+   "first_open": "2019-12-31T00:00Z",
+   "first_open_ms": 1577750400000,
+   "gap_count": 1,
+   "gaps": [
+    [
+     "2026-10-28T00:00Z",
+     "2026-10-29T00:00Z",
+     1440
+    ]
+   ],
+   "incomplete_chunks": [],
+   "interval": "1m",
+   "last_candle_age_days": 0.6196049189814815,
+   "last_open": "2026-11-01T23:59Z",
+   "last_open_ms": 1793577540000,
+   "missing_candles": 1440,
+   "observed": {
+    "first_candle_observed_at": null,
+    "history_days_observed": null,
+    "history_days_observed_reason": null,
+    "history_start_established": null,
+    "last_candle_observed_at": null,
+    "plan_date": "2026-11-02",
+    "store_built_at": "2026-11-02T14:09:09Z"
+   },
+   "ohlc_violations": 0,
+   "relpath": "candles/binance/1m.csv",
+   "rows": 3595680,
+   "rows_at_or_after_sealed_start": 132480,
+   "rows_before_sealed_start": 3463200,
+   "source": "binance"
+  },
+  {
+   "built": true,
+   "csv_sha256": "18f346941df04e375d21ad0c8ccb708b55918d1a047acfe9d677b975d2773b36",
+   "first_open": "2019-12-31T00:00Z",
+   "first_open_ms": 1577750400000,
+   "gap_count": 1,
+   "gaps": [
+    [
+     "2026-10-28T00:00Z",
+     "2026-10-29T00:00Z",
+     288
+    ]
+   ],
+   "incomplete_chunks": [],
+   "interval": "5m",
+   "last_candle_age_days": 0.6223826967592593,
+   "last_open": "2026-11-01T23:55Z",
+   "last_open_ms": 1793577300000,
+   "missing_candles": 288,
+   "observed": {
+    "first_candle_observed_at": null,
+    "history_days_observed": null,
+    "history_days_observed_reason": null,
+    "history_start_established": null,
+    "last_candle_observed_at": null,
+    "plan_date": null,
+    "store_built_at": "2026-11-02T14:09:09Z"
+   },
+   "ohlc_violations": 0,
+   "relpath": "candles/binance/5m.csv",
+   "rows": 719136,
+   "source": "binance"
+  },
+  {
+   "built": true,
+   "csv_sha256": "f9677e6aac03cc1b01f8a639fe234094e0ba5ad4cdab96b7f2fb7628870448b2",
+   "first_open": "2019-12-31T00:00Z",
+   "first_open_ms": 1577750400000,
+   "gap_count": 1,
+   "gaps": [
+    [
+     "2026-10-28T00:00Z",
+     "2026-10-29T00:00Z",
+     96
+    ]
+   ],
+   "incomplete_chunks": [],
+   "interval": "15m",
+   "last_candle_age_days": 0.6293271412037037,
+   "last_open": "2026-11-01T23:45Z",
+   "last_open_ms": 1793576700000,
+   "missing_candles": 96,
+   "observed": {
+    "first_candle_observed_at": null,
+    "history_days_observed": null,
+    "history_days_observed_reason": null,
+    "history_start_established": null,
+    "last_candle_observed_at": null,
+    "plan_date": null,
+    "store_built_at": "2026-11-02T14:09:09Z"
+   },
+   "ohlc_violations": 0,
+   "relpath": "candles/binance/15m.csv",
+   "rows": 239712,
+   "source": "binance"
+  },
+  {
+   "built": true,
+   "csv_sha256": "9a04ce60f1f5ddf6c3e93cc4cc1064b2203d37f2858c30a755c71c049bb05f14",
+   "first_open": "2019-12-31T00:00Z",
+   "first_open_ms": 1577750400000,
+   "gap_count": 1,
+   "gaps": [
+    [
+     "2026-10-28T00:00Z",
+     "2026-10-29T00:00Z",
+     24
+    ]
+   ],
+   "incomplete_chunks": [],
+   "interval": "1h",
+   "last_candle_age_days": 0.6605771412037037,
+   "last_open": "2026-11-01T23:00Z",
+   "last_open_ms": 1793574000000,
+   "missing_candles": 24,
+   "observed": {
+    "first_candle_observed_at": null,
+    "history_days_observed": null,
+    "history_days_observed_reason": null,
+    "history_start_established": null,
+    "last_candle_observed_at": null,
+    "plan_date": null,
+    "store_built_at": "2026-11-02T14:09:09Z"
+   },
+   "ohlc_violations": 0,
+   "relpath": "candles/binance/1h.csv",
+   "rows": 59928,
+   "rows_at_or_after_sealed_start": 2208,
+   "rows_before_sealed_start": 57720,
+   "source": "binance"
+  },
+  {
+   "built": true,
+   "csv_sha256": "3002022704301b85c8359c87173edfbfbc0136938af85519c438922e59e75121",
+   "first_open": "2019-12-31T00:00Z",
+   "first_open_ms": 1577750400000,
+   "gap_count": 1,
+   "gaps": [
+    [
+     "2026-10-28T00:00Z",
+     "2026-10-29T00:00Z",
+     24
+    ]
+   ],
+   "incomplete_chunks": [],
+   "interval": "1h",
+   "last_candle_age_days": 0.6605771412037037,
+   "last_open": "2026-11-01T23:00Z",
+   "last_open_ms": 1793574000000,
+   "missing_candles": 24,
+   "observed": {
+    "first_candle_observed_at": null,
+    "history_days_observed": null,
+    "history_days_observed_reason": null,
+    "history_start_established": null,
+    "last_candle_observed_at": null,
+    "plan_date": "2026-11-02",
+    "store_built_at": "2026-11-02T14:09:10Z"
+   },
+   "ohlc_violations": 0,
+   "relpath": "candles/binance_official/1h.csv",
+   "rows": 59928,
+   "source": "binance_official"
+  },
+  {
+   "built": true,
+   "csv_sha256": "fb0f79f51c5b4e65545af8a146617304ba3749d80d96f0a3da4faf15dd623469",
+   "first_open": "2025-07-31T16:00Z",
+   "first_open_ms": 1753977600000,
+   "gap_count": 0,
+   "gaps": [],
+   "incomplete_chunks": [
+    "raw/bingx/1m/1793580000000.csv"
+   ],
+   "interval": "1m",
+   "last_candle_age_days": 0.03488269675925926,
+   "last_open": "2026-11-02T14:01Z",
+   "last_open_ms": 1793628060000,
+   "missing_candles": 0,
+   "observed": {
+    "first_candle_observed_at": "2026-11-02T14:03:32.087Z",
+    "history_days_observed": 458.9191213773148,
+    "history_days_observed_reason": null,
+    "history_start_established": true,
+    "last_candle_observed_at": "2026-11-02T14:03:32.087Z",
+    "plan_date": null,
+    "store_built_at": "2026-11-02T14:50:29Z"
+   },
+   "ohlc_violations": 0,
+   "relpath": "candles/bingx/1m.csv",
+   "rows": 660842,
+   "rows_at_or_after_sealed_start": 134762,
+   "rows_before_sealed_start": 526080,
+   "source": "bingx"
+  },
+  {
+   "built": true,
+   "csv_sha256": "8a0ac47aeb5483dad64da14ec426d8dcc7943c60973c59510a70d6dcf281291c",
+   "first_open": "2026-09-18T14:00Z",
+   "first_open_ms": 1789740000000,
+   "gap_count": 0,
+   "gaps": [],
+   "incomplete_chunks": [
+    "raw/bingx/5m/1793400000000.csv"
+   ],
+   "interval": "5m",
+   "last_candle_age_days": 0.03904936342592592,
+   "last_open": "2026-11-02T13:55Z",
+   "last_open_ms": 1793627700000,
+   "missing_candles": 0,
+   "observed": {
+    "first_candle_observed_at": "2026-11-02T14:02:11.410Z",
+    "history_days_observed": 45.00152094907408,
+    "history_days_observed_reason": null,
+    "history_start_established": true,
+    "last_candle_observed_at": "2026-11-02T14:02:11.410Z",
+    "plan_date": null,
+    "store_built_at": "2026-11-02T14:03:30Z"
+   },
+   "ohlc_violations": 0,
+   "relpath": "candles/bingx/5m.csv",
+   "rows": 12960,
+   "rows_at_or_after_sealed_start": 12960,
+   "rows_before_sealed_start": 0,
+   "source": "bingx"
+  },
+  {
+   "built": true,
+   "csv_sha256": "0102a701706e7369abf7170766c72565fa58f28afa62605b5df17583c939214f",
+   "first_open": "2026-07-25T14:00Z",
+   "first_open_ms": 1784988000000,
+   "gap_count": 0,
+   "gaps": [],
+   "incomplete_chunks": [
+    "raw/bingx/15m/1792800000000.csv"
+   ],
+   "interval": "15m",
+   "last_candle_age_days": 0.056410474537037035,
+   "last_open": "2026-11-02T13:30Z",
+   "last_open_ms": 1793626200000,
+   "missing_candles": 0,
+   "observed": {
+    "first_candle_observed_at": "2026-11-02T14:00:56.283Z",
+    "history_days_observed": 100.00065142361112,
+    "history_days_observed_reason": null,
+    "history_start_established": true,
+    "last_candle_observed_at": "2026-11-02T14:00:56.283Z",
+    "plan_date": null,
+    "store_built_at": "2026-11-02T14:02:09Z"
+   },
+   "ohlc_violations": 0,
+   "relpath": "candles/bingx/15m.csv",
+   "rows": 9599,
+   "rows_at_or_after_sealed_start": 8983,
+   "rows_before_sealed_start": 616,
+   "source": "bingx"
+  },
+  {
+   "built": true,
+   "csv_sha256": "9c47de782cd66b7b89c6554f5cc9285b8c7e5b362f5fdf38e551ef30d15afeee",
+   "first_open": "2024-04-27T10:00Z",
+   "first_open_ms": 1714212000000,
+   "gap_count": 0,
+   "gaps": [],
+   "incomplete_chunks": [
+    "raw/bingx/1h/1792800000000.csv"
+   ],
+   "interval": "1h",
+   "last_candle_age_days": 0.11891047453703704,
+   "last_open": "2026-11-02T12:00Z",
+   "last_open_ms": 1793620800000,
+   "missing_candles": 0,
+   "observed": {
+    "first_candle_observed_at": "2026-11-02T13:58:29.101Z",
+    "history_days_observed": 919.1656145949074,
+    "history_days_observed_reason": null,
+    "history_start_established": true,
+    "last_candle_observed_at": "2026-11-02T13:58:29.101Z",
+    "plan_date": null,
+    "store_built_at": "2026-11-02T14:00:54Z"
+   },
+   "ohlc_violations": 0,
+   "relpath": "candles/bingx/1h.csv",
+   "rows": 22059,
+   "rows_at_or_after_sealed_start": 2245,
+   "rows_before_sealed_start": 19814,
+   "source": "bingx"
+  }
+ ],
+ "study": "coverage",
+ "tests_consumed": 0,
+ "usable_decision_hours": {
+  "candles/binance/1h.csv": {
+   "context_512h": {
+    "segments": {
+     "before_training": {
+      "eligible": 24,
+      "first_usable": null,
+      "last_usable": null,
+      "share": 0.0,
+      "unusable_ranges": [
+       [
+        "2019-12-31T00:00Z",
+        "2020-01-01T00:00Z"
+       ]
+      ],
+      "usable": 0
+     },
+     "embargo_1": {
+      "eligible": 520,
+      "first_usable": "2024-06-09T08:00Z",
+      "last_usable": "2024-06-30T23:00Z",
+      "share": 1.0,
+      "unusable_ranges": [],
+      "usable": 520
+     },
+     "embargo_2": {
+      "eligible": 520,
+      "first_usable": "2026-07-10T08:00Z",
+      "last_usable": "2026-07-31T23:00Z",
+      "share": 1.0,
+      "unusable_ranges": [],
+      "usable": 520
+     },
+     "sealed": {
+      "eligible": null,
+      "reason": "not counted: decision hours at or after the sealed start stay closed (gate 6)",
+      "usable": null
+     },
+     "training": {
+      "eligible": 38912,
+      "first_usable": "2020-01-21T08:00Z",
+      "last_usable": "2024-06-09T07:00Z",
+      "share": 0.9874588815789473,
+      "unusable_ranges": [
+       [
+        "2020-01-01T00:00Z",
+        "2020-01-21T08:00Z"
+       ]
+      ],
+      "usable": 38424
+     },
+     "validation": {
+      "eligible": 17744,
+      "first_usable": "2024-07-01T00:00Z",
+      "last_usable": "2026-07-10T07:00Z",
+      "share": 1.0,
+      "unusable_ranges": [],
+      "usable": 17744
+     }
+    },
+    "window_hours": 512
+   }
+  },
+  "candles/binance/1m.csv": {
+   "context_512h": {
+    "segments": {
+     "before_training": {
+      "eligible": 24,
+      "first_usable": null,
+      "last_usable": null,
+      "share": 0.0,
+      "unusable_ranges": [
+       [
+        "2019-12-31T00:00Z",
+        "2020-01-01T00:00Z"
+       ]
+      ],
+      "usable": 0
+     },
+     "embargo_1": {
+      "eligible": 520,
+      "first_usable": "2024-06-09T08:00Z",
+      "last_usable": "2024-06-30T23:00Z",
+      "share": 1.0,
+      "unusable_ranges": [],
+      "usable": 520
+     },
+     "embargo_2": {
+      "eligible": 520,
+      "first_usable": "2026-07-10T08:00Z",
+      "last_usable": "2026-07-31T23:00Z",
+      "share": 1.0,
+      "unusable_ranges": [],
+      "usable": 520
+     },
+     "sealed": {
+      "eligible": null,
+      "reason": "not counted: decision hours at or after the sealed start stay closed (gate 6)",
+      "usable": null
+     },
+     "training": {
+      "eligible": 38912,
+      "first_usable": "2020-01-21T08:00Z",
+      "last_usable": "2024-06-09T07:00Z",
+      "share": 0.9874588815789473,
+      "unusable_ranges": [
+       [
+        "2020-01-01T00:00Z",
+        "2020-01-21T08:00Z"
+       ]
+      ],
+      "usable": 38424
+     },
+     "validation": {
+      "eligible": 17744,
+      "first_usable": "2024-07-01T00:00Z",
+      "last_usable": "2026-07-10T07:00Z",
+      "share": 1.0,
+      "unusable_ranges": [],
+      "usable": 17744
+     }
+    },
+    "window_hours": 512
+   }
+  },
+  "candles/bingx/15m.csv": {
+   "context_512h": {
+    "segments": {
+     "before_training": {
+      "eligible": 0,
+      "first_usable": null,
+      "last_usable": null,
+      "share": null,
+      "unusable_ranges": [],
+      "usable": 0
+     },
+     "embargo_1": {
+      "eligible": 520,
+      "first_usable": null,
+      "last_usable": null,
+      "share": 0.0,
+      "unusable_ranges": [
+       [
+        "2024-06-09T08:00Z",
+        "2024-07-01T00:00Z"
+       ]
+      ],
+      "usable": 0
+     },
+     "embargo_2": {
+      "eligible": 520,
+      "first_usable": null,
+      "last_usable": null,
+      "share": 0.0,
+      "unusable_ranges": [
+       [
+        "2026-07-10T08:00Z",
+        "2026-08-01T00:00Z"
+       ]
+      ],
+      "usable": 0
+     },
+     "sealed": {
+      "eligible": null,
+      "reason": "not counted: decision hours at or after the sealed start stay closed (gate 6)",
+      "usable": null
+     },
+     "training": {
+      "eligible": 38912,
+      "first_usable": null,
+      "last_usable": null,
+      "share": 0.0,
+      "unusable_ranges": [
+       [
+        "2020-01-01T00:00Z",
+        "2024-06-09T08:00Z"
+       ]
+      ],
+      "usable": 0
+     },
+     "validation": {
+      "eligible": 17744,
+      "first_usable": null,
+      "last_usable": null,
+      "share": 0.0,
+      "unusable_ranges": [
+       [
+        "2024-07-01T00:00Z",
+        "2026-07-10T08:00Z"
+       ]
+      ],
+      "usable": 0
+     }
+    },
+    "window_hours": 512
+   }
+  },
+  "candles/bingx/1h.csv": {
+   "context_512h": {
+    "segments": {
+     "before_training": {
+      "eligible": 0,
+      "first_usable": null,
+      "last_usable": null,
+      "share": null,
+      "unusable_ranges": [],
+      "usable": 0
+     },
+     "embargo_1": {
+      "eligible": 520,
+      "first_usable": "2024-06-09T08:00Z",
+      "last_usable": "2024-06-30T23:00Z",
+      "share": 1.0,
+      "unusable_ranges": [],
+      "usable": 520
+     },
+     "embargo_2": {
+      "eligible": 520,
+      "first_usable": "2026-07-10T08:00Z",
+      "last_usable": "2026-07-31T23:00Z",
+      "share": 1.0,
+      "unusable_ranges": [],
+      "usable": 520
+     },
+     "sealed": {
+      "eligible": null,
+      "reason": "not counted: decision hours at or after the sealed start stay closed (gate 6)",
+      "usable": null
+     },
+     "training": {
+      "eligible": 38912,
+      "first_usable": "2024-05-18T18:00Z",
+      "last_usable": "2024-06-09T07:00Z",
+      "share": 0.013312088815789474,
+      "unusable_ranges": [
+       [
+        "2020-01-01T00:00Z",
+        "2024-05-18T18:00Z"
+       ]
+      ],
+      "usable": 518
+     },
+     "validation": {
+      "eligible": 17744,
+      "first_usable": "2024-07-01T00:00Z",
+      "last_usable": "2026-07-10T07:00Z",
+      "share": 1.0,
+      "unusable_ranges": [],
+      "usable": 17744
+     }
+    },
+    "window_hours": 512
+   }
+  },
+  "candles/bingx/1m.csv": {
+   "context_512h": {
+    "segments": {
+     "before_training": {
+      "eligible": 0,
+      "first_usable": null,
+      "last_usable": null,
+      "share": null,
+      "unusable_ranges": [],
+      "usable": 0
+     },
+     "embargo_1": {
+      "eligible": 520,
+      "first_usable": null,
+      "last_usable": null,
+      "share": 0.0,
+      "unusable_ranges": [
+       [
+        "2024-06-09T08:00Z",
+        "2024-07-01T00:00Z"
+       ]
+      ],
+      "usable": 0
+     },
+     "embargo_2": {
+      "eligible": 520,
+      "first_usable": "2026-07-10T08:00Z",
+      "last_usable": "2026-07-31T23:00Z",
+      "share": 1.0,
+      "unusable_ranges": [],
+      "usable": 520
+     },
+     "sealed": {
+      "eligible": null,
+      "reason": "not counted: decision hours at or after the sealed start stay closed (gate 6)",
+      "usable": null
+     },
+     "training": {
+      "eligible": 38912,
+      "first_usable": null,
+      "last_usable": null,
+      "share": 0.0,
+      "unusable_ranges": [
+       [
+        "2020-01-01T00:00Z",
+        "2024-06-09T08:00Z"
+       ]
+      ],
+      "usable": 0
+     },
+     "validation": {
+      "eligible": 17744,
+      "first_usable": "2025-08-22T00:00Z",
+      "last_usable": "2026-07-10T07:00Z",
+      "share": 0.4359783588818756,
+      "unusable_ranges": [
+       [
+        "2024-07-01T00:00Z",
+        "2025-08-22T00:00Z"
+       ]
+      ],
+      "usable": 7736
+     }
+    },
+    "window_hours": 512
+   }
+  },
+  "candles/bingx/5m.csv": {
+   "context_512h": {
+    "segments": {
+     "before_training": {
+      "eligible": 0,
+      "first_usable": null,
+      "last_usable": null,
+      "share": null,
+      "unusable_ranges": [],
+      "usable": 0
+     },
+     "embargo_1": {
+      "eligible": 520,
+      "first_usable": null,
+      "last_usable": null,
+      "share": 0.0,
+      "unusable_ranges": [
+       [
+        "2024-06-09T08:00Z",
+        "2024-07-01T00:00Z"
+       ]
+      ],
+      "usable": 0
+     },
+     "embargo_2": {
+      "eligible": 520,
+      "first_usable": null,
+      "last_usable": null,
+      "share": 0.0,
+      "unusable_ranges": [
+       [
+        "2026-07-10T08:00Z",
+        "2026-08-01T00:00Z"
+       ]
+      ],
+      "usable": 0
+     },
+     "sealed": {
+      "eligible": null,
+      "reason": "not counted: decision hours at or after the sealed start stay closed (gate 6)",
+      "usable": null
+     },
+     "training": {
+      "eligible": 38912,
+      "first_usable": null,
+      "last_usable": null,
+      "share": 0.0,
+      "unusable_ranges": [
+       [
+        "2020-01-01T00:00Z",
+        "2024-06-09T08:00Z"
+       ]
+      ],
+      "usable": 0
+     },
+     "validation": {
+      "eligible": 17744,
+      "first_usable": null,
+      "last_usable": null,
+      "share": 0.0,
+      "unusable_ranges": [
+       [
+        "2024-07-01T00:00Z",
+        "2026-07-10T08:00Z"
+       ]
+      ],
+      "usable": 0
+     }
+    },
+    "window_hours": 512
+   }
+  }
+ }
+}

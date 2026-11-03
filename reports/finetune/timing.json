@@ -1,0 +1,737 @@
+{
+ "choice": {
+  "activation_checkpointing": true,
+  "batch_32_fits": false,
+  "batch_size": 32,
+  "deterministic": true,
+  "device": "cpu",
+  "mps_watermark_ratio": null,
+  "reasons": [
+   "CPU threads 2: 8 threads only 0.98 times faster at batch 32 (at least 1.3 needed)",
+   "MPS not usable: its preflight (M3) did not pass",
+   "batch 32 does not fit as is: activation checkpointing (M2 passed)",
+   "theta for the CPU comes from the pilot's first pseudo-epoch (no M4)"
+  ],
+  "seconds_per_step": 9.67916093749227,
+  "speedups": {
+   "eight_vs_two_threads": 0.9761983409352423,
+   "mps_vs_best_cpu": null
+  },
+  "theta": null,
+  "threads": 2
+ },
+ "code": {
+  "commit": "3cda6c6b125e573dd764f1dc1bd1510602da7711",
+  "dirty": true,
+  "forecasting_code_sha256": "37c3bf99e48a6aee17a804432e4ae40726310e9d82aef40adbdc4f8d66e593a1",
+  "source_tree_sha256": "bb2fad7612c9921adbc98078fbc52dc419c6e5fa58d507bf2703ed84e0dff615",
+  "training_code_sha256": "fb82f2ec48fe06cdee817965473051b2fff4061f83c7640c20617fee96d14be5",
+  "vendored_manifest_sha256": "4a3214ae510ccf6cc0fd7836d4e48e54851bf71b579fd852faf7f9089a081f92"
+ },
+ "comparators": {
+  "device_rule": "MPS if its preflight passed and its sustained step time is at least 1.5 times faster than the best CPU configuration's",
+  "memory_rule": "batch 32 fits at a peak of at most 9 GiB with no swap growth",
+  "prior_fan_seconds": "t(L) = 0.44 + 0.678 L s at 2 threads (design 5.2)",
+  "prior_nll4_tf": "about 50 s per 336 decisions at 2 threads (design 3.3)",
+  "prior_seconds_per_step_b32": {
+   "cpu-2": 6.1,
+   "cpu-8": 5.0,
+   "mps-2": 3.2
+  },
+  "priors": "the per-measurement priors of docs/RETRAINING.md section (a)",
+  "threads_rule": "8 CPU threads only if at least 1.3 times faster than 2 at batch 32"
+ },
+ "config_sha256": "7408a6f62be55872c13a5e81939ac5f899d5b2266a2b33e2afc34531d96a4359",
+ "data_md_sha256": "ddfca5a24e0c43bda78ea9bdc60331ebc2e65a40aabec187552956ee8d55a306",
+ "environment": {
+  "cpu_count": 10,
+  "mps_available": true,
+  "numpy_version": "2.2.6",
+  "pandas_version": "2.2.2",
+  "platform": "darwin-arm64",
+  "ram_bytes": 17179869184,
+  "threads": 2,
+  "torch_version": "2.14.1"
+ },
+ "estimate": {
+  "cpu_seconds": 2620.0,
+  "gpu_minutes": 25.0,
+  "mps_available": true,
+  "per_measurement": {
+   "M1": {
+    "cpu_seconds": 1350.0,
+    "gpu_minutes": 2.0
+   },
+   "M2": {
+    "cpu_seconds": 200.0,
+    "gpu_minutes": 1.0
+   },
+   "M3": {
+    "cpu_seconds": 150.0,
+    "gpu_minutes": 2.0
+   },
+   "M4": {
+    "cpu_seconds": 120.0,
+    "gpu_minutes": 20.0
+   },
+   "M5": {
+    "cpu_seconds": 210.0,
+    "gpu_minutes": 0.0
+   },
+   "M6": {
+    "cpu_seconds": 300.0,
+    "gpu_minutes": 0.0
+   },
+   "M7": {
+    "cpu_seconds": 150.0,
+    "gpu_minutes": 0.0
+   },
+   "M8": {
+    "cpu_seconds": 20.0,
+    "gpu_minutes": 0.0
+   },
+   "M9": {
+    "cpu_seconds": 20.0,
+    "gpu_minutes": 0.0
+   },
+   "loads": {
+    "cpu_seconds": 100.0,
+    "gpu_minutes": 0.0
+   }
+  }
+ },
+ "expected_chance_misses": 0.0,
+ "failures": [],
+ "finished_at": "2026-11-02T21:01:36Z",
+ "generated_at": "2026-11-02T21:01:36Z",
+ "measurements": {
+  "M1": [
+   {
+    "activation_checkpointing": false,
+    "batch_size": 8,
+    "child_status": "completed",
+    "cpu_seconds": 28.342629,
+    "deadline_seconds": 1352.1467934989669,
+    "deterministic": true,
+    "device": "cpu",
+    "error": null,
+    "max_pressure_level": 1,
+    "peak_bytes": 4044865536,
+    "peak_mps_driver_bytes": null,
+    "peak_rss_bytes": 4044865536,
+    "run_id": "synthetic-timing-20261102T204827Z",
+    "seconds_per_step": {
+     "max": 1.6468716249801219,
+     "median": 1.5306061250012135,
+     "min": 1.5064290839945897,
+     "values": [
+      1.5495563329895958,
+      1.5124214999959804,
+      1.5194137080106884,
+      1.5064290839945897,
+      1.531799874996068,
+      1.529412375006359,
+      1.6468716249801219,
+      1.6119147080171388,
+      1.5210522919951472,
+      1.5487922909960616
+     ]
+    },
+    "status": "completed",
+    "stop_reason": "timing_done",
+    "swap_growth_bytes": 0,
+    "threads": 2,
+    "timed_steps": 10,
+    "wall_seconds": 22.74552808300359,
+    "warmup_steps": 3,
+    "windows_per_second": 5.226687564701636
+   },
+   {
+    "activation_checkpointing": false,
+    "batch_size": 16,
+    "child_status": "completed",
+    "cpu_seconds": 56.8359,
+    "deadline_seconds": 1337.789977498967,
+    "deterministic": true,
+    "device": "cpu",
+    "error": null,
+    "max_pressure_level": 1,
+    "peak_bytes": 7305723904,
+    "peak_mps_driver_bytes": null,
+    "peak_rss_bytes": 7305723904,
+    "run_id": "synthetic-timing-20261102T204850Z",
+    "seconds_per_step": {
+     "max": 3.3773552920029033,
+     "median": 3.155152208506479,
+     "min": 3.0323381250200327,
+     "values": [
+      3.0538347909750883,
+      3.0323381250200327,
+      3.3773552920029033,
+      3.2739322079869453,
+      3.07302566699218,
+      3.150930708012311,
+      3.0957765000057407,
+      3.164822374994401,
+      3.159373709000647,
+      3.1726108329894487
+     ]
+    },
+    "status": "completed",
+    "stop_reason": "timing_done",
+    "swap_growth_bytes": 0,
+    "threads": 2,
+    "timed_steps": 10,
+    "wall_seconds": 42.87451012499514,
+    "warmup_steps": 3,
+    "windows_per_second": 5.071070725799866
+   },
+   {
+    "activation_checkpointing": false,
+    "batch_size": 32,
+    "child_status": "completed",
+    "cpu_seconds": 168.891705,
+    "deadline_seconds": 1309.182960998967,
+    "deterministic": true,
+    "device": "cpu",
+    "error": null,
+    "max_pressure_level": 1,
+    "peak_bytes": 9908764672,
+    "peak_mps_driver_bytes": null,
+    "peak_rss_bytes": 9908764672,
+    "run_id": "synthetic-timing-20261102T204933Z",
+    "seconds_per_step": {
+     "max": 11.893442750006216,
+     "median": 10.359475833494798,
+     "min": 9.770233541989,
+     "values": [
+      10.267581958993105,
+      10.451369707996491,
+      9.770233541989,
+      11.384464458009461,
+      10.998126624996075,
+      10.529120999999577,
+      10.002160417003324,
+      11.893442750006216,
+      10.216664749983465,
+      10.017624916014029
+     ]
+    },
+    "status": "completed",
+    "stop_reason": "timing_done",
+    "swap_growth_bytes": 1631909315,
+    "threads": 2,
+    "timed_steps": 10,
+    "wall_seconds": 139.56255837500794,
+    "warmup_steps": 3,
+    "windows_per_second": 3.0889593753900106
+   },
+   {
+    "activation_checkpointing": false,
+    "batch_size": 8,
+    "child_status": "completed",
+    "cpu_seconds": 56.259298,
+    "deadline_seconds": 306.11776524974175,
+    "deterministic": true,
+    "device": "cpu",
+    "error": null,
+    "max_pressure_level": 1,
+    "peak_bytes": 4044324864,
+    "peak_mps_driver_bytes": null,
+    "peak_rss_bytes": 4044324864,
+    "run_id": "synthetic-timing-20261102T205152Z",
+    "seconds_per_step": {
+     "max": 1.8345180000178516,
+     "median": 1.7231043335050344,
+     "min": 1.6933935830020346,
+     "values": [
+      1.8345180000178516,
+      1.7511671249812935,
+      1.713254375004908,
+      1.7358229579986073,
+      1.7070052920025773,
+      1.6933935830020346,
+      1.7329542920051608,
+      1.7406131250027101,
+      1.697163625009125,
+      1.6961336669919547
+     ]
+    },
+    "status": "completed",
+    "stop_reason": "timing_done",
+    "swap_growth_bytes": 0,
+    "threads": 8,
+    "timed_steps": 10,
+    "wall_seconds": 25.131042124994565,
+    "warmup_steps": 3,
+    "windows_per_second": 4.642783286213949
+   },
+   {
+    "activation_checkpointing": false,
+    "batch_size": 16,
+    "child_status": "completed",
+    "cpu_seconds": 119.286261,
+    "deadline_seconds": 299.03509849974176,
+    "deterministic": true,
+    "device": "cpu",
+    "error": null,
+    "max_pressure_level": 1,
+    "peak_bytes": 7301365760,
+    "peak_mps_driver_bytes": null,
+    "peak_rss_bytes": 7301365760,
+    "run_id": "synthetic-timing-20261102T205217Z",
+    "seconds_per_step": {
+     "max": 4.356661832978716,
+     "median": 3.434377499987022,
+     "min": 3.3791105000127573,
+     "values": [
+      3.4807742919947486,
+      3.4021827920223586,
+      3.4313962499727495,
+      3.3943717910151463,
+      3.3791105000127573,
+      3.4213797499833163,
+      3.527105417015264,
+      3.4373587500012945,
+      4.356661832978716,
+      4.152976875018794
+     ]
+    },
+    "status": "completed",
+    "stop_reason": "timing_done",
+    "swap_growth_bytes": 0,
+    "threads": 8,
+    "timed_steps": 10,
+    "wall_seconds": 48.21637545802514,
+    "warmup_steps": 3,
+    "windows_per_second": 4.658777318469056
+   },
+   {
+    "activation_checkpointing": false,
+    "batch_size": 32,
+    "child_status": "completed",
+    "cpu_seconds": 336.860215,
+    "deadline_seconds": 284.05869599974176,
+    "deterministic": true,
+    "device": "cpu",
+    "error": null,
+    "max_pressure_level": 1,
+    "peak_bytes": 9831727104,
+    "peak_mps_driver_bytes": null,
+    "peak_rss_bytes": 9831727104,
+    "run_id": "synthetic-timing-20261102T205306Z",
+    "seconds_per_step": {
+     "max": 11.361502834013663,
+     "median": 10.612060478990315,
+     "min": 9.81798483300372,
+     "values": [
+      11.22044599999208,
+      10.33664179200423,
+      9.81798483300372,
+      10.125350832997356,
+      10.098657499998808,
+      11.361502834013663,
+      10.887479165976401,
+      10.1372633750143,
+      10.898732875008136,
+      10.900821333983913
+     ]
+    },
+    "status": "completed",
+    "stop_reason": "timing_done",
+    "swap_growth_bytes": 1436947578,
+    "threads": 8,
+    "timed_steps": 10,
+    "wall_seconds": 142.04547808298958,
+    "warmup_steps": 3,
+    "windows_per_second": 3.0154370174720904
+   },
+   {
+    "batch_size": 8,
+    "device": "mps",
+    "reason": "not run: the MPS preflight (M3) did not pass",
+    "status": "not_run",
+    "threads": 2,
+    "timed_steps": 0,
+    "warmup_steps": 3
+   },
+   {
+    "batch_size": 16,
+    "device": "mps",
+    "reason": "not run: the MPS preflight (M3) did not pass",
+    "status": "not_run",
+    "threads": 2,
+    "timed_steps": 0,
+    "warmup_steps": 3
+   },
+   {
+    "batch_size": 32,
+    "device": "mps",
+    "reason": "not run: the MPS preflight (M3) did not pass",
+    "status": "not_run",
+    "threads": 2,
+    "timed_steps": 0,
+    "warmup_steps": 3
+   }
+  ],
+  "M2": [
+   {
+    "batch_size": 32,
+    "device": "cpu",
+    "gradient_check": {
+     "activation_checkpointing": false,
+     "checks": {
+      "checkpoint_gradients": {
+       "mismatches": [],
+       "passed": true,
+       "tensors": 127
+      }
+     },
+     "child_status": "completed",
+     "cpu_seconds": 30.795717,
+     "deadline_seconds": 880.543950498967,
+     "deterministic": true,
+     "device": "cpu",
+     "error": null,
+     "max_pressure_level": 1,
+     "passed": true,
+     "peak_bytes": 5743378432,
+     "peak_mps_driver_bytes": null,
+     "peak_rss_bytes": 5743378432,
+     "run_id": "synthetic-timing-20261102T205738Z",
+     "status": "completed",
+     "stop_reason": "preflight_done",
+     "swap_growth_bytes": 701298115,
+     "threads": 2,
+     "wall_seconds": 30.049045083025703
+    },
+    "passed": true,
+    "status": "completed",
+    "threads": 2,
+    "timing": {
+     "activation_checkpointing": true,
+     "batch_size": 32,
+     "child_status": "completed",
+     "cpu_seconds": 173.413783,
+     "deadline_seconds": 967.516757498967,
+     "deterministic": true,
+     "device": "cpu",
+     "error": null,
+     "max_pressure_level": 1,
+     "peak_bytes": 3394109440,
+     "peak_mps_driver_bytes": null,
+     "peak_rss_bytes": 3394109440,
+     "run_id": "synthetic-timing-20261102T205528Z",
+     "seconds_per_step": {
+      "max": 10.45164908299921,
+      "median": 9.67916093749227,
+      "min": 9.501656000007642,
+      "values": [
+       10.330650333024096,
+       9.712969374988461,
+       9.724603667011252,
+       9.579061625001486,
+       9.64535249999608,
+       9.505081624985905,
+       9.589721916010603,
+       9.501656000007642,
+       10.046407416986767,
+       10.45164908299921
+      ]
+     },
+     "status": "completed",
+     "stop_reason": "timing_done",
+     "swap_growth_bytes": 0,
+     "threads": 2,
+     "timed_steps": 10,
+     "wall_seconds": 130.12006266700337,
+     "warmup_steps": 3,
+     "windows_per_second": 3.306071694298198
+    },
+    "why": "batch 32 peak 9.23 GiB, swap growth 1.52 GiB"
+   }
+  ],
+  "M3": {
+   "activation_checkpointing": false,
+   "batch_size": 32,
+   "checks": {},
+   "child_status": "memory_abort",
+   "cpu_seconds": 35.260264,
+   "deadline_seconds": 1370.491162498967,
+   "deterministic": false,
+   "deterministic_op": null,
+   "deterministic_passed": false,
+   "deterministic_refused": false,
+   "device": "mps",
+   "error": {
+    "message": "MPS backend out of memory (MPS allocated: 12.17 GiB, other allocations: 1.72 MiB, max allowed: 11.84 GiB). Tried to allocate 32.00 MiB on shared pool. Use PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0 to disable upper limit for memory allocations (may cause system failure).",
+    "type": "RuntimeError"
+   },
+   "max_pressure_level": 2,
+   "passed": false,
+   "peak_bytes": 12143083520,
+   "peak_mps_driver_bytes": 8801452032,
+   "peak_rss_bytes": 3341631488,
+   "requested": [
+    "multinomial",
+    "parity",
+    "steps",
+    "deterministic"
+   ],
+   "run_id": "synthetic-timing-20261102T204640Z",
+   "status": "memory_abort",
+   "stop_reason": null,
+   "swap_growth_bytes": 4931652157,
+   "threads": 2,
+   "wall_seconds": 106.62287766701775
+  },
+  "M4": {
+   "batch_size": 32,
+   "device": "mps",
+   "reason": "not run: the MPS preflight (M3) did not pass",
+   "status": "not_run",
+   "theta": null,
+   "threads": 2,
+   "timed_seconds": 1200.0,
+   "warmup_steps": 3
+  },
+  "M5": {
+   "fit": {
+    "intercept": -0.10749271544808003,
+    "slope": 0.7952557239815568
+   },
+   "per_length": [
+    {
+     "length": 4,
+     "prior_seconds_per_fan": 3.152,
+     "seconds_per_fan": 3.230299707996892,
+     "status": "completed"
+    },
+    {
+     "length": 8,
+     "prior_seconds_per_fan": 5.864000000000001,
+     "seconds_per_fan": 6.058591167005943,
+     "status": "completed"
+    },
+    {
+     "length": 24,
+     "prior_seconds_per_fan": 16.712000000000003,
+     "seconds_per_fan": 19.01783704198897,
+     "status": "completed"
+    }
+   ],
+   "repeats": 3,
+   "status": "completed",
+   "t24": 19.01783704198897,
+   "t4": 3.230299707996892,
+   "t8": 6.058591167005943
+  },
+  "M6": [
+   {
+    "cpu_seconds": 103.3504218320013,
+    "evaluation_length": 4,
+    "fans": 12,
+    "fans_per_second": 0.2322196617543816,
+    "requested_workers": 1,
+    "seconds_per_fan": 4.306267576333387,
+    "startup_seconds": 5.265877124998951,
+    "status": "completed",
+    "wall_seconds": 51.67521091600065,
+    "workers": 1
+   },
+   {
+    "cpu_seconds": 165.24374599999283,
+    "evaluation_length": 4,
+    "fans": 12,
+    "fans_per_second": 0.29047997979906653,
+    "requested_workers": 2,
+    "seconds_per_fan": 6.885156083333034,
+    "startup_seconds": 8.54350504197646,
+    "status": "completed",
+    "wall_seconds": 41.310936499998206,
+    "workers": 2
+   },
+   {
+    "cpu_seconds": 221.23278625204694,
+    "evaluation_length": 4,
+    "fans": 12,
+    "fans_per_second": 0.32544904948207615,
+    "requested_workers": 3,
+    "seconds_per_fan": 9.218032760501956,
+    "startup_seconds": 11.283090667013312,
+    "status": "completed",
+    "wall_seconds": 36.87213104200782,
+    "workers": 3
+   },
+   {
+    "cpu_seconds": 289.1816356640775,
+    "evaluation_length": 4,
+    "fans": 12,
+    "fans_per_second": 0.3319712878016799,
+    "requested_workers": 4,
+    "seconds_per_fan": 12.049234819336561,
+    "startup_seconds": 14.592996374994982,
+    "status": "completed",
+    "wall_seconds": 36.147704458009684,
+    "workers": 4
+   }
+  ],
+  "M7": [
+   {
+    "fans": 12,
+    "reason": "not run: M7 runs during M4, which did not run",
+    "requested_workers": 1,
+    "slowdown_vs_m6": null,
+    "status": "not_run"
+   },
+   {
+    "fans": 12,
+    "reason": "not run: M7 runs during M4, which did not run",
+    "requested_workers": 2,
+    "slowdown_vs_m6": null,
+    "status": "not_run"
+   }
+  ],
+  "M8": {
+   "batch_size": 16,
+   "decisions": 48,
+   "planned_decisions": 336,
+   "seconds": 7.601864083000692,
+   "seconds_per_decision": 0.15837216839584775,
+   "seconds_per_evaluation": 53.21304858100484,
+   "status": "completed",
+   "threads": 2
+  },
+  "M9": {
+   "checkpoint_config_id": "d49ec38a515fe546",
+   "checkpoint_id": "ks-identity-shipped",
+   "files": [
+    {
+     "name": "config.json",
+     "sha256": "5e0f6a605d5f81b5c9b559fe5cf716a1acb041c744e6f41bd05b097b7a685396",
+     "size": 228
+    },
+    {
+     "name": "model.safetensors",
+     "sha256": "b082dfcbd8e8c142a725c8bbb99781802f38fec81210e13479effb32b3c3e020",
+     "size": 98980656
+    }
+   ],
+   "identical": true,
+   "paths_sha256": {
+    "checkpoint": "e12aae8b3b305a7170e14dd20c114693f54539dd873b65dae468784fae08ce73",
+    "shipped": "e12aae8b3b305a7170e14dd20c114693f54539dd873b65dae468784fae08ce73"
+   },
+   "seconds": 9.1733163339959,
+   "shipped_config_id": "62906d91f853a8e5",
+   "status": "completed"
+  }
+ },
+ "memory_slopes": [
+  {
+   "batches": [
+    8,
+    16,
+    32
+   ],
+   "bytes_per_window": 232666404.57142857,
+   "device": "cpu",
+   "gib_per_window": 0.2166874749319894,
+   "threads": 2
+  },
+  {
+   "batches": [
+    8,
+    16,
+    32
+   ],
+   "bytes_per_window": 229285449.14285713,
+   "device": "cpu",
+   "gib_per_window": 0.21353871481759207,
+   "threads": 8
+  },
+  {
+   "batches": [],
+   "bytes_per_window": null,
+   "device": "mps",
+   "gib_per_window": null,
+   "threads": 2
+  }
+ ],
+ "retraining_md_sha256": "6e5979f561100a08a4ed73e23f607a361e61564bffb11ff0b48e6e2417c44a23",
+ "samples": {
+  "csv_end": "2020-06-19T16:00Z",
+  "csv_start": "2020-01-01T00:00Z",
+  "export_content_sha256": "fa0ef873407744e0e5e5a2bf8e82e00e04ddd07422604661d41f10a4b607526a",
+  "fit_windows": 2240,
+  "market_data": "none: synthetic candles only",
+  "nll_decisions_exported": 336,
+  "nll_decisions_timed": 48,
+  "synthetic_rows": 4096,
+  "val_windows": 832
+ },
+ "schema_version": 1,
+ "scratch": "timing-20261102T204430Z",
+ "seeds": {
+  "fans": "kronos_agent.seeds of the timing window's decision hour for the streams timing-warmup, timing and timing-w<i>",
+  "synthetic_candles": 0,
+  "training": "finetune.recipe.training_seeds of each timing recipe for fold synthetic-timing, replicate 0"
+ },
+ "spend": {
+  "cpu_seconds": 2049.3184047501845,
+  "gate3_cpu_seconds": 3600,
+  "gate3_gpu_minutes": 60.0,
+  "gpu_minutes": 1.7770479611169625,
+  "limit_cpu_seconds": 3000,
+  "limit_gpu_minutes": 45.0,
+  "per_measurement": {
+   "M1": {
+    "cpu_seconds": 769.260072,
+    "gpu_minutes": 0.0
+   },
+   "M2": {
+    "cpu_seconds": 205.34332999999992,
+    "gpu_minutes": 0.0
+   },
+   "M3": {
+    "cpu_seconds": 36.688738,
+    "gpu_minutes": 1.7770479611169625
+   },
+   "M4": {
+    "cpu_seconds": 0.0,
+    "gpu_minutes": 0.0
+   },
+   "M5": {
+    "cpu_seconds": 224.83137608401012,
+    "gpu_minutes": 0.0
+   },
+   "M6": {
+    "cpu_seconds": 779.0085897481185,
+    "gpu_minutes": 0.0
+   },
+   "M7": {
+    "cpu_seconds": 0.0,
+    "gpu_minutes": 0.0
+   },
+   "M8": {
+    "cpu_seconds": 15.222421334008686,
+    "gpu_minutes": 0.0
+   },
+   "M9": {
+    "cpu_seconds": 18.348389584047254,
+    "gpu_minutes": 0.0
+   },
+   "loads": {
+    "cpu_seconds": 0.615488,
+    "gpu_minutes": 0.0
+   }
+  },
+  "stop_reason": null,
+  "stopped": false
+ },
+ "started_at": "2026-11-02T20:44:30Z",
+ "statistics_with_intervals": 0,
+ "status": "completed",
+ "study": "timing",
+ "tests_consumed": 0
+}

@@ -473,7 +473,14 @@ class PublicMarketClient:
         *,
         server_time_ms: int | None = None,
     ) -> list[Candle]:
-        """Every CLOSED candle with open time in ``[start_ms, end_ms]``, ascending and contiguous.
+        """Every CLOSED candle with open time in ``[start_ms, end_ms)``, ascending and contiguous.
+
+        The range is half-open, like every ``*_ms`` range of the project, and so is the
+        exchange's: an ``endTime`` exactly at a candle's open excludes that candle (observed live
+        on 2026-11-01, D-041), and this method drops such a candle too, so the result does not
+        depend on how the exchange treats that edge. An ``end_ms`` off the candle grid selects
+        the same candles as the next boundary: the live decision window's ``end_ms = D - 1 ms``
+        ends with the candle opening at ``D - 1 h``, as ``end_ms = D`` would.
 
         Pages backwards from ``end_ms`` (``endTime = oldest_returned - 1``) until ``start_ms`` is
         covered or a page comes back empty, drops candles whose close is after the server time,
@@ -484,9 +491,9 @@ class PublicMarketClient:
         the next boundary, so the next page's newest candle is the one before the previous page's
         oldest (observed live on 2026-10-31; the two-page network test checks it). A seam
         semantic that repeats or skips a candle raises :class:`DataGapError` and one that ignores
-        ``endTime`` raises :class:`BingXSchemaError`; nothing is deduplicated or filled. Bounds
-        on an exact boundary likewise assume inclusive ``startTime``/``endTime``: an exclusive
-        one only trims that edge candle (an exclusive ``startTime`` also costs one empty page).
+        ``endTime`` raises :class:`BingXSchemaError`; nothing is deduplicated or filled.
+        ``startTime`` is inclusive at an exact boundary (observed live on 2026-10-31); an
+        exclusive one would only trim that edge candle and cost one empty page.
         """
         _require_symbol(symbol)
         step = interval_ms(interval)
@@ -518,7 +525,7 @@ class PublicMarketClient:
             (
                 c
                 for c in collected
-                if start_ms <= c.open_ms <= end_ms and c.close_ms(step) <= server_time_ms
+                if start_ms <= c.open_ms < end_ms and c.close_ms(step) <= server_time_ms
             ),
             key=lambda c: c.open_ms,
         )
@@ -549,7 +556,7 @@ class PublicMarketClient:
         )
         if canonical_bytes(first) != canonical_bytes(second):
             raise CandleMismatchError(
-                f"two fetches of {symbol} {interval} [{start_ms}, {end_ms}] differ: "
+                f"two fetches of {symbol} {interval} [{start_ms}, {end_ms}) differ: "
                 f"{len(first)} vs {len(second)} candles, sha256 {window_sha256(first)[:12]} vs "
                 f"{window_sha256(second)[:12]}"
             )

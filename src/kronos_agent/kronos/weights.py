@@ -6,34 +6,55 @@ published by the Hugging Face API (LFS object ids). Downloads are plain HTTPS GE
 ``huggingface.co`` / ``*.hf.co``; every file is hashed while streaming into a ``.part`` file that is
 renamed into place only if size and sha256 match, and deleted otherwise or when the transfer
 breaks off. Loading never contacts the Hub: local directories, ``strict=True``, ``.eval()`` on
-both models, CPU.
+both models, CPU. The predictor is built with :data:`PREDICTOR_CLIP`, and
+:func:`inference_problems` tells whether loaded models still forecast as loaded (the forecast
+configuration and the decision layer refuse models that do not).
+
+A fine-tuned checkpoint (step 6, ``docs/RETRAINING.md`` 3.6) is loaded by the same
+:func:`load_models` with ``checkpoint=``: its entry in the fine-tune registry
+(:mod:`kronos_agent.finetune.registry`) names its files and hashes, which this module verifies
+itself before loading (this file is hashed into the forecast ``config_id``; the registry module is
+not). Its ``weights_sha256`` holds the checkpoint's own hashes (``finetuned/<id>/<file>``), so
+its fans never share a configuration with the shipped model's, and ``LoadedModels.data_end_ms``
+carries the end of its training data for the model-period rule of the decision layer.
 """
 
 from __future__ import annotations
 
+import contextlib
+import io
 import json
 import os
 import time
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import httpx
 
 from ..hashing import sha256_file
 from ..manifests import ManifestMismatch, VerifyReport
 from ..models import MODEL_SPECS, ModelSpec, spec_for
-from ..paths import manifests_dir, weights_dir
+from ..paths import manifests_dir, redact_home, weights_dir
 from ..runtime import assert_hf_offline, require_configured
 from .vendored import import_kronos
+
+if TYPE_CHECKING:
+    from ..finetune.registry import CheckpointRef, RegistryEntry
 
 REGISTRY_NAME = "weights.json"
 RESOLVE_URL = "https://huggingface.co/{repo_id}/resolve/{revision}/{filename}"
 POLICY_ALLOWED = "download_allowed"
 POLICY_GATED = "needs_owner_approval"
+# a fine-tuned checkpoint described as a repository of the local fine-tune registry
+POLICY_LOCAL_CHECKPOINT = "local_checkpoint"
+CHECKPOINT_REPO_PREFIX = "finetuned"
 MAX_REDIRECTS = 5
 REFERENCE_DEVICE = "cpu"
+# KronosPredictor clamps the normalised context to [-clip, clip] (upstream's default, SPEC section
+# 3); every forecast configuration records it (kronos_agent.data.forecast_store)
+PREDICTOR_CLIP = 5
 
 
 class Gate4Error(PermissionError):
@@ -70,6 +91,9 @@ class WeightRepo:
 
 @dataclass
 class LoadedModels:
+    """What :func:`load_models` returns. ``checkpoint`` is the fine-tuned checkpoint's id and
+    ``data_end_ms`` the end of its training data (both ``None`` for the shipped weights)."""
+
     spec: ModelSpec
     tokenizer: Any
     model: Any
@@ -78,6 +102,8 @@ class LoadedModels:
     load_seconds: float
     device: str = REFERENCE_DEVICE
     extra: dict[str, Any] = field(default_factory=dict)
+    checkpoint: str | None = None
+    data_end_ms: int | None = None
 
 
 def registry_path() -> Path:
@@ -108,8 +134,14 @@ def repo_dir(repo_id: str, base: Path | None = None) -> Path:
 
 def verify_repo(repo: WeightRepo, base: Path | None = None) -> VerifyReport:
     """Size and sha256 (or expected config content) of every registered file."""
+    return verify_directory(repo_dir(repo.repo_id, base), repo)
+
+
+def verify_directory(directory: Path, repo: WeightRepo) -> VerifyReport:
+    """:func:`verify_repo` on an explicit directory; problems are labelled
+    ``<repo_id>/<file>``, never with the directory's path."""
     report = VerifyReport()
-    directory = repo_dir(repo.repo_id, base)
+    directory = Path(directory)
     for item in repo.files:
         path = directory / item.name
         if not path.is_file():
@@ -307,14 +339,135 @@ def _check_config(directory: Path, repo: WeightRepo) -> None:
         raise WeightsError(f"{repo.repo_id}/config.json differs from the registered configuration")
 
 
+def checkpoint_repo(entry: RegistryEntry) -> WeightRepo:
+    """A registered fine-tuned checkpoint as a :class:`WeightRepo` (``finetuned/<id>``): its
+    files with their sizes and sha256, the element count and configuration it must have."""
+    return WeightRepo(
+        repo_id=f"{CHECKPOINT_REPO_PREFIX}/{entry.checkpoint_id}",
+        role="model",
+        revision=entry.checkpoint_id,
+        policy=POLICY_LOCAL_CHECKPOINT,
+        files=tuple(WeightFile(item.name, item.size, item.sha256) for item in entry.files),
+        state_dict_numel=entry.state_dict_numel,
+        expected_config=dict(entry.expected_config),
+    )
+
+
+def checkpoint_dir_problems(directory: Path, name: str = "small") -> list[str]:
+    """Why the Hugging Face-format ``directory`` is not a loadable ``name`` model (empty: it is).
+
+    ``config.json`` missing, unparseable or other than the registered ``expected_config`` of the
+    model's repository; ``model.safetensors`` missing; ``Kronos.from_pretrained(...,
+    strict=True)`` failing (its message, the home directory redacted); a ``state_dict`` element
+    count other than the model's. The model is loaded on the CPU and dropped. Raises only when
+    the runtime is not configured or the vendored tree does not verify. The fine-tune registry
+    runs it on a staged checkpoint before installing it.
+    """
+    require_configured()
+    assert_hf_offline()
+    spec = spec_for(name)
+    model_repo = load_registry()[spec.repo_id]
+    directory = Path(directory)
+    problems: list[str] = []
+    config_path = directory / "config.json"
+    if not config_path.is_file():
+        problems.append("config.json is missing")
+    else:
+        try:
+            content = json.loads(config_path.read_text(encoding="utf-8"))
+        except ValueError:
+            problems.append("config.json is not valid JSON")
+        else:
+            if content != model_repo.expected_config:
+                problems.append(
+                    f"config.json differs from the registered configuration of {spec.repo_id}"
+                )
+    if not (directory / "model.safetensors").is_file():
+        problems.append("model.safetensors is missing")
+    if problems:
+        return problems
+    api = import_kronos()
+    try:
+        with contextlib.redirect_stdout(io.StringIO()):  # the Hub mixin's "Loading weights" line
+            loaded = api.Kronos.from_pretrained(str(directory), strict=True)
+    except Exception as exc:  # noqa: BLE001 - any failure to load is the problem reported
+        return [f"Kronos.from_pretrained(strict=True) fails: {redact_home(str(exc))}"]
+    numel = _state_dict_numel(loaded)
+    if numel != spec.state_dict_numel:
+        problems.append(
+            f"the state_dict has {numel} elements, Kronos-{name} has {spec.state_dict_numel}"
+        )
+    return problems
+
+
+def _verified_checkpoint(
+    name: str,
+    ref: CheckpointRef,
+    model_repo: WeightRepo,
+    tokenizer_repo: WeightRepo,
+    base: Path | None,
+) -> tuple[RegistryEntry, WeightRepo, Path]:
+    """The registry entry, repository and directory of the checkpoint ``ref``.
+
+    Refused (:class:`WeightsError`): an entry that is not a ``name`` model with the registered
+    configuration and element count, or that was trained with another tokenizer than the
+    registered one; a tokenizer or checkpoint file whose size or sha256 does not verify. The
+    registry's own errors (a broken chain, an unknown id) propagate.
+    """
+    from ..finetune import registry
+
+    entry = registry.find_entry(ref)
+    spec = spec_for(name)
+    problems: list[str] = []
+    if entry.model != name:
+        problems.append(f"it is a {entry.model!r} model")
+    if dict(entry.expected_config) != model_repo.expected_config:
+        problems.append(f"its configuration is not the registered one of {model_repo.repo_id}")
+    if entry.state_dict_numel != spec.state_dict_numel:
+        problems.append(f"its state_dict has {entry.state_dict_numel} elements")
+    registered = {item.name: item.sha256 for item in tokenizer_repo.files}
+    if entry.tokenizer_repo_id != tokenizer_repo.repo_id or dict(entry.tokenizer_sha256) != (
+        registered
+    ):
+        problems.append(f"it was trained with another tokenizer than {tokenizer_repo.repo_id}")
+    if problems:
+        raise WeightsError(
+            f"checkpoint {entry.checkpoint_id} is not a Kronos-{name} checkpoint to load: "
+            + "; ".join(problems)
+        )
+    repo = checkpoint_repo(entry)
+    directory = registry.checkpoint_dir(ref)
+    report = verify_repo(tokenizer_repo, base)
+    report.problems.extend(verify_directory(directory, repo).problems)
+    if not report.ok:
+        raise WeightsError(
+            f"weights of checkpoint {entry.checkpoint_id} not verified: "
+            f"{ManifestMismatch(report.problems)}"
+        )
+    return entry, repo, directory
+
+
 def load_models(
     name: str = "small",
     *,
     base: Path | None = None,
     device: str = REFERENCE_DEVICE,
     allow_non_reference_device: bool = False,
+    checkpoint: CheckpointRef | None = None,
 ) -> LoadedModels:
-    """Verify, then load tokenizer + model from local directories, in eval mode, on CPU."""
+    """Verify, then load tokenizer + model from local directories, in eval mode without
+    gradients, on CPU, with a predictor clipping at :data:`PREDICTOR_CLIP`.
+
+    ``checkpoint`` loads a registered fine-tuned checkpoint of ``name`` instead of the shipped
+    model (``base`` still locates the shipped tokenizer; the checkpoint lives in its fine-tune
+    root): its registry entry must describe a ``name`` model trained with the registered
+    tokenizer, the tokenizer and checkpoint files must verify (size and sha256), and the model
+    is loaded with ``strict=True`` and the same checks as the shipped one. Its
+    ``weights_sha256`` are the entry's (:meth:`RegistryEntry.weights_sha256
+    <kronos_agent.finetune.registry.RegistryEntry.weights_sha256>`), ``checkpoint`` and
+    ``data_end_ms`` name it, and ``extra`` records the sha256 of its registry line; ``spec``
+    stays the ``name`` spec.
+    """
     require_configured()
     assert_hf_offline()
     if device != REFERENCE_DEVICE and not allow_non_reference_device:
@@ -323,17 +476,23 @@ def load_models(
         )
     spec = spec_for(name)
     model_repo, tokenizer_repo = repos_for_model(name)
-    report = verify_model(name, base)
-    if not report.ok:
-        raise WeightsError(
-            f"weights for {name!r} not verified: {ManifestMismatch(report.problems)}"
+    entry: RegistryEntry | None = None
+    if checkpoint is None:
+        report = verify_model(name, base)
+        if not report.ok:
+            raise WeightsError(
+                f"weights for {name!r} not verified: {ManifestMismatch(report.problems)}"
+            )
+        model_dir = repo_dir(model_repo.repo_id, base)
+    else:
+        entry, model_repo, model_dir = _verified_checkpoint(
+            name, checkpoint, model_repo, tokenizer_repo, base
         )
     api = import_kronos()
     import torch
 
     started = time.perf_counter()
     tokenizer_dir = repo_dir(tokenizer_repo.repo_id, base)
-    model_dir = repo_dir(model_repo.repo_id, base)
     _check_config(tokenizer_dir, tokenizer_repo)
     _check_config(model_dir, model_repo)
     tokenizer = api.KronosTokenizer.from_pretrained(str(tokenizer_dir), strict=True)
@@ -353,14 +512,19 @@ def load_models(
             f"model state_dict has {model_numel} elements, expected {spec.state_dict_numel}"
         )
     predictor = api.KronosPredictor(
-        model, tokenizer, device=device, max_context=spec.max_context, clip=5
+        model, tokenizer, device=device, max_context=spec.max_context, clip=PREDICTOR_CLIP
     )
-    weights_sha256 = {
-        f"{repo.repo_id}/{item.name}": item.sha256
-        for repo in (model_repo, tokenizer_repo)
-        for item in repo.files
-        if item.sha256 is not None
-    }
+    extra: dict[str, Any] = {"torch_version": torch.__version__}
+    if entry is None:
+        weights_sha256 = {
+            f"{repo.repo_id}/{item.name}": item.sha256
+            for repo in (model_repo, tokenizer_repo)
+            for item in repo.files
+            if item.sha256 is not None
+        }
+    else:
+        weights_sha256 = entry.weights_sha256()
+        extra["registry_line_sha256"] = entry.line_sha256
     return LoadedModels(
         spec=spec,
         tokenizer=tokenizer,
@@ -369,8 +533,72 @@ def load_models(
         weights_sha256=weights_sha256,
         load_seconds=time.perf_counter() - started,
         device=device,
-        extra={"torch_version": torch.__version__},
+        extra=extra,
+        checkpoint=None if entry is None else entry.checkpoint_id,
+        data_end_ms=None if entry is None else entry.data_end_ms,
     )
+
+
+def _modules_of(models: LoadedModels) -> list[tuple[str, Any]]:
+    """The tokenizer and model a fan runs, as ``models`` and its predictor hold them: each object
+    once, absent and ``None`` ones skipped."""
+    predictor = getattr(models, "predictor", None)
+    found: list[tuple[str, Any]] = []
+    for owner, name, label in (
+        (models, "tokenizer", "the tokenizer"),
+        (models, "model", "the model"),
+        (predictor, "tokenizer", "the predictor's tokenizer"),
+        (predictor, "model", "the predictor's model"),
+    ):
+        module = getattr(owner, name, None)
+        if module is not None and all(module is not seen for _, seen in found):
+            found.append((label, module))
+    return found
+
+
+def inference_problems(models: LoadedModels) -> list[str]:
+    """Why a fan of ``models`` would differ from one of the models :func:`load_models` returns.
+
+    The predictor must clip at :data:`PREDICTOR_CLIP`, read ``models.spec.max_context`` candles
+    and run on ``models.device``; every torch module a fan runs (the tokenizer and the model, as
+    ``models`` and as its predictor hold them) must be in eval mode, every submodule included
+    (training mode turns dropout on and changes the cross-attention mask), with no parameter
+    requiring gradients. Models without any module run no Kronos code (the registry description
+    of :mod:`kronos_agent.kronos.batch`, the stand-in predictors of the tests): a clip, context
+    length or device their predictor does not have is not asked for. An empty list: nothing to
+    refuse.
+    """
+    problems: list[str] = []
+    predictor = getattr(models, "predictor", None)
+    modules = _modules_of(models)
+    built: dict[str, Any] = {
+        "clip": PREDICTOR_CLIP,
+        "max_context": models.spec.max_context,
+        "device": str(models.device),
+    }
+    for name, expected in built.items():
+        actual = getattr(predictor, name, None)
+        if actual is None and not modules:
+            continue
+        if name == "device" and actual is not None:
+            actual = str(actual)  # a torch.device names the same device as its string
+        if actual != expected:
+            problems.append(
+                f"the predictor's {name} is {actual!r}, load_models builds it with {expected!r}"
+            )
+    if modules:
+        require_configured()
+        import torch
+
+        for label, module in modules:
+            if not isinstance(module, torch.nn.Module):
+                problems.append(f"{label} is not a torch module ({type(module).__name__})")
+                continue
+            if any(submodule.training for submodule in module.modules()):
+                problems.append(f"{label} is in training mode")
+            if any(parameter.requires_grad for parameter in module.parameters()):
+                problems.append(f"{label} has parameters with gradients enabled")
+    return problems
 
 
 def registry_lines(registry: dict[str, WeightRepo] | None = None) -> Iterable[str]:
@@ -383,18 +611,25 @@ def registry_lines(registry: dict[str, WeightRepo] | None = None) -> Iterable[st
 
 
 __all__ = [
+    "CHECKPOINT_REPO_PREFIX",
     "MODEL_SPECS",
+    "POLICY_LOCAL_CHECKPOINT",
+    "PREDICTOR_CLIP",
     "Gate4Error",
     "LoadedModels",
     "WeightFile",
     "WeightRepo",
     "WeightsError",
+    "checkpoint_dir_problems",
+    "checkpoint_repo",
     "download_model",
     "download_repo",
+    "inference_problems",
     "load_models",
     "load_registry",
     "registry_lines",
     "repo_dir",
+    "verify_directory",
     "verify_model",
     "verify_repo",
     "weights_available",

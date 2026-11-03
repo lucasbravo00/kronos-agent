@@ -1,0 +1,994 @@
+{
+ "code": {
+  "commit": "3cda6c6b125e573dd764f1dc1bd1510602da7711",
+  "dirty": true,
+  "source_tree_sha256": "c594c87c0868879e75b6add6a5b542e94f0de16f68ddc813140c483fe1604439"
+ },
+ "comparators": {
+  "binance_official_1h": "Binance's own 1h archives: each resampled hour is compared with the exchange's aggregate of the same trades",
+  "quote_volume_tolerance": "sum over the 60 minute values of 0.5 * 10^-d_i plus 0.5 * 10^-d_official, d = digits after the decimal point of each string"
+ },
+ "comparison": {
+  "columns": {
+   "close": {
+    "compared": 59928,
+    "max_abs_difference": "25.80",
+    "max_abs_difference_open_ms": 1699628400000,
+    "mismatches": 1,
+    "mismatches_before_sealed": 1,
+    "mismatches_sealed": 0,
+    "rule": "equal"
+   },
+   "count": {
+    "compared": 59928,
+    "max_abs_difference": "235717",
+    "max_abs_difference_open_ms": 1699632000000,
+    "mismatches": 16,
+    "mismatches_before_sealed": 16,
+    "mismatches_sealed": 0,
+    "rule": "equal"
+   },
+   "high": {
+    "compared": 59928,
+    "max_abs_difference": "69.80",
+    "max_abs_difference_open_ms": 1699628400000,
+    "mismatches": 3,
+    "mismatches_before_sealed": 3,
+    "mismatches_sealed": 0,
+    "rule": "equal"
+   },
+   "low": {
+    "compared": 59928,
+    "max_abs_difference": "109.80",
+    "max_abs_difference_open_ms": 1736866800000,
+    "mismatches": 3,
+    "mismatches_before_sealed": 3,
+    "mismatches_sealed": 0,
+    "rule": "equal"
+   },
+   "open": {
+    "compared": 59928,
+    "max_abs_difference": "83.90",
+    "max_abs_difference_open_ms": 1730149200000,
+    "mismatches": 2,
+    "mismatches_before_sealed": 2,
+    "mismatches_sealed": 0,
+    "rule": "equal"
+   },
+   "quote_volume": {
+    "compared": 59928,
+    "max_abs_difference": "892150829.47330",
+    "max_abs_difference_open_ms": 1699632000000,
+    "max_ratio_open_ms": 1736866800000,
+    "max_ratio_to_tolerance": 196740523207.541,
+    "mismatches": 16,
+    "mismatches_before_sealed": 16,
+    "mismatches_sealed": 0,
+    "rule": "tolerance"
+   },
+   "taker_buy_quote_volume": {
+    "compared": 59928,
+    "max_abs_difference": "461091707.49991",
+    "max_abs_difference_open_ms": 1699632000000,
+    "max_ratio_open_ms": 1736866800000,
+    "max_ratio_to_tolerance": 116859018730.16394,
+    "mismatches": 16,
+    "mismatches_before_sealed": 16,
+    "mismatches_sealed": 0,
+    "rule": "tolerance"
+   },
+   "taker_buy_volume": {
+    "compared": 59928,
+    "max_abs_difference": "12348.480",
+    "max_abs_difference_open_ms": 1699632000000,
+    "mismatches": 16,
+    "mismatches_before_sealed": 16,
+    "mismatches_sealed": 0,
+    "rule": "equal"
+   },
+   "volume": {
+    "compared": 59928,
+    "max_abs_difference": "23890.642",
+    "max_abs_difference_open_ms": 1699632000000,
+    "mismatches": 16,
+    "mismatches_before_sealed": 16,
+    "mismatches_sealed": 0,
+    "rule": "equal"
+   }
+  },
+  "exact_mismatches": 57,
+  "hours_compared": 59928,
+  "hours_compared_before_sealed": 57720,
+  "hours_compared_sealed": 2208,
+  "hours_official": 59928,
+  "hours_resampled": 59928,
+  "max_mismatch_samples_per_column": 20,
+  "mismatch_samples": [
+   {
+    "column": "open",
+    "difference": "25.80",
+    "hour": "2023-11-10T16:00Z",
+    "official": "37092.60",
+    "open_ms": 1699632000000,
+    "resampled": "37118.40",
+    "tolerance": null
+   },
+   {
+    "column": "open",
+    "difference": "-83.90",
+    "hour": "2024-10-28T21:00Z",
+    "official": "69650.00",
+    "open_ms": 1730149200000,
+    "resampled": "69566.10",
+    "tolerance": null
+   },
+   {
+    "column": "high",
+    "difference": "-69.80",
+    "hour": "2023-11-10T15:00Z",
+    "official": "37189.80",
+    "open_ms": 1699628400000,
+    "resampled": "37120",
+    "tolerance": null
+   },
+   {
+    "column": "high",
+    "difference": "-61.60",
+    "hour": "2023-11-10T16:00Z",
+    "official": "37474",
+    "open_ms": 1699632000000,
+    "resampled": "37412.40",
+    "tolerance": null
+   },
+   {
+    "column": "high",
+    "difference": "-30.20",
+    "hour": "2025-01-14T13:00Z",
+    "official": "97250.00",
+    "open_ms": 1736859600000,
+    "resampled": "97219.80",
+    "tolerance": null
+   },
+   {
+    "column": "low",
+    "difference": "85.30",
+    "hour": "2023-11-10T15:00Z",
+    "official": "36945.00",
+    "open_ms": 1699628400000,
+    "resampled": "37030.30",
+    "tolerance": null
+   },
+   {
+    "column": "low",
+    "difference": "25.90",
+    "hour": "2023-11-10T16:00Z",
+    "official": "37092.50",
+    "open_ms": 1699632000000,
+    "resampled": "37118.40",
+    "tolerance": null
+   },
+   {
+    "column": "low",
+    "difference": "-109.80",
+    "hour": "2025-01-14T15:00Z",
+    "official": "96249.00",
+    "open_ms": 1736866800000,
+    "resampled": "96139.20",
+    "tolerance": null
+   },
+   {
+    "column": "close",
+    "difference": "25.80",
+    "hour": "2023-11-10T15:00Z",
+    "official": "37092.60",
+    "open_ms": 1699628400000,
+    "resampled": "37118.40",
+    "tolerance": null
+   },
+   {
+    "column": "volume",
+    "difference": "-37.709",
+    "hour": "2021-01-12T06:00Z",
+    "official": "17895.842",
+    "open_ms": 1610431200000,
+    "resampled": "17858.133",
+    "tolerance": null
+   },
+   {
+    "column": "volume",
+    "difference": "-317.982",
+    "hour": "2021-05-15T00:00Z",
+    "official": "18319.620",
+    "open_ms": 1621036800000,
+    "resampled": "18001.638",
+    "tolerance": null
+   },
+   {
+    "column": "volume",
+    "difference": "-167.123",
+    "hour": "2022-06-18T20:00Z",
+    "official": "135125.221",
+    "open_ms": 1655582400000,
+    "resampled": "134958.098",
+    "tolerance": null
+   },
+   {
+    "column": "volume",
+    "difference": "-0.929",
+    "hour": "2022-06-22T11:00Z",
+    "official": "26444.685",
+    "open_ms": 1655895600000,
+    "resampled": "26443.756",
+    "tolerance": null
+   },
+   {
+    "column": "volume",
+    "difference": "-79.003",
+    "hour": "2022-06-23T19:00Z",
+    "official": "51615.158",
+    "open_ms": 1656010800000,
+    "resampled": "51536.155",
+    "tolerance": null
+   },
+   {
+    "column": "volume",
+    "difference": "-1.660",
+    "hour": "2022-06-24T11:00Z",
+    "official": "46709.535",
+    "open_ms": 1656068400000,
+    "resampled": "46707.875",
+    "tolerance": null
+   },
+   {
+    "column": "volume",
+    "difference": "-114.447",
+    "hour": "2022-07-04T11:00Z",
+    "official": "60081.989",
+    "open_ms": 1656932400000,
+    "resampled": "59967.542",
+    "tolerance": null
+   },
+   {
+    "column": "volume",
+    "difference": "-67.133",
+    "hour": "2022-08-19T00:00Z",
+    "official": "48010.212",
+    "open_ms": 1660867200000,
+    "resampled": "47943.079",
+    "tolerance": null
+   },
+   {
+    "column": "volume",
+    "difference": "-496.208",
+    "hour": "2022-08-21T08:00Z",
+    "official": "43070.680",
+    "open_ms": 1661068800000,
+    "resampled": "42574.472",
+    "tolerance": null
+   },
+   {
+    "column": "volume",
+    "difference": "0.137",
+    "hour": "2023-08-16T15:00Z",
+    "official": "8853.323",
+    "open_ms": 1692198000000,
+    "resampled": "8853.460",
+    "tolerance": null
+   },
+   {
+    "column": "volume",
+    "difference": "-12053.295",
+    "hour": "2023-11-10T15:00Z",
+    "official": "13404.865",
+    "open_ms": 1699628400000,
+    "resampled": "1351.570",
+    "tolerance": null
+   },
+   {
+    "column": "volume",
+    "difference": "-23890.642",
+    "hour": "2023-11-10T16:00Z",
+    "official": "25855.773",
+    "open_ms": 1699632000000,
+    "resampled": "1965.131",
+    "tolerance": null
+   },
+   {
+    "column": "volume",
+    "difference": "-1503.176",
+    "hour": "2025-01-14T13:00Z",
+    "official": "19827.845",
+    "open_ms": 1736859600000,
+    "resampled": "18324.669",
+    "tolerance": null
+   },
+   {
+    "column": "volume",
+    "difference": "623.365",
+    "hour": "2025-01-14T15:00Z",
+    "official": "11293.454",
+    "open_ms": 1736866800000,
+    "resampled": "11916.819",
+    "tolerance": null
+   },
+   {
+    "column": "volume",
+    "difference": "-973.952",
+    "hour": "2025-01-29T01:00Z",
+    "official": "3718.573",
+    "open_ms": 1738112400000,
+    "resampled": "2744.621",
+    "tolerance": null
+   },
+   {
+    "column": "volume",
+    "difference": "-145.365",
+    "hour": "2025-01-29T02:00Z",
+    "official": "3752.320",
+    "open_ms": 1738116000000,
+    "resampled": "3606.955",
+    "tolerance": null
+   },
+   {
+    "column": "count",
+    "difference": "-533",
+    "hour": "2021-01-12T06:00Z",
+    "official": "179140",
+    "open_ms": 1610431200000,
+    "resampled": "178607",
+    "tolerance": null
+   },
+   {
+    "column": "count",
+    "difference": "-2709",
+    "hour": "2021-05-15T00:00Z",
+    "official": "174893",
+    "open_ms": 1621036800000,
+    "resampled": "172184",
+    "tolerance": null
+   },
+   {
+    "column": "count",
+    "difference": "-1140",
+    "hour": "2022-06-18T20:00Z",
+    "official": "906840",
+    "open_ms": 1655582400000,
+    "resampled": "905700",
+    "tolerance": null
+   },
+   {
+    "column": "count",
+    "difference": "-9",
+    "hour": "2022-06-22T11:00Z",
+    "official": "230695",
+    "open_ms": 1655895600000,
+    "resampled": "230686",
+    "tolerance": null
+   },
+   {
+    "column": "count",
+    "difference": "-423",
+    "hour": "2022-06-23T19:00Z",
+    "official": "381008",
+    "open_ms": 1656010800000,
+    "resampled": "380585",
+    "tolerance": null
+   },
+   {
+    "column": "count",
+    "difference": "-20",
+    "hour": "2022-06-24T11:00Z",
+    "official": "370553",
+    "open_ms": 1656068400000,
+    "resampled": "370533",
+    "tolerance": null
+   },
+   {
+    "column": "count",
+    "difference": "-717",
+    "hour": "2022-07-04T11:00Z",
+    "official": "380905",
+    "open_ms": 1656932400000,
+    "resampled": "380188",
+    "tolerance": null
+   },
+   {
+    "column": "count",
+    "difference": "-331",
+    "hour": "2022-08-19T00:00Z",
+    "official": "353163",
+    "open_ms": 1660867200000,
+    "resampled": "352832",
+    "tolerance": null
+   },
+   {
+    "column": "count",
+    "difference": "-2577",
+    "hour": "2022-08-21T08:00Z",
+    "official": "280805",
+    "open_ms": 1661068800000,
+    "resampled": "278228",
+    "tolerance": null
+   },
+   {
+    "column": "count",
+    "difference": "11",
+    "hour": "2023-08-16T15:00Z",
+    "official": "75972",
+    "open_ms": 1692198000000,
+    "resampled": "75983",
+    "tolerance": null
+   },
+   {
+    "column": "count",
+    "difference": "-136190",
+    "hour": "2023-11-10T15:00Z",
+    "official": "153509",
+    "open_ms": 1699628400000,
+    "resampled": "17319",
+    "tolerance": null
+   },
+   {
+    "column": "count",
+    "difference": "-235717",
+    "hour": "2023-11-10T16:00Z",
+    "official": "263031",
+    "open_ms": 1699632000000,
+    "resampled": "27314",
+    "tolerance": null
+   },
+   {
+    "column": "count",
+    "difference": "-22766",
+    "hour": "2025-01-14T13:00Z",
+    "official": "325608",
+    "open_ms": 1736859600000,
+    "resampled": "302842",
+    "tolerance": null
+   },
+   {
+    "column": "count",
+    "difference": "17418",
+    "hour": "2025-01-14T15:00Z",
+    "official": "243884",
+    "open_ms": 1736866800000,
+    "resampled": "261302",
+    "tolerance": null
+   },
+   {
+    "column": "count",
+    "difference": "-19475",
+    "hour": "2025-01-29T01:00Z",
+    "official": "94041",
+    "open_ms": 1738112400000,
+    "resampled": "74566",
+    "tolerance": null
+   },
+   {
+    "column": "count",
+    "difference": "-3312",
+    "hour": "2025-01-29T02:00Z",
+    "official": "90435",
+    "open_ms": 1738116000000,
+    "resampled": "87123",
+    "tolerance": null
+   },
+   {
+    "column": "taker_buy_volume",
+    "difference": "-21.507",
+    "hour": "2021-01-12T06:00Z",
+    "official": "9233.739",
+    "open_ms": 1610431200000,
+    "resampled": "9212.232",
+    "tolerance": null
+   },
+   {
+    "column": "taker_buy_volume",
+    "difference": "-49.421",
+    "hour": "2021-05-15T00:00Z",
+    "official": "8737.141",
+    "open_ms": 1621036800000,
+    "resampled": "8687.720",
+    "tolerance": null
+   },
+   {
+    "column": "taker_buy_volume",
+    "difference": "-66.422",
+    "hour": "2022-06-18T20:00Z",
+    "official": "66466.617",
+    "open_ms": 1655582400000,
+    "resampled": "66400.195",
+    "tolerance": null
+   },
+   {
+    "column": "taker_buy_volume",
+    "difference": "-0.849",
+    "hour": "2022-06-22T11:00Z",
+    "official": "13894.996",
+    "open_ms": 1655895600000,
+    "resampled": "13894.147",
+    "tolerance": null
+   },
+   {
+    "column": "taker_buy_volume",
+    "difference": "-77.347",
+    "hour": "2022-06-23T19:00Z",
+    "official": "28533.120",
+    "open_ms": 1656010800000,
+    "resampled": "28455.773",
+    "tolerance": null
+   },
+   {
+    "column": "taker_buy_volume",
+    "difference": "-0.446",
+    "hour": "2022-06-24T11:00Z",
+    "official": "24599.303",
+    "open_ms": 1656068400000,
+    "resampled": "24598.857",
+    "tolerance": null
+   },
+   {
+    "column": "taker_buy_volume",
+    "difference": "-77.717",
+    "hour": "2022-07-04T11:00Z",
+    "official": "34581.276",
+    "open_ms": 1656932400000,
+    "resampled": "34503.559",
+    "tolerance": null
+   },
+   {
+    "column": "taker_buy_volume",
+    "difference": "-33.987",
+    "hour": "2022-08-19T00:00Z",
+    "official": "21349.695",
+    "open_ms": 1660867200000,
+    "resampled": "21315.708",
+    "tolerance": null
+   },
+   {
+    "column": "taker_buy_volume",
+    "difference": "-289.253",
+    "hour": "2022-08-21T08:00Z",
+    "official": "22719.895",
+    "open_ms": 1661068800000,
+    "resampled": "22430.642",
+    "tolerance": null
+   },
+   {
+    "column": "taker_buy_volume",
+    "difference": "0.033",
+    "hour": "2023-08-16T15:00Z",
+    "official": "4233.196",
+    "open_ms": 1692198000000,
+    "resampled": "4233.229",
+    "tolerance": null
+   },
+   {
+    "column": "taker_buy_volume",
+    "difference": "-6007.891",
+    "hour": "2023-11-10T15:00Z",
+    "official": "6727.262",
+    "open_ms": 1699628400000,
+    "resampled": "719.371",
+    "tolerance": null
+   },
+   {
+    "column": "taker_buy_volume",
+    "difference": "-12348.480",
+    "hour": "2023-11-10T16:00Z",
+    "official": "13327.235",
+    "open_ms": 1699632000000,
+    "resampled": "978.755",
+    "tolerance": null
+   },
+   {
+    "column": "taker_buy_volume",
+    "difference": "-768.358",
+    "hour": "2025-01-14T13:00Z",
+    "official": "10579.056",
+    "open_ms": 1736859600000,
+    "resampled": "9810.698",
+    "tolerance": null
+   },
+   {
+    "column": "taker_buy_volume",
+    "difference": "370.260",
+    "hour": "2025-01-14T15:00Z",
+    "official": "5583.341",
+    "open_ms": 1736866800000,
+    "resampled": "5953.601",
+    "tolerance": null
+   },
+   {
+    "column": "taker_buy_volume",
+    "difference": "-294.483",
+    "hour": "2025-01-29T01:00Z",
+    "official": "1957.401",
+    "open_ms": 1738112400000,
+    "resampled": "1662.918",
+    "tolerance": null
+   },
+   {
+    "column": "taker_buy_volume",
+    "difference": "-27.599",
+    "hour": "2025-01-29T02:00Z",
+    "official": "1820.057",
+    "open_ms": 1738116000000,
+    "resampled": "1792.458",
+    "tolerance": null
+   },
+   {
+    "column": "quote_volume",
+    "difference": "-1355260.86869",
+    "hour": "2021-01-12T06:00Z",
+    "official": "645703479.26016",
+    "open_ms": 1610431200000,
+    "resampled": "644348218.39147",
+    "tolerance": "0.000305"
+   },
+   {
+    "column": "quote_volume",
+    "difference": "-15748016.85846",
+    "hour": "2021-05-15T00:00Z",
+    "official": "910498813.96466",
+    "open_ms": 1621036800000,
+    "resampled": "894750797.10620",
+    "tolerance": "0.000305"
+   },
+   {
+    "column": "quote_volume",
+    "difference": "-3000296.46720",
+    "hour": "2022-06-18T20:00Z",
+    "official": "2409841528.06227",
+    "open_ms": 1655582400000,
+    "resampled": "2406841231.59507",
+    "tolerance": "0.000305"
+   },
+   {
+    "column": "quote_volume",
+    "difference": "-19175.33700",
+    "hour": "2022-06-22T11:00Z",
+    "official": "543006658.76981",
+    "open_ms": 1655895600000,
+    "resampled": "542987483.43281",
+    "tolerance": "0.000305"
+   },
+   {
+    "column": "quote_volume",
+    "difference": "-1624995.60600",
+    "hour": "2022-06-23T19:00Z",
+    "official": "1069184029.91653",
+    "open_ms": 1656010800000,
+    "resampled": "1067559034.31053",
+    "tolerance": "0.000305"
+   },
+   {
+    "column": "quote_volume",
+    "difference": "-35179.11690",
+    "hour": "2022-06-24T11:00Z",
+    "official": "988548385.90839",
+    "open_ms": 1656068400000,
+    "resampled": "988513206.79149",
+    "tolerance": "0.000305"
+   },
+   {
+    "column": "quote_volume",
+    "difference": "-2259502.16010",
+    "hour": "2022-07-04T11:00Z",
+    "official": "1178601833.68677",
+    "open_ms": 1656932400000,
+    "resampled": "1176342331.52667",
+    "tolerance": "0.000305"
+   },
+   {
+    "column": "quote_volume",
+    "difference": "-1536258.46450",
+    "hour": "2022-08-19T00:00Z",
+    "official": "1103710568.53961",
+    "open_ms": 1660867200000,
+    "resampled": "1102174310.07511",
+    "tolerance": "0.000305"
+   },
+   {
+    "column": "quote_volume",
+    "difference": "-10648219.64340",
+    "hour": "2022-08-21T08:00Z",
+    "official": "919806477.14584",
+    "open_ms": 1661068800000,
+    "resampled": "909158257.50244",
+    "tolerance": "0.000305"
+   },
+   {
+    "column": "quote_volume",
+    "difference": "3993.11490",
+    "hour": "2023-08-16T15:00Z",
+    "official": "258007140.36640",
+    "open_ms": 1692198000000,
+    "resampled": "258011133.48130",
+    "tolerance": "0.000305"
+   },
+   {
+    "column": "quote_volume",
+    "difference": "-446833733.10283",
+    "hour": "2023-11-10T15:00Z",
+    "official": "496949148.21873",
+    "open_ms": 1699628400000,
+    "resampled": "50115415.11590",
+    "tolerance": "26.500040"
+   },
+   {
+    "column": "quote_volume",
+    "difference": "-892150829.47330",
+    "hour": "2023-11-10T16:00Z",
+    "official": "965563239.66510",
+    "open_ms": 1699632000000,
+    "resampled": "73412410.19180",
+    "tolerance": "23.000075"
+   },
+   {
+    "column": "quote_volume",
+    "difference": "-145879892.42400",
+    "hour": "2025-01-14T13:00Z",
+    "official": "1913159306.48340",
+    "open_ms": 1736859600000,
+    "resampled": "1767279414.05940",
+    "tolerance": "1.000295"
+   },
+   {
+    "column": "quote_volume",
+    "difference": "60005859.57830",
+    "hour": "2025-01-14T15:00Z",
+    "official": "1090879404.32910",
+    "open_ms": 1736866800000,
+    "resampled": "1150885263.90740",
+    "tolerance": "0.000305"
+   },
+   {
+    "column": "quote_volume",
+    "difference": "-98935302.16850",
+    "hour": "2025-01-29T01:00Z",
+    "official": "378272412.27550",
+    "open_ms": 1738112400000,
+    "resampled": "279337110.10700",
+    "tolerance": "6.500240"
+   },
+   {
+    "column": "quote_volume",
+    "difference": "-14794783.09100",
+    "hour": "2025-01-29T02:00Z",
+    "official": "382495362.71230",
+    "open_ms": 1738116000000,
+    "resampled": "367700579.62130",
+    "tolerance": "2.000285"
+   },
+   {
+    "column": "taker_buy_quote_volume",
+    "difference": "-773038.75536",
+    "hour": "2021-01-12T06:00Z",
+    "official": "333276411.77928",
+    "open_ms": 1610431200000,
+    "resampled": "332503373.02392",
+    "tolerance": "0.000305"
+   },
+   {
+    "column": "taker_buy_quote_volume",
+    "difference": "-2448062.03699",
+    "hour": "2021-05-15T00:00Z",
+    "official": "434401609.13262",
+    "open_ms": 1621036800000,
+    "resampled": "431953547.09563",
+    "tolerance": "0.000305"
+   },
+   {
+    "column": "taker_buy_quote_volume",
+    "difference": "-1192921.50960",
+    "hour": "2022-06-18T20:00Z",
+    "official": "1185780041.05903",
+    "open_ms": 1655582400000,
+    "resampled": "1184587119.54943",
+    "tolerance": "0.000305"
+   },
+   {
+    "column": "taker_buy_quote_volume",
+    "difference": "-17524.20900",
+    "hour": "2022-06-22T11:00Z",
+    "official": "285393721.51351",
+    "open_ms": 1655895600000,
+    "resampled": "285376197.30451",
+    "tolerance": "0.000305"
+   },
+   {
+    "column": "taker_buy_quote_volume",
+    "difference": "-1590980.78560",
+    "hour": "2022-06-23T19:00Z",
+    "official": "591021869.03173",
+    "open_ms": 1656010800000,
+    "resampled": "589430888.24613",
+    "tolerance": "0.000305"
+   },
+   {
+    "column": "taker_buy_quote_volume",
+    "difference": "-9452.24850",
+    "hour": "2022-06-24T11:00Z",
+    "official": "520606897.75529",
+    "open_ms": 1656068400000,
+    "resampled": "520597445.50679",
+    "tolerance": "0.000305"
+   },
+   {
+    "column": "taker_buy_quote_volume",
+    "difference": "-1534542.28130",
+    "hour": "2022-07-04T11:00Z",
+    "official": "678503892.33707",
+    "open_ms": 1656932400000,
+    "resampled": "676969350.05577",
+    "tolerance": "0.000305"
+   },
+   {
+    "column": "taker_buy_quote_volume",
+    "difference": "-777850.68500",
+    "hour": "2022-08-19T00:00Z",
+    "official": "490779153.17620",
+    "open_ms": 1660867200000,
+    "resampled": "490001302.49120",
+    "tolerance": "0.000305"
+   },
+   {
+    "column": "taker_buy_quote_volume",
+    "difference": "-6212475.51170",
+    "hour": "2022-08-21T08:00Z",
+    "official": "485261036.44824",
+    "open_ms": 1661068800000,
+    "resampled": "479048560.93654",
+    "tolerance": "0.000305"
+   },
+   {
+    "column": "taker_buy_quote_volume",
+    "difference": "961.84770",
+    "hour": "2023-08-16T15:00Z",
+    "official": "123371824.14980",
+    "open_ms": 1692198000000,
+    "resampled": "123372785.99750",
+    "tolerance": "0.000305"
+   },
+   {
+    "column": "taker_buy_quote_volume",
+    "difference": "-222734809.38614",
+    "hour": "2023-11-10T15:00Z",
+    "official": "249408368.51034",
+    "open_ms": 1699628400000,
+    "resampled": "26673559.12420",
+    "tolerance": "26.500040"
+   },
+   {
+    "column": "taker_buy_quote_volume",
+    "difference": "-461091707.49991",
+    "hour": "2023-11-10T16:00Z",
+    "official": "497656455.71081",
+    "open_ms": 1699632000000,
+    "resampled": "36564748.21090",
+    "tolerance": "23.000075"
+   },
+   {
+    "column": "taker_buy_quote_volume",
+    "difference": "-74589986.84010",
+    "hour": "2025-01-14T13:00Z",
+    "official": "1021053299.19650",
+    "open_ms": 1736859600000,
+    "resampled": "946463312.35640",
+    "tolerance": "1.000295"
+   },
+   {
+    "column": "taker_buy_quote_volume",
+    "difference": "35642000.71270",
+    "hour": "2025-01-14T15:00Z",
+    "official": "539335396.38540",
+    "open_ms": 1736866800000,
+    "resampled": "574977397.09810",
+    "tolerance": "0.000305"
+   },
+   {
+    "column": "taker_buy_quote_volume",
+    "difference": "-29918501.69370",
+    "hour": "2025-01-29T01:00Z",
+    "official": "199172874.51050",
+    "open_ms": 1738112400000,
+    "resampled": "169254372.81680",
+    "tolerance": "6.500240"
+   },
+   {
+    "column": "taker_buy_quote_volume",
+    "difference": "-2808377.36330",
+    "hour": "2025-01-29T02:00Z",
+    "official": "185613971.40080",
+    "open_ms": 1738116000000,
+    "resampled": "182805594.03750",
+    "tolerance": "2.000285"
+   }
+  ],
+  "sealed_mismatches": [],
+  "sealed_start_ms": 1785542400000,
+  "tolerance_mismatches": 32
+ },
+ "config_sha256": "bb0a8883d0a1cfc7f92b01b61eef1806943423ffa454825f269429706efc6dd8",
+ "data_md_sha256": "883f012f1876f5864092ddfc79cebb71d5463405709d372f1d10952949d5e544",
+ "expected_chance_misses": 0.0,
+ "generated_at": "2026-11-02T14:09:15Z",
+ "incomplete_hours": {
+  "by_segment": {
+   "before_training": 0,
+   "embargo_1": 0,
+   "embargo_2": 0,
+   "sealed": 0,
+   "training": 0,
+   "validation": 0
+  },
+  "count": 0,
+  "hours": []
+ },
+ "inputs": {
+  "candles/binance/1h.csv": {
+   "csv_sha256": "9a04ce60f1f5ddf6c3e93cc4cc1064b2203d37f2858c30a755c71c049bb05f14",
+   "first_open": "2019-12-31T00:00Z",
+   "last_open": "2026-11-01T23:00Z",
+   "rows": 59928
+  },
+  "candles/binance/1m.csv": {
+   "csv_sha256": "25343cdae9cf6451500902d33810326c40fe909b18486bd0411cbf2ede172f91",
+   "first_open": "2019-12-31T00:00Z",
+   "last_open": "2026-11-01T23:59Z",
+   "rows": 3595680
+  },
+  "candles/binance_official/1h.csv": {
+   "csv_sha256": "3002022704301b85c8359c87173edfbfbc0136938af85519c438922e59e75121",
+   "first_open": "2019-12-31T00:00Z",
+   "last_open": "2026-11-01T23:00Z",
+   "rows": 59928
+  }
+ },
+ "lost_decision_hours": {
+  "512h": {
+   "before_training": {
+    "eligible": 0,
+    "lost": 0
+   },
+   "embargo_1": {
+    "eligible": 520,
+    "lost": 0
+   },
+   "embargo_2": {
+    "eligible": 520,
+    "lost": 0
+   },
+   "sealed": {
+    "eligible": 2233,
+    "lost": 0
+   },
+   "training": {
+    "eligible": 38424,
+    "lost": 0
+   },
+   "validation": {
+    "eligible": 17744,
+    "lost": 0
+   }
+  }
+ },
+ "only_official": [],
+ "only_resampled": [],
+ "owner_attention": true,
+ "samples": {
+  "hours_compared": 59928,
+  "hours_compared_before_sealed": 57720,
+  "hours_compared_sealed": 2208,
+  "hours_only_official": 0,
+  "hours_only_resampled": 0,
+  "incomplete_hours": 0
+ },
+ "seeds": {
+  "bootstrap": "none: a deterministic comparison of every hour, no random draws"
+ },
+ "statistics_with_intervals": 0,
+ "study": "binance_resample_check",
+ "tests_consumed": 0
+}

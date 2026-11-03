@@ -1,0 +1,1159 @@
+{
+ "approval": {
+  "above_gate3": true,
+  "approved_cpu_hours": 1.5,
+  "estimate_cpu_seconds": 3577.52,
+  "estimate_gpu_minutes": 33.22933333333333,
+  "gate3_cpu_seconds": 3600,
+  "given_at": "2026-11-03T01:00:47Z",
+  "limit_cpu_seconds": 5400.0,
+  "own_limit_cpu_seconds": 3000,
+  "reserve_cpu_seconds": 600.0,
+  "stop_cpu_seconds": 4800.0
+ },
+ "choice": {
+  "activation_checkpointing": true,
+  "batch_32_fits": false,
+  "batch_size": 32,
+  "best_cpu": {
+   "configuration": "CPU x2 with activation checkpointing, 8.790 s per step",
+   "seconds_per_step": 8.789903374999994
+  },
+  "deterministic": true,
+  "device": "mps",
+  "mps_sustained_seconds_per_step": 5.444885458011413,
+  "mps_watermark_ratio": 1.0,
+  "reasons": [
+   "CPU threads 2: 8 threads only 1.02 times faster at batch 32 (at least 1.3 needed)",
+   "device MPS: its sustained step time (with activation checkpointing) is 1.61 times faster than the best CPU configuration's (CPU x2 with activation checkpointing, 8.790 s per step; at least 1.5 needed)",
+   "batch 32 runs with activation checkpointing on MPS: the batch 32 of CPU x2 does not fit as is (M1) and activation checkpointing passed there (M2)",
+   "theta 1.004 from M4 (at least 1)"
+  ],
+  "seconds_per_step": 5.448582562501542,
+  "speedups": {
+   "eight_vs_two_threads": 1.0211077501750043,
+   "mps_vs_best_cpu": 1.6143412828027153
+  },
+  "theta": 1.004073166669094,
+  "threads": 2
+ },
+ "code": {
+  "commit": "3cda6c6b125e573dd764f1dc1bd1510602da7711",
+  "dirty": true,
+  "forecasting_code_sha256": "37c3bf99e48a6aee17a804432e4ae40726310e9d82aef40adbdc4f8d66e593a1",
+  "source_tree_sha256": "50cf9115aab6b973e89e7cb8429b53c3d0ee995c0324155140a8f8f1400514bc",
+  "training_code_sha256": "f28c0f30d217c24c914fe6b8f8c75aed27aa44115198b4a1821122706a5216d8",
+  "vendored_manifest_sha256": "4a3214ae510ccf6cc0fd7836d4e48e54851bf71b579fd852faf7f9089a081f92"
+ },
+ "comparators": {
+  "device_rule": "MPS if its preflight passed and its sustained step time (with activation checkpointing when it ran with it) is at least 1.5 times faster than that of the fastest CPU configuration that runs batch 32 (as is where it fits, with activation checkpointing where M2 passed)",
+  "memory_rule": "batch 32 fits at a peak of at most 9 GiB with no swap growth; otherwise activation checkpointing (M2), on MPS also after a memory abort (one retry)",
+  "prior_fan_seconds": "t(L) = 0.44 + 0.678 L s at 2 threads (design 5.2)",
+  "prior_nll4_tf": "about 50 s per 336 decisions at 2 threads (design 3.3)",
+  "prior_seconds_per_step_b32": {
+   "cpu-2": 6.1,
+   "cpu-8": 5.0,
+   "mps-2": 3.2
+  },
+  "priors": "the per-measurement priors of docs/RETRAINING.md section (a)",
+  "threads_rule": "8 CPU threads only if at least 1.3 times faster than 2 at batch 32"
+ },
+ "config_sha256": "2128b4bb2eb0e2ed947024ea95cffe5cf327657ad6b5f9a2eea5c267e7a17d53",
+ "data_md_sha256": "ddfca5a24e0c43bda78ea9bdc60331ebc2e65a40aabec187552956ee8d55a306",
+ "environment": {
+  "cpu_count": 10,
+  "mps_available": true,
+  "numpy_version": "2.2.6",
+  "pandas_version": "2.2.2",
+  "platform": "darwin-arm64",
+  "ram_bytes": 17179869184,
+  "threads": 2,
+  "torch_version": "2.14.1"
+ },
+ "estimate": {
+  "cpu_seconds": 3577.52,
+  "gpu_minutes": 33.22933333333333,
+  "mps_available": true,
+  "per_measurement": {
+   "M1": {
+    "cpu_seconds": 1350.0,
+    "gpu_minutes": 2.0
+   },
+   "M2": {
+    "cpu_seconds": 200.0,
+    "gpu_minutes": 1.0
+   },
+   "M3": {
+    "cpu_seconds": 553.76,
+    "gpu_minutes": 4.6146666666666665
+   },
+   "M4": {
+    "cpu_seconds": 120.0,
+    "gpu_minutes": 21.0
+   },
+   "M5": {
+    "cpu_seconds": 210.0,
+    "gpu_minutes": 0.0
+   },
+   "M6": {
+    "cpu_seconds": 300.0,
+    "gpu_minutes": 0.0
+   },
+   "M7": {
+    "cpu_seconds": 150.0,
+    "gpu_minutes": 0.0
+   },
+   "M8": {
+    "cpu_seconds": 20.0,
+    "gpu_minutes": 0.0
+   },
+   "M9": {
+    "cpu_seconds": 20.0,
+    "gpu_minutes": 0.0
+   },
+   "loads": {
+    "cpu_seconds": 100.0,
+    "gpu_minutes": 0.0
+   },
+   "retries": {
+    "cpu_seconds": 553.76,
+    "gpu_minutes": 4.6146666666666665
+   }
+  }
+ },
+ "expected_chance_misses": 0.0,
+ "failures": [],
+ "finished_at": "2026-11-03T01:42:36Z",
+ "generated_at": "2026-11-03T01:42:36Z",
+ "measurements": {
+  "M1": [
+   {
+    "activation_checkpointing": false,
+    "batch_size": 8,
+    "child_status": "completed",
+    "cpu_seconds": 29.342453,
+    "deadline_seconds": 2273.8802125009624,
+    "deterministic": true,
+    "device": "cpu",
+    "error": null,
+    "max_pressure_level": 1,
+    "peak_bytes": 3847520256,
+    "peak_mps_driver_bytes": null,
+    "peak_rss_bytes": 3847520256,
+    "run_id": "synthetic-timing-20261103T010255Z",
+    "seconds_per_step": {
+     "max": 1.6881871669902466,
+     "median": 1.5547879790101433,
+     "min": 1.5193333749775775,
+     "values": [
+      1.5492222500033677,
+      1.6881871669902466,
+      1.662237415992422,
+      1.5489277919987217,
+      1.5319336670218036,
+      1.5193333749775775,
+      1.5591203750227578,
+      1.6708159580011852,
+      1.5856529169832356,
+      1.5504555829975288
+     ]
+    },
+    "status": "completed",
+    "stop_reason": "timing_done",
+    "swap_growth_bytes": 0,
+    "threads": 2,
+    "timed_steps": 10,
+    "wall_seconds": 22.70632545798435,
+    "warmup_steps": 3,
+    "windows_per_second": 5.145396097732377
+   },
+   {
+    "activation_checkpointing": false,
+    "batch_size": 16,
+    "child_status": "completed",
+    "cpu_seconds": 73.513606,
+    "deadline_seconds": 2259.0093020009626,
+    "deterministic": true,
+    "device": "cpu",
+    "error": null,
+    "max_pressure_level": 1,
+    "peak_bytes": 6180274176,
+    "peak_mps_driver_bytes": null,
+    "peak_rss_bytes": 6180274176,
+    "run_id": "synthetic-timing-20261103T010318Z",
+    "seconds_per_step": {
+     "max": 4.626603999990039,
+     "median": 4.164020312498906,
+     "min": 3.9823422089975793,
+     "values": [
+      4.0145693750237115,
+      4.626603999990039,
+      4.2059962910134345,
+      3.9823422089975793,
+      4.568121207994409,
+      4.146235874999547,
+      4.310687999997754,
+      4.055670041998383,
+      4.104218874999788,
+      4.181804749998264
+     ]
+    },
+    "status": "completed",
+    "stop_reason": "timing_done",
+    "swap_growth_bytes": 0,
+    "threads": 2,
+    "timed_steps": 10,
+    "wall_seconds": 56.322856874990975,
+    "warmup_steps": 3,
+    "windows_per_second": 3.8424404299790997
+   },
+   {
+    "activation_checkpointing": false,
+    "batch_size": 32,
+    "child_status": "completed",
+    "cpu_seconds": 167.793629,
+    "deadline_seconds": 2222.050714000962,
+    "deterministic": true,
+    "device": "cpu",
+    "error": null,
+    "max_pressure_level": 1,
+    "peak_bytes": 9932521472,
+    "peak_mps_driver_bytes": null,
+    "peak_rss_bytes": 9932521472,
+    "run_id": "synthetic-timing-20261103T010414Z",
+    "seconds_per_step": {
+     "max": 12.21865337502095,
+     "median": 9.664964166513528,
+     "min": 9.338664584007347,
+     "values": [
+      12.21865337502095,
+      9.919278582994593,
+      9.875443750002887,
+      9.584765374980634,
+      9.675520542019513,
+      10.040073374984786,
+      9.635108707996551,
+      9.472774082998512,
+      9.338664584007347,
+      9.654407791007543
+     ]
+    },
+    "status": "completed",
+    "stop_reason": "timing_done",
+    "swap_growth_bytes": 3425834107,
+    "threads": 2,
+    "timed_steps": 10,
+    "wall_seconds": 136.9429869170126,
+    "warmup_steps": 3,
+    "windows_per_second": 3.3109279505527085
+   },
+   {
+    "activation_checkpointing": false,
+    "batch_size": 8,
+    "child_status": "completed",
+    "cpu_seconds": 54.154283,
+    "deadline_seconds": 534.4753576252406,
+    "deterministic": true,
+    "device": "cpu",
+    "error": null,
+    "max_pressure_level": 1,
+    "peak_bytes": 4037492736,
+    "peak_mps_driver_bytes": null,
+    "peak_rss_bytes": 4037492736,
+    "run_id": "synthetic-timing-20261103T010631Z",
+    "seconds_per_step": {
+     "max": 1.7683024590078276,
+     "median": 1.6900399375153938,
+     "min": 1.6730559159768745,
+     "values": [
+      1.7577189579897095,
+      1.6874283340002876,
+      1.6919230000057723,
+      1.6963444580032956,
+      1.6815891669830307,
+      1.6881568750250153,
+      1.6730559159768745,
+      1.7683024590078276,
+      1.6865883330174256,
+      1.7170730419747997
+     ]
+    },
+    "status": "completed",
+    "stop_reason": "timing_done",
+    "swap_growth_bytes": 0,
+    "threads": 8,
+    "timed_steps": 10,
+    "wall_seconds": 23.815578000008827,
+    "warmup_steps": 3,
+    "windows_per_second": 4.7336159474202555
+   },
+   {
+    "activation_checkpointing": false,
+    "batch_size": 16,
+    "child_status": "completed",
+    "cpu_seconds": 113.959028,
+    "deadline_seconds": 527.6541010002406,
+    "deterministic": true,
+    "device": "cpu",
+    "error": null,
+    "max_pressure_level": 1,
+    "peak_bytes": 7301857280,
+    "peak_mps_driver_bytes": null,
+    "peak_rss_bytes": 7301857280,
+    "run_id": "synthetic-timing-20261103T010655Z",
+    "seconds_per_step": {
+     "max": 3.57394375000149,
+     "median": 3.2978217709896853,
+     "min": 3.279202040983364,
+     "values": [
+      3.3145978749962524,
+      3.3058933330175932,
+      3.297377124981722,
+      3.295599000004586,
+      3.5068664170103148,
+      3.2982664169976488,
+      3.2875698329880834,
+      3.282051042013336,
+      3.279202040983364,
+      3.57394375000149
+     ]
+    },
+    "status": "completed",
+    "stop_reason": "timing_done",
+    "swap_growth_bytes": 0,
+    "threads": 8,
+    "timed_steps": 10,
+    "wall_seconds": 45.201578708016314,
+    "warmup_steps": 3,
+    "windows_per_second": 4.8516872987949125
+   },
+   {
+    "activation_checkpointing": false,
+    "batch_size": 32,
+    "child_status": "completed",
+    "cpu_seconds": 325.406239,
+    "deadline_seconds": 513.3539912502406,
+    "deterministic": true,
+    "device": "cpu",
+    "error": null,
+    "max_pressure_level": 1,
+    "peak_bytes": 10108043264,
+    "peak_mps_driver_bytes": null,
+    "peak_rss_bytes": 10108043264,
+    "run_id": "synthetic-timing-20261103T010740Z",
+    "seconds_per_step": {
+     "max": 11.957208167004865,
+     "median": 9.465175604491378,
+     "min": 8.980789082997944,
+     "values": [
+      11.957208167004865,
+      9.991634583013365,
+      9.898096207994968,
+      10.10743645898765,
+      9.306118958018487,
+      9.418135499989148,
+      8.980789082997944,
+      9.152015750005376,
+      9.512215708993608,
+      9.214266166003654
+     ]
+    },
+    "status": "completed",
+    "stop_reason": "timing_done",
+    "swap_growth_bytes": 1018230211,
+    "threads": 8,
+    "timed_steps": 10,
+    "wall_seconds": 134.62324629200157,
+    "warmup_steps": 3,
+    "windows_per_second": 3.380814190580414
+   },
+   {
+    "activation_checkpointing": false,
+    "batch_size": 8,
+    "child_status": "completed",
+    "cpu_seconds": 2.838344,
+    "deadline_seconds": 1669.5295690009625,
+    "deterministic": true,
+    "device": "mps",
+    "error": null,
+    "max_pressure_level": 1,
+    "peak_bytes": 5481611264,
+    "peak_mps_driver_bytes": 4809523200,
+    "peak_rss_bytes": 672088064,
+    "run_id": "synthetic-timing-20261103T011713Z",
+    "seconds_per_step": {
+     "max": 1.1622772080008872,
+     "median": 1.09020612500899,
+     "min": 1.0645959159883205,
+     "values": [
+      1.136531666998053,
+      1.1622772080008872,
+      1.106870792020345,
+      1.1195837919949554,
+      1.0855932910053525,
+      1.0859560839890037,
+      1.0645959159883205,
+      1.0903461250127293,
+      1.0900661250052508,
+      1.0856868749833666
+     ]
+    },
+    "status": "completed",
+    "stop_reason": "timing_done",
+    "swap_growth_bytes": 0,
+    "threads": 2,
+    "timed_steps": 10,
+    "wall_seconds": 16.209637790976558,
+    "warmup_steps": 3,
+    "windows_per_second": 7.338061873330633
+   },
+   {
+    "activation_checkpointing": false,
+    "batch_size": 16,
+    "child_status": "completed",
+    "cpu_seconds": 3.418062,
+    "deadline_seconds": 1667.9590550009625,
+    "deterministic": true,
+    "device": "mps",
+    "error": null,
+    "max_pressure_level": 1,
+    "peak_bytes": 8608628736,
+    "peak_mps_driver_bytes": 7913308160,
+    "peak_rss_bytes": 695320576,
+    "run_id": "synthetic-timing-20261103T011729Z",
+    "seconds_per_step": {
+     "max": 2.149356167006772,
+     "median": 2.096196354003041,
+     "min": 2.0777777500043157,
+     "values": [
+      2.0777777500043157,
+      2.1109996250015683,
+      2.115457709005568,
+      2.101699708000524,
+      2.1302396249957383,
+      2.0812589999986812,
+      2.149356167006772,
+      2.0861193329910748,
+      2.081523542001378,
+      2.090693000005558
+     ]
+    },
+    "status": "completed",
+    "stop_reason": "timing_done",
+    "swap_growth_bytes": 0,
+    "threads": 2,
+    "timed_steps": 10,
+    "wall_seconds": 29.38160466699628,
+    "warmup_steps": 3,
+    "windows_per_second": 7.6328727361085695
+   },
+   {
+    "activation_checkpointing": true,
+    "batch_size": 32,
+    "checkpointing_reason": "the batch 32 of CPU x2 does not fit as is (M1) and activation checkpointing passed there (M2)",
+    "child_status": "completed",
+    "cpu_seconds": 4.64102,
+    "deadline_seconds": 1666.0618440009625,
+    "deterministic": true,
+    "device": "mps",
+    "error": null,
+    "max_pressure_level": 1,
+    "peak_bytes": 5398872064,
+    "peak_mps_driver_bytes": 4624973824,
+    "peak_rss_bytes": 773898240,
+    "run_id": "synthetic-timing-20261103T011759Z",
+    "seconds_per_step": {
+     "max": 5.486384125018958,
+     "median": 5.448582562501542,
+     "min": 5.396840707981028,
+     "values": [
+      5.463480374979554,
+      5.448162417014828,
+      5.449002707988257,
+      5.44066591700539,
+      5.4463969159987755,
+      5.4559052500117105,
+      5.465643833973445,
+      5.486384125018958,
+      5.396840707981028,
+      5.415532542014262
+     ]
+    },
+    "status": "completed",
+    "stop_reason": "timing_done",
+    "swap_growth_bytes": 0,
+    "threads": 2,
+    "timed_steps": 10,
+    "wall_seconds": 73.30307937500766,
+    "warmup_steps": 3,
+    "windows_per_second": 5.873087107137131
+   }
+  ],
+  "M2": {
+   "gradient_check": {
+    "activation_checkpointing": false,
+    "checks": {
+     "checkpoint_gradients": {
+      "mismatches": [],
+      "passed": true,
+      "tensors": 127
+     }
+    },
+    "child_status": "completed",
+    "cpu_seconds": 24.706083,
+    "deadline_seconds": 1811.6659525009622,
+    "deterministic": true,
+    "device": "cpu",
+    "error": null,
+    "max_pressure_level": 1,
+    "passed": true,
+    "peak_bytes": 7844265984,
+    "peak_mps_driver_bytes": null,
+    "peak_rss_bytes": 7844265984,
+    "run_id": "synthetic-timing-20261103T011152Z",
+    "status": "completed",
+    "stop_reason": "preflight_done",
+    "swap_growth_bytes": 645073469,
+    "threads": 2,
+    "wall_seconds": 19.928965207975125
+   },
+   "runs": [
+    {
+     "batch_size": 32,
+     "device": "cpu",
+     "passed": true,
+     "status": "completed",
+     "threads": 2,
+     "timing": {
+      "activation_checkpointing": true,
+      "batch_size": 32,
+      "child_status": "completed",
+      "cpu_seconds": 157.216788,
+      "deadline_seconds": 1890.4644905009623,
+      "deterministic": true,
+      "device": "cpu",
+      "error": null,
+      "max_pressure_level": 1,
+      "peak_bytes": 3389571072,
+      "peak_mps_driver_bytes": null,
+      "peak_rss_bytes": 3389571072,
+      "run_id": "synthetic-timing-20261103T010955Z",
+      "seconds_per_step": {
+       "max": 9.130842667014804,
+       "median": 8.789903374999994,
+       "min": 8.710787249990972,
+       "values": [
+        8.999139291991014,
+        8.900402250001207,
+        9.130842667014804,
+        8.842822040984174,
+        8.784336167009315,
+        8.795470582990674,
+        8.737723625003127,
+        8.775192875007633,
+        8.710787249990972,
+        8.731042458995944
+       ]
+      },
+      "status": "completed",
+      "stop_reason": "timing_done",
+      "swap_growth_bytes": 0,
+      "threads": 2,
+      "timed_steps": 10,
+      "wall_seconds": 117.2923445419874,
+      "warmup_steps": 3,
+      "windows_per_second": 3.640540587853734
+     },
+     "why": "batch 32 peak 9.25 GiB, swap growth 3.19 GiB"
+    }
+   ]
+  },
+  "M3": {
+   "activation_checkpointing": true,
+   "batch_size": 32,
+   "checkpointing_reason": "the batch 32 of CPU x2 does not fit as is (M1) and activation checkpointing passed there (M2)",
+   "checks": {
+    "deterministic": {
+     "op": null,
+     "passed": true,
+     "refused": false
+    },
+    "multinomial": {
+     "categories": 1024,
+     "cpu": {
+      "dof": 454,
+      "p_value": 0.9276020705484763,
+      "statistic": 410.8380351315091,
+      "zero_probability_draws": 0
+     },
+     "device": {
+      "dof": 454,
+      "p_value": 0.12010746058973586,
+      "statistic": 489.61829292752975,
+      "zero_probability_draws": 0
+     },
+     "passed": true,
+     "repetitions": 64,
+     "rows": 16384
+    },
+    "parity": {
+     "gradient_cosine": 0.9999999999987944,
+     "max_relative_logit_difference": 2.720720153848315e-06,
+     "passed": true
+    },
+    "steps": {
+     "finite": true,
+     "mean_loss_cpu": 3.0493219971656798,
+     "mean_loss_device": 3.0474183201789855,
+     "passed": true,
+     "relative_difference": 0.0006242951674056396,
+     "steps": 20
+    }
+   },
+   "child_status": "completed",
+   "cpu_seconds": 258.616076,
+   "deadline_seconds": 1799.1143185009623,
+   "deterministic": false,
+   "deterministic_op": null,
+   "deterministic_passed": true,
+   "deterministic_refused": false,
+   "device": "mps",
+   "error": null,
+   "max_pressure_level": 1,
+   "passed": true,
+   "peak_bytes": 8771420160,
+   "peak_mps_driver_bytes": 4802183168,
+   "peak_rss_bytes": 3969236992,
+   "requested": [
+    "multinomial",
+    "parity",
+    "steps",
+    "deterministic"
+   ],
+   "run_id": "synthetic-timing-20261103T011212Z",
+   "status": "completed",
+   "stop_reason": "preflight_done",
+   "swap_growth_bytes": 0,
+   "threads": 2,
+   "wall_seconds": 301.2524302499951
+  },
+  "M4": {
+   "activation_checkpointing": true,
+   "batch_size": 32,
+   "checkpointing_reason": "the batch 32 of CPU x2 does not fit as is (M1) and activation checkpointing passed there (M2)",
+   "child_status": "completed",
+   "cpu_seconds": 73.749217,
+   "deadline_seconds": 2279.8532479170244,
+   "deterministic": true,
+   "device": "mps",
+   "error": null,
+   "first_window_steps": 23,
+   "last_window_steps": 109,
+   "max_pressure_level": 1,
+   "median_first_seconds": 5.422797499981243,
+   "median_last_seconds": 5.444885458011413,
+   "median_seconds": 5.450888646009844,
+   "peak_bytes": 5400805376,
+   "peak_mps_driver_bytes": 4624973824,
+   "peak_rss_bytes": 775831552,
+   "run_id": "synthetic-timing-20261103T011912Z",
+   "seconds": 1200.765995499998,
+   "seconds_per_step": {
+    "max": 6.776749749988085,
+    "median": 5.450888646009844,
+    "min": 5.39249737499631,
+    "values": [
+     5.436032040975988,
+     5.422679667011835,
+     5.438864083000226,
+     5.419658792001428,
+     5.418944875011221,
+     5.46816749998834,
+     5.39249737499631,
+     5.420681124989642,
+     5.411835917009739,
+     5.422504916001344,
+     5.416899917006958,
+     5.418407707998995,
+     5.412437374994624,
+     5.414863709011115,
+     5.951069250004366,
+     5.423003582982346,
+     5.4546838749956805,
+     5.4228224999969825,
+     5.426726458012126,
+     5.4280311669863295,
+     5.449891292024404,
+     5.422797499981243,
+     5.438850333011942,
+     5.436238374997629,
+     5.435162500012666,
+     5.736652457999298,
+     5.465798208984779,
+     5.4311790830106474,
+     5.432934957992984,
+     5.468909999995958,
+     6.776749749988085,
+     6.251003834011499,
+     6.2290958749945275,
+     6.238761750020785,
+     6.235187207988929,
+     6.2976207500032615,
+     6.235719291988062,
+     6.372436250007013,
+     6.258894541009795,
+     6.560680333990604,
+     6.251263999991352,
+     6.215462874999503,
+     6.305597583006602,
+     6.224843917007092,
+     6.236758374987403,
+     6.233067291002953,
+     6.266904749994865,
+     6.309782584023196,
+     6.241013874998316,
+     6.2441345829865895,
+     6.484709042008035,
+     6.147962540999288,
+     6.409444124990841,
+     6.409066374995746,
+     6.404403000022285,
+     6.396139124990441,
+     6.487095166987274,
+     6.3456655830086675,
+     6.326357459009159,
+     6.331364915997256,
+     6.3209288340003695,
+     6.330120957980398,
+     6.386229125026148,
+     6.347121207974851,
+     6.438653917022748,
+     6.48499837500276,
+     6.345584832975874,
+     6.366074749996187,
+     6.355353917024331,
+     6.364791542000603,
+     6.356213249993743,
+     6.354532375000417,
+     6.351602749986341,
+     6.409857541002566,
+     6.374153459008085,
+     6.497141833009664,
+     6.390477999986615,
+     5.512450167007046,
+     5.482981582987122,
+     5.426486167008989,
+     5.433174083009362,
+     5.445836250000866,
+     5.430707833002089,
+     5.503146499977447,
+     5.676208624994615,
+     5.512563125026645,
+     5.406933916994603,
+     5.449788208003156,
+     5.596794708981179,
+     5.52837387501495,
+     5.43656612499035,
+     5.462433208012953,
+     5.452791832998628,
+     5.444441667001229,
+     5.447356624994427,
+     5.434988708002493,
+     5.496376083989162,
+     5.437480624997988,
+     5.460267290996853,
+     5.463403208996169,
+     5.442796083021676,
+     5.433648541977163,
+     5.442093083023792,
+     5.4422687079932075,
+     5.648476834001485,
+     5.472658874990884,
+     5.446842875011498,
+     5.537640750000719,
+     5.404063458001474,
+     5.447599541977979,
+     5.452873875008663,
+     5.449769291008124,
+     5.442731499992078,
+     5.438761083991267,
+     5.445575041027041,
+     5.442690874973778,
+     5.712436542002251,
+     5.468417791998945,
+     5.498830916010775,
+     5.4272139169916045,
+     5.443168375000823,
+     5.443312582996441,
+     5.450732334022177,
+     5.4359620829927735,
+     5.438033832993824,
+     5.443392624991247,
+     5.442663417023141,
+     5.4342778329737484,
+     5.436994292016607,
+     5.502498082991224,
+     5.690922084002523,
+     5.4345238750102,
+     5.45104495799751,
+     5.424901082995348,
+     5.431542959006038,
+     5.4396589579992,
+     5.444688916992163,
+     5.439233165991027,
+     5.745413417025702,
+     5.4398077499936335,
+     5.495571582985576,
+     5.441390334017342,
+     5.456618124997476,
+     5.575747750001028,
+     5.457606665993808,
+     5.425272916996619,
+     5.449213417014107,
+     5.449952457973268,
+     5.428130583022721,
+     5.453684541978873,
+     5.441442500014091,
+     5.482688957999926,
+     5.448008167004446,
+     5.458695457986323,
+     5.451445625018096,
+     5.441484416980529,
+     5.437039417010965,
+     5.434168625011807,
+     5.437019832985243,
+     5.663030625000829,
+     5.489912041986827,
+     5.429629582999041,
+     5.4612243750016205,
+     5.440858500020113,
+     5.459174291987438,
+     5.484077375003835,
+     5.474748582986649,
+     5.435511042014696,
+     5.447680749988649,
+     5.44967870801338,
+     5.440300832997309,
+     5.749489625013666,
+     5.427434291981626,
+     5.46320833300706,
+     5.430603791988688,
+     5.443732542014914,
+     5.427428208000492,
+     5.552126374997897,
+     5.420367999991868,
+     5.445696708018659,
+     5.425622583978111,
+     5.486250999994809,
+     5.4277759160031565,
+     5.451263834023848,
+     5.469726332987193,
+     5.436628416995518,
+     5.437479707994498,
+     5.426409417006653,
+     5.432572624995373,
+     5.440043915994465,
+     5.431436417013174,
+     5.437558125006035,
+     5.432114374998491,
+     5.727276666992111,
+     5.423507791012526,
+     5.448454291996313,
+     5.436693208001088,
+     5.443707708996953,
+     5.581956957990769,
+     5.425675542006502,
+     5.49066045798827,
+     5.444885458011413,
+     5.457857667002827,
+     5.438633582991315,
+     6.027919584012125,
+     5.4263677499839105,
+     5.470906708011171,
+     5.453504832985345,
+     5.453280750021804,
+     5.448445374990115,
+     5.466744375007693,
+     5.471575584000675
+    ]
+   },
+   "status": "completed",
+   "steps": 212,
+   "stop_reason": "timing_done",
+   "swap_growth_bytes": 0,
+   "theta": 1.004073166669094,
+   "theta_reason": null,
+   "threads": 2,
+   "timed_seconds": 1200.0,
+   "timed_steps": 212,
+   "wall_seconds": 1221.6122517499898,
+   "warmup_steps": 3,
+   "windows_per_second": 5.870602405981018
+  },
+  "M5": {
+   "fit": {
+    "intercept": -0.04528808304929122,
+    "slope": 0.7664938228928284
+   },
+   "per_length": [
+    {
+     "length": 4,
+     "prior_seconds_per_fan": 3.152,
+     "seconds_per_fan": 3.0623048749985173,
+     "status": "completed"
+    },
+    {
+     "length": 8,
+     "prior_seconds_per_fan": 5.864000000000001,
+     "seconds_per_fan": 6.034640416997718,
+     "status": "completed"
+    },
+    {
+     "length": 24,
+     "prior_seconds_per_fan": 16.712000000000003,
+     "seconds_per_fan": 18.360968082997715,
+     "status": "completed"
+    }
+   ],
+   "repeats": 3,
+   "status": "completed",
+   "t24": 18.360968082997715,
+   "t4": 3.0623048749985173,
+   "t8": 6.034640416997718
+  },
+  "M6": [
+   {
+    "cpu_seconds": 81.53180416597752,
+    "evaluation_length": 4,
+    "fans": 12,
+    "fans_per_second": 0.29436365655716695,
+    "requested_workers": 1,
+    "seconds_per_fan": 3.39715850691573,
+    "startup_seconds": 4.85939908400178,
+    "status": "completed",
+    "wall_seconds": 40.76590208298876,
+    "workers": 1
+   },
+   {
+    "cpu_seconds": 149.9704173320206,
+    "evaluation_length": 4,
+    "fans": 12,
+    "fans_per_second": 0.32006312214049826,
+    "requested_workers": 2,
+    "seconds_per_fan": 6.2487673888341915,
+    "startup_seconds": 7.37089758401271,
+    "status": "completed",
+    "wall_seconds": 37.49260433300515,
+    "workers": 2
+   },
+   {
+    "cpu_seconds": 205.78257199795917,
+    "evaluation_length": 4,
+    "fans": 12,
+    "fans_per_second": 0.3498838570290299,
+    "requested_workers": 3,
+    "seconds_per_fan": 8.574273833248299,
+    "startup_seconds": 10.31656820801436,
+    "status": "completed",
+    "wall_seconds": 34.297095332993194,
+    "workers": 3
+   },
+   {
+    "cpu_seconds": 260.7385639999993,
+    "evaluation_length": 4,
+    "fans": 12,
+    "fans_per_second": 0.3681848918980786,
+    "requested_workers": 4,
+    "seconds_per_fan": 10.864106833333304,
+    "startup_seconds": 12.805414875008864,
+    "status": "completed",
+    "wall_seconds": 32.592320499999914,
+    "workers": 4
+   }
+  ],
+  "M7": [
+   {
+    "cpu_seconds": 245.45142350002425,
+    "evaluation_length": 4,
+    "fans": 12,
+    "fans_per_second": 0.09777902143638466,
+    "m4_elapsed_end_seconds": 315.04397708398756,
+    "m4_elapsed_start_seconds": 180.57886170898564,
+    "requested_workers": 1,
+    "seconds_per_fan": 10.227142645834343,
+    "slowdown_vs_m6": 3.0104991053595365,
+    "startup_seconds": 10.95292383301421,
+    "status": "completed",
+    "wall_seconds": 122.72571175001212,
+    "workers": 1
+   },
+   {
+    "cpu_seconds": 546.1125128320418,
+    "evaluation_length": 4,
+    "fans": 12,
+    "fans_per_second": 0.08789397582392057,
+    "m4_elapsed_end_seconds": 479.56613312498666,
+    "m4_elapsed_start_seconds": 315.05345516698435,
+    "requested_workers": 2,
+    "seconds_per_fan": 22.75468803466841,
+    "slowdown_vs_m6": 3.641468247854504,
+    "startup_seconds": 27.105611834005686,
+    "status": "completed",
+    "wall_seconds": 136.52812820801046,
+    "workers": 2
+   }
+  ],
+  "M8": {
+   "batch_size": 16,
+   "decisions": 48,
+   "planned_decisions": 336,
+   "seconds": 7.450583750003716,
+   "seconds_per_decision": 0.15522049479174407,
+   "seconds_per_evaluation": 52.15408625002601,
+   "status": "completed",
+   "threads": 2
+  },
+  "M9": {
+   "checkpoint_config_id": "d49ec38a515fe546",
+   "checkpoint_id": "ks-identity-shipped",
+   "files": [
+    {
+     "name": "config.json",
+     "sha256": "5e0f6a605d5f81b5c9b559fe5cf716a1acb041c744e6f41bd05b097b7a685396",
+     "size": 228
+    },
+    {
+     "name": "model.safetensors",
+     "sha256": "b082dfcbd8e8c142a725c8bbb99781802f38fec81210e13479effb32b3c3e020",
+     "size": 98980656
+    }
+   ],
+   "identical": true,
+   "paths_sha256": {
+    "checkpoint": "e12aae8b3b305a7170e14dd20c114693f54539dd873b65dae468784fae08ce73",
+    "shipped": "e12aae8b3b305a7170e14dd20c114693f54539dd873b65dae468784fae08ce73"
+   },
+   "seconds": 8.507148000004236,
+   "shipped_config_id": "62906d91f853a8e5",
+   "status": "completed"
+  }
+ },
+ "memory_slopes": [
+  {
+   "batches": [
+    8,
+    16,
+    32
+   ],
+   "bytes_per_window": 250823680.0,
+   "device": "cpu",
+   "gib_per_window": 0.2335977554321289,
+   "threads": 2
+  },
+  {
+   "batches": [
+    8,
+    16,
+    32
+   ],
+   "bytes_per_window": 241860607.99999997,
+   "device": "cpu",
+   "gib_per_window": 0.22525024414062497,
+   "threads": 8
+  },
+  {
+   "batches": [
+    8,
+    16
+   ],
+   "bytes_per_window": 390877184.0,
+   "device": "mps",
+   "gib_per_window": 0.3640327453613281,
+   "threads": 2
+  }
+ ],
+ "mps_checkpointing": {
+  "from_batch": 32,
+  "reason": "the batch 32 of CPU x2 does not fit as is (M1) and activation checkpointing passed there (M2)"
+ },
+ "retraining_md_sha256": "7d8b6504b5ec9ff459ccc531205c31546684a4d5b71375b1cb5d12e2a9b9135f",
+ "samples": {
+  "csv_end": "2020-06-19T16:00Z",
+  "csv_start": "2020-01-01T00:00Z",
+  "export_content_sha256": "fa0ef873407744e0e5e5a2bf8e82e00e04ddd07422604661d41f10a4b607526a",
+  "fit_windows": 2240,
+  "market_data": "none: synthetic candles only",
+  "nll_decisions_exported": 336,
+  "nll_decisions_timed": 48,
+  "synthetic_rows": 4096,
+  "val_windows": 832
+ },
+ "schema_version": 2,
+ "scratch": "timing-20261103T010048Z",
+ "seeds": {
+  "fans": "kronos_agent.seeds of the timing window's decision hour for the streams timing-warmup, timing and timing-w<i>",
+  "synthetic_candles": 0,
+  "training": "finetune.recipe.training_seeds of each timing recipe for fold synthetic-timing, replicate 0"
+ },
+ "spend": {
+  "cpu_seconds": 3037.542953826098,
+  "gate3_cpu_seconds": 3600,
+  "gate3_gpu_minutes": 60.0,
+  "gpu_minutes": 27.362650063882754,
+  "limit_cpu_seconds": 5400.0,
+  "limit_gpu_minutes": 45.0,
+  "per_measurement": {
+   "M1": {
+    "cpu_seconds": 778.7225999999999,
+    "gpu_minutes": 1.981572030549675
+   },
+   "M2": {
+    "cpu_seconds": 182.70034399999986,
+    "gpu_minutes": 0.0
+   },
+   "M3": {
+    "cpu_seconds": 259.1694990000001,
+    "gpu_minutes": 5.020873837499918
+   },
+   "M4": {
+    "cpu_seconds": 75.12364199999979,
+    "gpu_minutes": 20.360204195833163
+   },
+   "M5": {
+    "cpu_seconds": 219.7076134160161,
+    "gpu_minutes": 0.0
+   },
+   "M6": {
+    "cpu_seconds": 698.0233574959566,
+    "gpu_minutes": 0.0
+   },
+   "M7": {
+    "cpu_seconds": 791.5639363320661,
+    "gpu_minutes": 0.0
+   },
+   "M8": {
+    "cpu_seconds": 14.916005916020367,
+    "gpu_minutes": 0.0
+   },
+   "M9": {
+    "cpu_seconds": 17.015231666038744,
+    "gpu_minutes": 0.0
+   },
+   "loads": {
+    "cpu_seconds": 0.6007239999999998,
+    "gpu_minutes": 0.0
+   },
+   "retries": {
+    "cpu_seconds": 0.0,
+    "gpu_minutes": 0.0
+   }
+  },
+  "stop_reason": null,
+  "stopped": false
+ },
+ "started_at": "2026-11-03T01:00:48Z",
+ "statistics_with_intervals": 0,
+ "status": "completed",
+ "study": "timing-2",
+ "tests_consumed": 0
+}

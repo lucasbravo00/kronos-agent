@@ -315,6 +315,7 @@ def test_coreutils_verify_the_vendored_manifest(tool, options):
 # --- weights manifest and registry -------------------------------------------------------------
 
 
+@pytest.mark.real_roots("weights")  # the files present in the real weights root, read only
 def test_weights_manifest_parses_and_present_files_match():
     entries = read_manifest(manifests_dir() / "weights.sha256")
     assert len(entries) == 7
