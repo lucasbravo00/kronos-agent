@@ -10,8 +10,8 @@ checkpoint and the shipped weights on stream ``forecast`` (common random numbers
 shipped weights on ``forecast-aa`` (the two-seed floor). Decisions any batch drops are dropped
 from every statistic and listed.
 
-Statistics, point estimates only (168 decisions touch 2 four-week blocks, fewer than the 20 an
-interval needs, D-035):
+Statistics, point estimates only (the 168 decisions touch 3 four-week blocks, fewer than the 20
+an interval needs, D-035; :func:`intervals_reason` counts them):
 
 - ``a_same``: the share of decisions where the pilot and the shipped model give the same signal
   under common seeds; ``a_floor`` the same for the two shipped streams; the mean ``|delta
@@ -45,7 +45,11 @@ the CPU time of this process and its children and the wall time times the govern
 its start, and stops once they pass its limit (:func:`spend_limit`: 1.25 times the CPU-hours the
 owner approved, or gate 3's 3,600 CPU-seconds without a figure), checked after every fan, before
 each batch and before each teacher-forced pass: :class:`PilotCheckStopped` (a refusal, exit 2);
-the fans stored so far are kept, and a rerun reuses them.
+the fans stored so far are kept, and a rerun reuses them. A lost run's compute counts against
+the approval: the command records a stopped run in the ledger (stage ``stopped``, its spend),
+and the next run of the same check starts from what the stopped runs spent since its last
+``done`` entry (:func:`prior_spend`), for the gate-3 check of its estimate, its limit and its
+recorded spend alike.
 """
 
 from __future__ import annotations
@@ -119,10 +123,9 @@ CLOSE_INDEX = FEATURE_COLUMNS.index("close")
 SCHEMA_VERSION = 1
 FINETUNE_REPORTS_SUBDIR = "finetune"
 RETRAINING_MD_RELPATH = "docs/RETRAINING.md"
-INTERVALS_REASON = (
-    "the decisions touch 2 four-week blocks, fewer than the 20 an interval needs (D-035): "
-    "point estimates only"
-)
+BLOCK_WEEKS = 4  # D-035: four-week blocks of decision hours (eval.bootstrap.week_blocks)
+LEDGER_ACTIVITY = "pilot-check"  # the ledger's exploration activity of the check
+STOPPED_STAGE = "stopped"  # a run its spend control stopped (ledger.EXPLORATION_STAGES)
 
 
 class PilotCheckError(ValueError):
@@ -131,7 +134,13 @@ class PilotCheckError(ValueError):
 
 class PilotCheckStopped(PermissionError):
     """The run's measured spend passed its limit (design 3.5): it stopped between fans, the fans
-    stored so far kept (exit 2)."""
+    stored so far kept (exit 2). ``spend`` is the run's spend record (``_Spend.record``, where it
+    stopped included), for the ledger's ``stopped`` entry: a lost run's compute counts against
+    the next run of the same check."""
+
+    def __init__(self, message: str, *, spend: Mapping[str, Any] | None = None) -> None:
+        super().__init__(message)
+        self.spend: dict[str, Any] = dict(spend or {})
 
 
 def _process_cpu_seconds() -> float:
@@ -230,6 +239,27 @@ def check_decisions_ms(fold: Fold) -> tuple[int, ...]:
     return decisions
 
 
+def intervals_reason(decisions_ms: Sequence[int]) -> str:
+    """Why the check's statistics are point estimates: the four-week blocks its decisions touch
+    (``eval.bootstrap.week_blocks``, counted here; 3 for the 168 planned decisions of
+    ``q-2024-07``), fewer than the ``eval.bootstrap.MIN_BLOCKS`` an interval needs (D-035).
+    :class:`PilotCheckError` for decisions that touch enough blocks: the definition holds no
+    interval for them."""
+    from ..eval.bootstrap import MIN_BLOCKS, week_blocks
+
+    values = np.asarray(decisions_ms, dtype=np.int64)
+    blocks = int(np.unique(week_blocks(values, weeks=BLOCK_WEEKS)).size)
+    if blocks >= MIN_BLOCKS:
+        raise PilotCheckError(
+            f"the decisions touch {blocks} four-week blocks: their statistics would get "
+            "intervals, which the check's definition does not hold"
+        )
+    return (
+        f"the decisions touch {blocks} four-week block{'s' if blocks != 1 else ''}, fewer than "
+        f"the {MIN_BLOCKS} an interval needs (D-035): point estimates only"
+    )
+
+
 def _statistic_definitions() -> dict[str, str]:
     return {
         "a_same": "share of decisions where signal(pilot, forecast) == signal(shipped, forecast)",
@@ -244,7 +274,7 @@ def _statistic_definitions() -> dict[str, str]:
         "d": "d(D) = CRPS_pilot - CRPS_shipped at h = 4, stream forecast, fair CRPS (K = 20) of "
         "x_k = 1e4 log(close_k(4) / c_ref) against y = 1e4 log(close(D + 3 h) / c_ref), in bp; "
         "c_ref and the realised close are rows 511 and 515 of the NLL4-TF inputs; a fan with a "
-        "close <= 0 drops its decision from d (counted)",
+        "close <= 0 or not finite drops its decision from d (counted)",
         "d_mean_bp": "descriptive only: no skill is read from it",
         "d_sd_bp": "the SD of d (ddof 1)",
         "rho_k": "eval.bootstrap.autocorrelation(d, lags 1..6)",
@@ -324,7 +354,7 @@ def check_plan(recipe: Recipe, fold: Fold) -> dict[str, Any]:
         "nll_inputs": "the pilot export's nll_inputs.npz (its sha256 verified) restricted to "
         "the decisions",
         "statistics": _statistic_definitions(),
-        "intervals": INTERVALS_REASON,
+        "intervals": intervals_reason(decisions),
         "reading": {
             "statistic": "a_same",
             "threshold": GO_NO_GO_THRESHOLD,
@@ -646,54 +676,107 @@ def spend_limit(approved_cpu_hours: float | None) -> float:
 
 
 class _Spend:
-    """A run's CPU-seconds since it started, charged as D-033 counts CPU work (the larger of the
-    measured CPU time and the wall time times the threads), against its limit."""
+    """The check's CPU-seconds, charged as D-033 counts CPU work (the larger of the measured CPU
+    time and the wall time times the threads): this run's since it started, plus ``prior``, what
+    the stopped runs of the same check spent since its last ``done`` entry (:func:`prior_spend`),
+    against its limit: across a stop and its reruns, the limit and the recorded spend are the
+    check's, never a fresh run's."""
 
     def __init__(
-        self, *, stem: str, limit: float, approved: float | None, threads: int, steps: Any
+        self,
+        *,
+        stem: str,
+        limit: float,
+        approved: float | None,
+        threads: int,
+        steps: Any,
+        prior: float = 0.0,
     ) -> None:
         self.stem = stem
         self.limit = limit
         self.approved = approved
         self.threads = threads
         self.steps = steps
+        self.prior = prior
         self.wall0 = float(steps.clock())
         self.cpu0 = float(steps.cpu_seconds())
 
     def spent(self) -> tuple[float, float, float]:
-        """``(charged, cpu, wall)`` seconds since the start."""
+        """``(charged, cpu, wall)`` seconds of this run since its start."""
         wall = max(0.0, float(self.steps.clock()) - self.wall0)
         cpu = max(0.0, float(self.steps.cpu_seconds()) - self.cpu0)
         return max(cpu, wall * self.threads), cpu, wall
 
     def check(self, where: str) -> None:
-        """Stop (:class:`PilotCheckStopped`) once the charged spend passes the limit."""
+        """Stop (:class:`PilotCheckStopped`, with :meth:`record`) once the charged spend, the
+        prior included, passes the limit."""
         charged, _, _ = self.spent()
-        if charged <= self.limit:
+        total = self.prior + charged
+        if total <= self.limit:
             return
         if self.approved is None:
             rule = f"gate 3's {GATE3_CPU_SECONDS} CPU-seconds, without an approved figure"
         else:
             rule = f"{APPROVAL_TOLERANCE:g} x the {self.approved:g} CPU-hours the owner approved"
+        earlier = (
+            f" ({charged:.0f} in this run, {self.prior:.0f} in the stopped runs before it)"
+            if self.prior
+            else ""
+        )
         raise PilotCheckStopped(
-            f"{self.stem}: the run's spend, {charged:.0f} CPU-seconds, passed its limit of "
+            f"{self.stem}: the run's spend, {total:.0f} CPU-seconds{earlier}, passed its limit of "
             f"{self.limit:.0f} ({rule}) {where}: it stopped there (design 3.5); the fans stored "
-            "so far are kept and a rerun reuses them; show the owner the spend before a rerun"
+            "so far are kept and a rerun reuses them, and the ledger records what it spent, "
+            "which counts against the next run; show the owner the spend before a rerun",
+            spend={**self.record(), "stopped": where},
         )
 
     def record(self) -> dict[str, Any]:
         charged, cpu, wall = self.spent()
         return {
-            "cpu_seconds": charged,
+            "cpu_seconds": self.prior + charged,
+            "run_cpu_seconds": charged,
+            "prior_cpu_seconds": self.prior,
             "measured_cpu_seconds": cpu,
             "wall_seconds": wall,
             "threads": self.threads,
             "limit_cpu_seconds": self.limit,
             "approved_cpu_hours": self.approved,
-            "rule": "charged: the larger of the measured CPU time and wall x threads (D-033); "
+            "rule": "charged: the larger of the measured CPU time and wall x threads (D-033), "
+            "plus what the stopped runs of the same check spent since its last done entry; "
             f"stopped once past the limit, {APPROVAL_TOLERANCE:g} x the approved CPU-hours or "
             f"{GATE3_CPU_SECONDS} CPU-seconds without a figure (design 3.5)",
         }
+
+
+def prior_spend(stem: str, *, entries: Sequence[Any]) -> dict[str, Any]:
+    """What the stopped runs of the check ``stem`` spent since its last ``done`` entry: the
+    ledger's ``pilot-check`` exploration entries of that subject with stage ``stopped``
+    (``details.run_cpu_seconds``, recorded by the command when a run's spend control stopped
+    it). ``{"cpu_seconds", "entries"}``, the sum and their seqs; a rerun starts from that sum,
+    so the limit, the gate-3 check of its estimate and its recorded spend are the check's."""
+    total, seqs = 0.0, []
+    for entry in entries:
+        payload = getattr(entry, "payload", None)
+        if (
+            getattr(entry, "kind", None) != "exploration"
+            or not isinstance(payload, Mapping)
+            or payload.get("activity") != LEDGER_ACTIVITY
+            or payload.get("subject") != stem
+        ):
+            continue
+        if payload.get("stage") == "done":
+            total, seqs = 0.0, []
+        elif payload.get("stage") == STOPPED_STAGE:
+            details = payload.get("details")
+            value = details.get("run_cpu_seconds") if isinstance(details, Mapping) else None
+            if isinstance(value, bool) or not isinstance(value, (int, float)) or value < 0:
+                raise PilotCheckError(
+                    f"ledger entry #{entry.seq}: a stopped {stem} run without its spend"
+                )
+            total += float(value)
+            seqs.append(int(entry.seq))
+    return {"cpu_seconds": total, "entries": seqs}
 
 
 # -- statistics -------------------------------------------------------------------------------
@@ -873,16 +956,23 @@ def _fan_closes(
 def _crps(
     pilot: np.ndarray, shipped: np.ndarray, c_ref: np.ndarray, realised: np.ndarray
 ) -> dict[str, Any]:
-    """Fair CRPS of both models at ``h = 4`` and their per-decision difference ``d`` (bp)."""
+    """Fair CRPS of both models at ``h = 4`` and their per-decision difference ``d`` (bp). A fan
+    with a close that is not positive or not finite is invalid (design 5.1; ``fair_crps`` takes
+    finite values only), and so is its decision for ``d``."""
     from ..eval.crps import fair_crps
 
-    if not ((c_ref > 0).all() and (realised > 0).all()):
-        raise PilotCheckError("a reference or realised close of the NLL4-TF inputs is not positive")
-    valid = (pilot > 0).all(axis=1) & (shipped > 0).all(axis=1)
+    references = np.concatenate([c_ref, realised])
+    if not (np.isfinite(references).all() and (references > 0).all()):
+        raise PilotCheckError(
+            "a reference or realised close of the NLL4-TF inputs is not positive and finite"
+        )
+    valid = ((pilot > 0) & np.isfinite(pilot)).all(axis=1) & (
+        (shipped > 0) & np.isfinite(shipped)
+    ).all(axis=1)
     if int(valid.sum()) <= max(AUTOCORRELATION_LAGS) + 1:
         raise PilotCheckError(
-            f"only {int(valid.sum())} decisions have two valid fans (a close <= 0 makes a fan "
-            "invalid): too few for the CRPS differences"
+            f"only {int(valid.sum())} decisions have two valid fans (a close that is not positive "
+            "and finite makes a fan invalid): too few for the CRPS differences"
         )
     y = BASIS_POINTS * np.log(realised[valid] / c_ref[valid])
     x_pilot = BASIS_POINTS * np.log(pilot[valid] / c_ref[valid, None])
@@ -1032,12 +1122,15 @@ def run_check(
     directory: Path | None = None,
     progress: Callable[[str], None] = print,
     approved_cpu_hours: float | None = None,
+    prior_cpu_seconds: float = 0.0,
 ) -> CheckResult:
     """Run the three fan batches (one worker each), compute the statistics of design 6.2 step 3
     and the reading of step 4, and write the report. The fold record, the registry line and the
     export are verified again first; ``root`` is the data root. ``approved_cpu_hours`` is the
     figure the owner approved (``None`` below gate 3): the run stops once its spend passes
-    :func:`spend_limit` of it (:class:`PilotCheckStopped`; module docstring)."""
+    :func:`spend_limit` of it (:class:`PilotCheckStopped`; module docstring).
+    ``prior_cpu_seconds`` is what the stopped runs of this check spent since its last ``done``
+    entry (:func:`prior_spend`): the spend starts from it."""
     from ..report.writer import report_header, write_report
 
     if not isinstance(prepared, PreparedCheck):
@@ -1047,12 +1140,22 @@ def run_check(
     stem = stem_for(recipe)
     directory = _report_dir(directory)
     _check_params(params)
+    if (
+        isinstance(prior_cpu_seconds, bool)
+        or not isinstance(prior_cpu_seconds, (int, float))
+        or not math.isfinite(prior_cpu_seconds)
+        or prior_cpu_seconds < 0
+    ):
+        raise ValueError(
+            f"prior_cpu_seconds must be a finite number >= 0, got {prior_cpu_seconds!r}"
+        )
     spend = _Spend(
         stem=stem,
         limit=spend_limit(approved_cpu_hours),
         approved=None if approved_cpu_hours is None else float(approved_cpu_hours),
         threads=params.kronos.threads,
         steps=steps,
+        prior=float(prior_cpu_seconds),
     )
     if record_check_config(recipe, fold, directory=directory) != prepared.config_sha256:
         raise PilotCheckError(f"{stem}: the batches were prepared under another definition")
@@ -1177,7 +1280,7 @@ def run_check(
             for name in BATCHES
         },
         "statistics": statistics,
-        "statistics_with_intervals_reason": INTERVALS_REASON,
+        "statistics_with_intervals_reason": intervals_reason(decisions),
         "nll4_tf_curve": curve,
         "reading": {
             "value": reading,
@@ -1222,6 +1325,7 @@ def run_check(
         "registry_line_sha256": entry.line_sha256,
         "cpu_seconds": spent["cpu_seconds"],
         "limit_cpu_seconds": spent["limit_cpu_seconds"],
+        "prior_cpu_seconds": spent["prior_cpu_seconds"],
     }
     return CheckResult(
         report=payload,
@@ -1356,8 +1460,15 @@ def summary_lines(report: Mapping[str, Any]) -> list[str]:
 def _spend_text(spend: Mapping[str, Any]) -> str:
     approved = spend.get("approved_cpu_hours")
     figure = "no approved figure" if approved is None else f"{approved:g} CPU-hours approved"
+    prior = spend.get("prior_cpu_seconds")
+    earlier = (
+        f"{_number(spend.get('run_cpu_seconds'))} in this run and {_number(prior)} in the "
+        "stopped runs before it; "
+        if prior
+        else ""
+    )
     return (
-        f"spend {_number(spend.get('cpu_seconds'))} CPU-seconds (wall "
+        f"spend {_number(spend.get('cpu_seconds'))} CPU-seconds ({earlier}wall "
         f"{_number(spend.get('wall_seconds'))} s) against a limit of "
         f"{_number(spend.get('limit_cpu_seconds'))} ({figure})"
     )
@@ -1521,11 +1632,13 @@ __all__ = [
     "APPROVAL_TOLERANCE",
     "AUTOCORRELATION_LAGS",
     "BATCHES",
+    "BLOCK_WEEKS",
     "GATE3_CPU_SECONDS",
     "GO_NO_GO_THRESHOLD",
     "GRID",
     "HORIZON",
     "KL_SECONDS_PER_DECISION_PRIOR",
+    "LEDGER_ACTIVITY",
     "NO_GO_OPTIONS",
     "PROJECTED_BLOCKS",
     "PROJECTED_DECISIONS",
@@ -1533,6 +1646,7 @@ __all__ = [
     "READING_NO_GO",
     "SOURCE",
     "STEM_PREFIX",
+    "STOPPED_STAGE",
     "STREAM_FLOOR",
     "STREAM_SAME",
     "TRAJECTORIES",
@@ -1546,8 +1660,10 @@ __all__ = [
     "check_plan",
     "estimate_check",
     "go_no_go",
+    "intervals_reason",
     "mdd_projection",
     "prepare_check",
+    "prior_spend",
     "real_steps",
     "record_check_config",
     "relative_weight_change",

@@ -266,6 +266,72 @@ def test_the_sealed_guard_reads_the_order_from_the_ledger_it_is_given(tmp_path):
             sealed_access("order-0001", ledger_root=elsewhere, data_root=REAL_DATA)
 
 
+def test_an_access_opens_only_the_data_root_it_was_issued_for(tmp_path):
+    """The reviewer's case: an access issued with the test's ledger for its own data root, then
+    passed to a read of another data root (which stands for any other, the repository's
+    included), read nothing there: the study read path refuses an access issued for another
+    root, sealed range or not, before anything is read; the same directory through a link, or
+    spelled otherwise, is the same root."""
+    import step2_fakes
+
+    from kronos_agent.data.store import StoreId, read_study_frame
+
+    own, other = tmp_path / "own-data", tmp_path / "other-data"
+    lf.recorded_order(lf.recipe_id("tie"), data_root=own)
+    access = sealed_access("order-0001", data_root=own)
+    frame = step2_fakes.binance_frame(SEALED_START_MS - 48 * HOUR_MS, 96, interval="1h")
+    for root in (own, other):
+        step2_fakes.write_binance_store(root, frame, interval="1h")
+    store = StoreId("binance", "1h")
+    sealed_day = {"start_ms": SEALED_START_MS, "end_ms": SEALED_START_MS + 24 * HOUR_MS}
+    for start_ms, end_ms in ((sealed_day["start_ms"], sealed_day["end_ms"]), (0, SEALED_START_MS)):
+        with pytest.raises(SealedPartitionError, match="issued for another data root"):
+            read_study_frame(
+                store, start_ms=start_ms, end_ms=end_ms, sealed_access=access, root=other
+            )
+    assert len(read_study_frame(store, **sealed_day, sealed_access=access, root=own)) == 24
+    link = tmp_path / "link-to-own"
+    link.symlink_to(own, target_is_directory=True)
+    assert access.opens(link) and access.opens(own / "." / "candles" / "..")
+    assert not access.opens(other) and not access.opens(tmp_path / "absent")
+    assert sealed_access("order-0001").opens(None)  # the default data root, by default
+    missing = sealed_access("order-0001", data_root=tmp_path / "later")  # not created yet
+    assert missing.opens(tmp_path / "later") and not missing.opens(own)
+    with pytest.raises(SealedPartitionError, match="issued only by sealed_access"):
+        SealedAccess("order-0001", _issuer=access._issuer)  # never without its data root
+
+
+def test_an_access_to_an_existing_data_root_is_tied_to_its_device_and_inode(tmp_path):
+    """The usual case: the data root exists when the access is issued, so the access records its
+    device and inode (the test above issues it before its root exists, compared by path). Another
+    existing root is refused, by path or through a link; the directory itself is opened through a
+    link or after a move; a new directory created where it was is another root."""
+    import step2_fakes
+
+    from kronos_agent.data.store import StoreId, read_study_frame
+
+    own, other = tmp_path / "own-data", tmp_path / "other-data"
+    frame = step2_fakes.binance_frame(SEALED_START_MS - 48 * HOUR_MS, 96, interval="1h")
+    for root in (own, other):
+        step2_fakes.write_binance_store(root, frame, interval="1h")
+    lf.recorded_order(lf.recipe_id("tie"), data_root=own)
+    access = sealed_access("order-0001", data_root=own)
+    to_other = tmp_path / "link-to-other"
+    to_other.symlink_to(other, target_is_directory=True)
+    assert access.opens(own) and not access.opens(other) and not access.opens(to_other)
+    sealed_day = {"start_ms": SEALED_START_MS, "end_ms": SEALED_START_MS + 24 * HOUR_MS}
+    store = StoreId("binance", "1h")
+    with pytest.raises(SealedPartitionError, match="issued for another data root"):
+        read_study_frame(store, **sealed_day, sealed_access=access, root=other)
+    moved = tmp_path / "moved-data"
+    own.rename(moved)
+    own.mkdir()  # another directory under the same name
+    assert access.opens(moved) and not access.opens(own)
+    with pytest.raises(SealedPartitionError, match="issued for another data root"):
+        read_study_frame(store, **sealed_day, sealed_access=access, root=own)
+    assert len(read_study_frame(store, **sealed_day, sealed_access=access, root=moved)) == 24
+
+
 def test_check_embargo():
     check_embargo(512, 8)
     check_embargo(512, 4)

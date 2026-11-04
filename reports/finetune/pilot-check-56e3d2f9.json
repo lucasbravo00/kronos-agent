@@ -1,0 +1,260 @@
+{
+ "checkpoint": {
+  "checkpoint_id": "ks-btc-56e3d2f9-q-2024-07",
+  "data_end": "2024-06-09T16:00Z",
+  "files_sha256": {
+   "config.json": "5e0f6a605d5f81b5c9b559fe5cf716a1acb041c744e6f41bd05b097b7a685396",
+   "model.safetensors": "97bdf4492ab57ac4052b97e6720c668479546c45fdc3fe62f9ebf870b794a4ef"
+  },
+  "registry_line_sha256": "3bd014876bce7f236f4458ecb93341a86855eb42e71186a2bbd65e077bda8f39"
+ },
+ "code": {
+  "commit": "720e03adebf49c4ab531b775fab33d4ab33955e7",
+  "dirty": true,
+  "source_tree_sha256": "51796efd12230d8b0ae100710cd216a8adaa3dad978397af26d6985725f52bf8"
+ },
+ "comparators": {
+  "a_floor": "the agreement of two shipped seed streams: the seed-noise floor of a_same",
+  "a_same_threshold": "0.98, SPEC 12's live-against-replay success level",
+  "kl": "0 for identical models",
+  "owner_floor": "SPEC 9's 88 % agreement (external reference)",
+  "projection": "4380 G4 decisions of the walk-forward in 27 four-week blocks"
+ },
+ "config_sha256": "110f190617541a58a4f6072bf7918ae5bf229c61bd68d800b57cc9070d50365b",
+ "data_md_sha256": "49da6aa791a493e66d72adab9c2e8af2ede67af62006cee5228a695355df2edd",
+ "decisions": {
+  "dropped": [],
+  "first": "2024-04-14T16:00Z",
+  "kept": 168,
+  "last": "2024-06-09T08:00Z",
+  "planned": 168
+ },
+ "expected_chance_misses": 0.0,
+ "export_content_sha256": "c23dd753ebb6cb1e857a96ab74f8e0c9e1a472ffb04439a709f32cbc93c75e31",
+ "fans": {
+  "floor": {
+   "checkpoint_id": null,
+   "computed": 0,
+   "config_id": "62906d91f853a8e5",
+   "fans": 168,
+   "stream": "forecast-aa"
+  },
+  "pilot": {
+   "checkpoint_id": "ks-btc-56e3d2f9-q-2024-07",
+   "computed": 0,
+   "config_id": "6d68b73f33853764",
+   "fans": 168,
+   "stream": "forecast"
+  },
+  "shipped": {
+   "checkpoint_id": null,
+   "computed": 0,
+   "config_id": "62906d91f853a8e5",
+   "fans": 168,
+   "stream": "forecast"
+  }
+ },
+ "figures": [
+  {
+   "name": "nll4tf",
+   "relpath": "figures/pilot-check-56e3d2f9-nll4tf.png",
+   "sha256": "56234c42f1e1ea39bfb03d2262f0d9155e26c8c5d394d2a21ee0160931ee1a88"
+  }
+ ],
+ "fit_record_sha256": "287f694e24faf2fd8f284759e48ace5dfe2ab33624fae3d3ba9a9e32cb5b3e84",
+ "fold": {
+  "csv_end": "2024-06-09T16:00Z",
+  "csv_start": "2020-01-01T00:00Z",
+  "inner_validation_start": "2024-04-14T16:00Z",
+  "label": "q-2024-07",
+  "run_label": "q-2024-07"
+ },
+ "generated_at": "2026-11-04T12:41:20Z",
+ "nll4_tf_curve": {
+  "epoch_0": "the shipped weights (a diagnostic, never selected)",
+  "epochs": [
+   {
+    "nll4_tf": 4.38251395405734,
+    "pseudo_epoch": 0,
+    "train_loss": null,
+    "vendored_val_loss": null
+   },
+   {
+    "nll4_tf": 4.30369231093893,
+    "pseudo_epoch": 1,
+    "train_loss": 2.382894634734839,
+    "vendored_val_loss": 2.324026630474971
+   },
+   {
+    "nll4_tf": 4.2262800047899685,
+    "pseudo_epoch": 2,
+    "train_loss": 2.2737775538116693,
+    "vendored_val_loss": 2.26398503780365
+   },
+   {
+    "nll4_tf": 4.174682332285112,
+    "pseudo_epoch": 3,
+    "train_loss": 2.2379970499314368,
+    "vendored_val_loss": 2.2374949867908773
+   },
+   {
+    "nll4_tf": 4.148551894947127,
+    "pseudo_epoch": 4,
+    "train_loss": 2.2187547688372433,
+    "vendored_val_loss": 2.2250460936472964
+   },
+   {
+    "nll4_tf": 4.136005099137035,
+    "pseudo_epoch": 5,
+    "train_loss": 2.207803586497903,
+    "vendored_val_loss": 2.218491595525008
+   },
+   {
+    "nll4_tf": 4.12789825700022,
+    "pseudo_epoch": 6,
+    "train_loss": 2.200461216736585,
+    "vendored_val_loss": 2.2137196384943447
+   },
+   {
+    "nll4_tf": 4.1227685278963975,
+    "pseudo_epoch": 7,
+    "train_loss": 2.1969512286596,
+    "vendored_val_loss": 2.210448159621312
+   },
+   {
+    "nll4_tf": 4.1192203546645105,
+    "pseudo_epoch": 8,
+    "train_loss": 2.189433636609465,
+    "vendored_val_loss": 2.208262929549584
+   },
+   {
+    "nll4_tf": 4.116970980521052,
+    "pseudo_epoch": 9,
+    "train_loss": 2.190328329335898,
+    "vendored_val_loss": 2.2068385711083045
+   },
+   {
+    "nll4_tf": 4.115850071823694,
+    "pseudo_epoch": 10,
+    "train_loss": 2.188810523599386,
+    "vendored_val_loss": 2.2061150715901303
+   },
+   {
+    "nll4_tf": 4.115459564927156,
+    "pseudo_epoch": 11,
+    "train_loss": 2.1852518934756517,
+    "vendored_val_loss": 2.205865992949559
+   },
+   {
+    "nll4_tf": 4.115421482449942,
+    "pseudo_epoch": 12,
+    "train_loss": 2.1883314475417137,
+    "vendored_val_loss": 2.2058385473031263
+   }
+  ],
+  "run_id": "q-2024-07-20261104T024953Z",
+  "selected_pseudo_epoch": 12,
+  "stop_reason": "max_epochs"
+ },
+ "params_version": "4dcb783980a9",
+ "reading": {
+  "a_same": 0.75,
+  "no_go": null,
+  "rule": "NO-GO when a_same >= 0.98 (included)",
+  "threshold": 0.98,
+  "value": "GO"
+ },
+ "recipe": {
+  "max_epochs": 12,
+  "name": "R1",
+  "recipe_id": "56e3d2f9b0a342ce86a612bf6a07a5f71ba62cd99c5dbc126bc3a85e91563718"
+ },
+ "retraining_md_sha256": "412583e42ac69eea7fd0f580669e1b29d90abaf58255bb2f931f0e522c215d96",
+ "role": {
+  "period_role": "pilot-check",
+  "text": "the named model-period opt-in 'pilot-check' (docs/RETRAINING.md 6.2): the shipped weights forecast hours before their cutoff and the pilot hours inside its own inner validation, training-segment hours where no skill is read"
+ },
+ "samples": {
+  "crps_decisions": 168,
+  "decisions_kept": 168,
+  "decisions_planned": 168,
+  "fans": 504
+ },
+ "seeds": {
+  "fans": "kronos_agent.seeds of D, the stream (forecast, forecast-aa) and the project symbol BTC-USDT; pilot and shipped share the forecast stream (common random numbers)",
+  "kl": "none: teacher forcing draws no random number",
+  "training": "the pilot's training seeds are in its registry entry"
+ },
+ "spend": {
+  "approved_cpu_hours": 1.1,
+  "cpu_seconds": 3726.145234416006,
+  "limit_cpu_seconds": 4950.0,
+  "measured_cpu_seconds": 79.38198,
+  "prior_cpu_seconds": 3622.473570000002,
+  "rule": "charged: the larger of the measured CPU time and wall x threads (D-033), plus what the stopped runs of the same check spent since its last done entry; stopped once past the limit, 1.25 x the approved CPU-hours or 3600 CPU-seconds without a figure (design 3.5)",
+  "run_cpu_seconds": 103.6716644160042,
+  "threads": 2,
+  "wall_seconds": 51.8358322080021
+ },
+ "statistics": {
+  "a_floor": 0.8273809523809523,
+  "a_same": 0.75,
+  "crps": {
+   "d_mean_bp": -2.1956377357492434,
+   "d_mean_note": "descriptive only: no skill is read from it (training-segment hours inside the pilot's own inner validation)",
+   "d_sd_bp": 21.96295849498129,
+   "decisions": 168,
+   "dropped_invalid_fans": 0,
+   "mean_crps_pilot_bp": 47.16954625792979,
+   "mean_crps_shipped_bp": 49.36518399367905,
+   "rho": {
+    "1": -0.004434734146242278,
+    "2": 0.08249700561232677,
+    "3": -0.019933007423690207,
+    "4": 0.051010636145098494,
+    "5": 0.1843110184787194,
+    "6": -0.029787023039450175
+   }
+  },
+  "kl_pilot_shipped": 0.11133711135037223,
+  "kl_pilot_shipped_max": 0.6785042351467836,
+  "kl_shipped_pilot": 0.1284643201262289,
+  "mean_abs_delta_p_up": 0.12738095238095237,
+  "projection": {
+   "assumptions": "the 8-hour autocorrelation applied to one of the two 8-hour phases of G4, the second phase counted as adding no information, the 27 four-week blocks not modelled",
+   "blocks": 27,
+   "d_sd_bp": 21.96295849498129,
+   "decisions": 4380,
+   "inflation": 1.5273277912535241,
+   "label": "approximate",
+   "mdd_bp": 1.624945306764577,
+   "mdd_relative": 0.032916828730399195,
+   "n_eff": 1433.8768747228785,
+   "phases": 2,
+   "rho": {
+    "1": -0.004434734146242278,
+    "2": 0.08249700561232677,
+    "3": -0.019933007423690207,
+    "4": 0.051010636145098494,
+    "5": 0.1843110184787194,
+    "6": -0.029787023039450175
+   },
+   "rho_sum": 0.263663895626762,
+   "se_bp": 0.5800092377197339,
+   "z_sum": 2.801585218112968
+  },
+  "relative_weight_change": {
+   "base_norm": 968.5009902929919,
+   "changed_share": 0.9338235294117647,
+   "changed_tensors": 127,
+   "delta_norm": 5.933863230731402,
+   "max_abs_delta": 0.005179882049560547,
+   "relative": 0.006126853033920268,
+   "tensors": 136
+  }
+ },
+ "statistics_with_intervals": 0,
+ "statistics_with_intervals_reason": "the decisions touch 3 four-week blocks, fewer than the 20 an interval needs (D-035): point estimates only",
+ "study": "pilot-check-56e3d2f9",
+ "tests_consumed": 0
+}

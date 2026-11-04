@@ -298,7 +298,7 @@ def test_store_window_source_never_loads_sealed_candles(tmp_path, monkeypatch):
     with pytest.raises(ValueError):
         StoreWindowSource("bingx", start_ms=float(first), root=tmp_path)
     monkeypatch.setattr(pt, "_verify_order", lambda order_id: None)
-    access = pt.sealed_access("order-unit")
+    access = pt.sealed_access("order-unit", data_root=tmp_path)
     opened = StoreWindowSource("bingx", sealed_access=access, root=tmp_path)
     assert opened.last_open_ms == SEALED_START_MS + 49 * HOUR_MS
     assert (

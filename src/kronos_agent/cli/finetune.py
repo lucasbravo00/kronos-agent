@@ -27,19 +27,25 @@
   figure the owner approved in chat (gate 3), and refuses an estimate more than 1.25 times it;
   the approval goes into the experiment ledger before the first unit, and nothing starts that
   could take the run's spend past 1.25 times it. Other folds than the pilot train only after the
-  pre-registration bundle (design 7.1), blinded; a fold that reads sealed candles needs
-  ``--order`` (gate 6). Run it when the machine is otherwise idle, on power, lid open, under
-  ``caffeinate -i -s``.
+  pre-registration bundle (design 7.1), recorded in a ledger that may authorize reading the
+  data root, blinded; a fold that reads sealed candles needs ``--order`` (gate 6). A training
+  child still running on this machine (a parent killed with SIGKILL leaves its child training)
+  is a refusal. Run it when the machine is otherwise idle, on power, lid open, under
+  ``caffeinate -i -s``, started so that ending the terminal session cannot kill it.
 - ``pilot-check [--record-config] [--estimate] [--approved-by-owner CPU_HOURS]``: the pilot
   check of design 6.2 (``kronos_agent.finetune.pilot_check``; 504 fans and the KL, 0 tests) on
   the registered pilot; ``--record-config`` records its definition only (allowed before the
   pilot exists); its estimate is printed first and gate 3 applies as for the batch commands
   (D-046), the approval recorded in the ledger before the first fan; the run stops between fans
   once its spend passes 1.25 times the approved figure, or 3,600 CPU-seconds without one
-  (design 3.5; exit 2, the stored fans kept); the reading is GO or NO-GO (both exit 0).
+  (design 3.5; exit 2, the stored fans kept, the stopped run and its spend recorded in the
+  ledger); a rerun counts what the stopped runs spent since the check's last done entry, in
+  its estimate, its gate 3 and its limit; the reading is GO or NO-GO (both exit 0).
 - ``tokenizer-diag --part training|validation [--record-config]``: the tokenizer diagnostic of
   design section 4 (``kronos_agent.finetune.tokenizer_diag``; 0 tests). Part B (``validation``)
-  runs only after the pre-registration bundle; each raised flag is printed as a ``WARNING:``.
+  runs only after the pre-registration bundle, recorded in a ledger that may authorize reading
+  the data root (``ledger.binding_problem``: a relocated reports root never reads the
+  repository's validation inputs); each raised flag is printed as a ``WARNING:``.
 
 Every subcommand but ``timing`` first verifies every pre-registration bundle the experiment
 ledger records (design 7.1: a changed bundle is a refusal) and records what it ran in the
@@ -518,30 +524,52 @@ def _pilot_check_run(args: argparse.Namespace, params: Params, started_at: datet
     steps = pilot_check.real_steps()
     prepared = pilot_check.prepare_check(inputs, params=params, steps=steps)
     estimate = pilot_check.estimate_check(prepared, params=params, steps=steps)
+    # what the stopped runs of this check spent counts against its approval (design 3.5)
+    prior = pilot_check.prior_spend(stem, entries=ledger.read_ledger())
+    total = float(estimate["cpu_seconds"]) + prior["cpu_seconds"]
+    shown = {
+        **estimate,
+        "pending_cpu_seconds": float(estimate["cpu_seconds"]),
+        "prior_cpu_seconds": prior["cpu_seconds"],
+        "prior_entries": prior["entries"],
+        "cpu_seconds": total,
+        "cpu_hours": total / 3600.0,
+        "needs_owner_approval": total > float(estimate.get("gate3_cpu_seconds", 3600)),
+    }
     _say(
         f"pilot check {stem} of {record.checkpoint.checkpoint_id}: estimate about "
         f"{float(estimate['cpu_seconds']):.0f} CPU-seconds ({float(estimate['cpu_hours']):.2f} "
         f"CPU-hours) for {estimate['pending']} pending fans and the KL"
         + (
+            f", plus the {prior['cpu_seconds']:.0f} CPU-seconds its stopped runs spent (ledger "
+            f"entr{'ies' if len(prior['entries']) > 1 else 'y'} "
+            + ", ".join(f"#{seq}" for seq in prior["entries"])
+            + f"): {total:.0f} CPU-seconds ({total / 3600:.2f} CPU-hours) in all"
+            if prior["entries"]
+            else ""
+        )
+        + (
             "; above gate 3 (3600 CPU-seconds): it needs --approved-by-owner CPU_HOURS"
-            if estimate.get("needs_owner_approval")
+            if shown["needs_owner_approval"]
             else ""
         )
     )
     if args.estimate:
         _say("--estimate: nothing ran")
         return EXIT_OK
-    require_gate3(estimate, approved_cpu_hours=args.approved_by_owner)
+    require_gate3(shown, approved_cpu_hours=args.approved_by_owner)
+    approval_seq = None
     if args.approved_by_owner is not None:
         approval = ledger.record_gate3_approval(
             command=PILOT_CHECK_COMMAND,
             subject=stem,
             unit="cpu_hours",
             approved=args.approved_by_owner,
-            estimate=float(estimate["cpu_hours"]),
+            estimate=float(shown["cpu_hours"]),
             given_at=started_at,
-            estimate_detail=dict(estimate),
+            estimate_detail=dict(shown),
         )
+        approval_seq = approval.seq
         _say(
             f"gate 3: the owner approved {args.approved_by_owner:g} CPU-hours (--approved-by-owner "
             f"given at {started_at.strftime('%Y-%m-%dT%H:%M:%SZ')}): approval entry "
@@ -549,18 +577,50 @@ def _pilot_check_run(args: argparse.Namespace, params: Params, started_at: datet
         )
     _say(
         f"spend control: the run stops once it passes "
-        f"{pilot_check.spend_limit(args.approved_by_owner):.0f} CPU-seconds (design 3.5); the "
-        "fans stored by then are kept"
+        f"{pilot_check.spend_limit(args.approved_by_owner):.0f} CPU-seconds (design 3.5)"
+        + (
+            f", counted from the {prior['cpu_seconds']:.0f} its stopped runs spent"
+            if prior["entries"]
+            else ""
+        )
+        + "; the fans stored by then are kept"
     )
-    result = pilot_check.run_check(
-        prepared,
-        params=params,
-        steps=steps,
-        progress=_say,
-        approved_cpu_hours=args.approved_by_owner,
-    )
+    try:
+        result = pilot_check.run_check(
+            prepared,
+            params=params,
+            steps=steps,
+            progress=_say,
+            approved_cpu_hours=args.approved_by_owner,
+            prior_cpu_seconds=prior["cpu_seconds"],
+        )
+    except pilot_check.PilotCheckStopped as stopped:
+        details = {**stopped.spend, "approval_seq": approval_seq}
+        spent = float(details.get("run_cpu_seconds") or 0.0)
+        try:
+            entry = ledger.record_exploration(
+                activity=pilot_check.LEDGER_ACTIVITY,
+                subject=stem,
+                stage=pilot_check.STOPPED_STAGE,
+                recipe_id=recipe_id(recipe),
+                inputs=["training"],
+                outcomes=["training"],
+                details=details,
+            )
+        except Exception as error:  # noqa: BLE001 - the stop goes on as the refusal it is
+            _say(
+                f"WARNING: the stopped run could not be recorded in the ledger "
+                f"({type(error).__name__}: {error}): show the owner its {spent:.0f} CPU-seconds"
+            )
+        else:
+            _say(
+                f"ledger: stopped entry #{entry.seq} (line {entry.line_sha256[:12]}...) records "
+                f"the {spent:.0f} CPU-seconds this run spent; the next run of {stem} counts them "
+                "against its approval"
+            )
+        raise
     entry = ledger.record_exploration(
-        activity="pilot-check",
+        activity=pilot_check.LEDGER_ACTIVITY,
         subject=stem,
         stage="done",
         recipe_id=recipe_id(recipe),
@@ -642,11 +702,16 @@ def _tokenizer_diag_run(args: argparse.Namespace, params: Params) -> int:
             f"tokenizer diagnostic {stem}: definition {stem}.config.json recorded (sha256 {digest})"
         )
         return EXIT_OK
-    if part == "validation" and not ledger.entries_of("preregistration"):
-        raise ledger.LedgerRefused(
-            "Part B runs after the pre-registration bundle (design 4, 7.1): the experiment "
-            "ledger has no preregistration entry"
-        )
+    if part == "validation":
+        # only a ledger that may authorize reading this data root admits Part B with its bundle
+        # (ledger.binding_problem; hard rule 7): a bundle in a scratch ledger never reads the
+        # repository's validation inputs
+        ledger.require_binding()
+        if not ledger.entries_of("preregistration"):
+            raise ledger.LedgerRefused(
+                "Part B runs after the pre-registration bundle (design 4, 7.1): the experiment "
+                "ledger has no preregistration entry"
+            )
     steps = tokenizer_diag.real_steps()
     prepared = tokenizer_diag.prepare_diag(part, params=params, steps=steps)
     estimate = tokenizer_diag.estimate_diag(prepared, steps=steps)

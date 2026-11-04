@@ -12,7 +12,8 @@ import argparse
 import json
 
 from ..models import MODEL_SPECS
-from ..paths import REPO_ROOT, default_label
+from ..paths import default_label
+from . import display_path
 
 SOURCES = ("upstream_fixture", "synthetic")
 
@@ -78,5 +79,7 @@ def run(args: argparse.Namespace) -> int:
     json_path, md_path = write_reports(result, label=args.label)
     for line in headline_lines(result):
         print(line)
-    print(f"wrote {json_path.relative_to(REPO_ROOT)} and {md_path.relative_to(REPO_ROOT)}")
+    # repository-relative when the reports root is the repository's, else home-redacted (a
+    # relocated KRONOS_AGENT_REPORTS_DIR lies outside the repository)
+    print(f"wrote {display_path(json_path)} and {display_path(md_path)}")
     return 0

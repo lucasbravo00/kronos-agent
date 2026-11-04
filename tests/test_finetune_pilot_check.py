@@ -7,9 +7,10 @@ from the same candles (``data.windows.context_frame``), its checkpoint is a stan
 and its fold record is a written ``runner_result.json``. Fans come from the real batch layer with
 stand-in models (``finetune_fakes.walk_models``) or from stand-in fan summaries; the KL and the
 weight change run on tiny random models. Nothing loads Kronos-small, no real fan or training runs.
-The tests that compute the fair CRPS need ``kronos_agent.eval.crps`` (interfaces 9); the spend
-control's tests (design 3.5) run on stand-in fans and a stand-in clock, with the CRPS oracle
-standing in for that module while it is not built.
+The tests that compute the fair CRPS use ``kronos_agent.eval.crps`` (interfaces 9;
+``tests/test_crps.py`` tests it); the spend control's tests (design 3.5) run on stand-in fans and
+a stand-in clock, with the CRPS oracle standing in for that module only where it cannot be
+imported.
 """
 
 from __future__ import annotations
@@ -639,9 +640,16 @@ def test_a_run_with_identical_fans_reads_no_go_and_writes_its_report(pilot, tiny
         "config_sha256",
         "checkpoint_id",
         "registry_line_sha256",
+        "cpu_seconds",
+        "limit_cpu_seconds",
+        "prior_cpu_seconds",
     }
     assert details["report_sha256"] == sha256_file(result.json_path)
     assert details["checkpoint_id"] == CHECKPOINT_ID and details["decisions"] == 168
+    # the spend of design 3.5, as the report records it: no figure, so gate 3's limit
+    assert details["cpu_seconds"] == report["spend"]["cpu_seconds"] >= 0
+    assert details["limit_cpu_seconds"] == report["spend"]["limit_cpu_seconds"] == 3600
+    assert details["prior_cpu_seconds"] == report["spend"]["prior_cpu_seconds"] == 0.0
     canonical_json(details)  # the ledger's exploration entry records it
     assert any("pilot fans" in line for line in lines)
     assert result.summary_lines[0].startswith("pilot-check-0ee0d123: 168 of 168 G8 decisions")
@@ -868,8 +876,8 @@ def test_the_spend_limit():
 
 @pytest.fixture
 def crps_stub(monkeypatch):
-    """``kronos_agent.eval.crps`` as the fair CRPS of the oracle while the module is not built
-    (interfaces 9): these tests check the spend control, not the CRPS."""
+    """The real ``kronos_agent.eval.crps``, or the oracle's fair CRPS where that module cannot be
+    imported (interfaces 9): these tests check the spend control, not the CRPS."""
     try:
         import kronos_agent.eval.crps  # noqa: F401
     except ImportError:
@@ -995,3 +1003,133 @@ def test_the_spend_is_checked_between_the_teacher_forced_passes(pilot, tiny, crp
     with pytest.raises(pc.PilotCheckStopped, match="between the two teacher-forced passes"):
         run_metered(pilot, prepared, steps)
     assert not (pilot.reports / "pilot-check-0ee0d123.json").exists()
+
+
+def test_a_stopped_run_carries_its_spend_and_a_rerun_starts_from_it(pilot, tiny, crps_stub):
+    """Design 3.5: a lost run's compute counts against the approval. The stopped run's spend
+    record (for the ledger's stopped entry) holds what it spent; a rerun given that spend as its
+    prior stops once the two together pass its limit, and a completed rerun records both."""
+    prepared, steps, meter = metered(pilot, tiny, fan=(100.0, 1.0))
+    with pytest.raises(pc.PilotCheckStopped) as info:
+        run_metered(pilot, prepared, steps)
+    spend = info.value.spend
+    assert (spend["run_cpu_seconds"], spend["prior_cpu_seconds"], spend["cpu_seconds"]) == (
+        3800.0,
+        0.0,
+        3800.0,
+    )
+    assert spend["stopped"] == "after 19 of the 168 pilot fans"
+    assert spend["limit_cpu_seconds"] == 3600 and spend["approved_cpu_hours"] is None
+    canonical_json(spend)  # the ledger's stopped entry records it
+    prepared, steps, meter = metered(pilot, tiny, fan=(100.0, 1.0))
+    with pytest.raises(pc.PilotCheckStopped) as info:
+        pc.run_check(
+            prepared,
+            params=PARAMS,
+            steps=steps,
+            root=pilot.data,
+            directory=pilot.reports,
+            progress=lambda line: None,
+            approved_cpu_hours=1.5,  # a limit of 6,750: 2,950 left after the 3,800
+            prior_cpu_seconds=3800.0,
+        )
+    message = str(info.value)
+    assert "spend, 6800 CPU-seconds (3000 in this run, 3800 in the stopped runs before it)" in (
+        message
+    )
+    assert "after 15 of the 168 pilot fans" in message and meter.stored["pilot"] == 15
+    prepared, steps, meter = metered(pilot, tiny, fan=(5.0, 1.0), kl=(100.0, 1.0))
+    result = pc.run_check(
+        prepared,
+        params=PARAMS,
+        steps=steps,
+        root=pilot.data,
+        directory=pilot.reports,
+        progress=lambda line: None,
+        approved_cpu_hours=2.5,
+        prior_cpu_seconds=3800.0,
+    )
+    spend = result.report["spend"]
+    assert spend["cpu_seconds"] == pytest.approx(3800.0 + 5440.0)
+    assert (spend["run_cpu_seconds"], spend["prior_cpu_seconds"]) == (pytest.approx(5440.0), 3800.0)
+    assert result.details["cpu_seconds"] == pytest.approx(9240.0)
+    assert result.details["prior_cpu_seconds"] == 3800.0
+    assert (
+        "(5440 in this run and 3800 in the stopped runs before it; wall 2720 s)"
+        in (result.summary_lines[-1])
+    )
+    for bad in (-1.0, float("nan"), True):
+        with pytest.raises(ValueError, match="prior_cpu_seconds"):
+            pc.run_check(prepared, params=PARAMS, steps=steps, prior_cpu_seconds=bad)
+
+
+def test_prior_spend_sums_the_stopped_runs_since_the_last_done_entry():
+    from kronos_agent import ledger
+
+    stem = pc.stem_for(R1)
+
+    def record(stage, subject=stem, **details):
+        return ledger.record_exploration(
+            activity=pc.LEDGER_ACTIVITY,
+            subject=subject,
+            stage=stage,
+            recipe_id=recipe_id(R1),
+            inputs=["training"],
+            outcomes=["training"],
+            details=details,
+        )
+
+    assert pc.prior_spend(stem, entries=ledger.read_ledger()) == {"cpu_seconds": 0.0, "entries": []}
+    record("stopped", run_cpu_seconds=100.0)
+    record("stopped", subject="pilot-check-56e3d2f9", run_cpu_seconds=50.0)  # another check
+    record("done")
+    third = record("stopped", run_cpu_seconds=30.0)
+    fourth = record("stopped", run_cpu_seconds=20.5)
+    assert pc.prior_spend(stem, entries=ledger.read_ledger()) == {
+        "cpu_seconds": 50.5,
+        "entries": [third.seq, fourth.seq],
+    }
+    assert pc.prior_spend("pilot-check-56e3d2f9", entries=ledger.read_ledger())["cpu_seconds"] == 50
+    assert "stopped" in ledger.EXPLORATION_STAGES and pc.STOPPED_STAGE == "stopped"
+    broken = record("stopped", note="no spend")
+    with pytest.raises(pc.PilotCheckError, match=f"ledger entry #{broken.seq}: a stopped"):
+        pc.prior_spend(stem, entries=ledger.read_ledger())
+
+
+def test_the_stated_blocks_are_the_blocks_the_decisions_touch():
+    """The definition and the report state how many four-week blocks the decisions touch
+    (``eval.bootstrap.week_blocks``): 3 for the 168 planned decisions of q-2024-07 (1 on
+    2024-04-14T16:00Z, 84 and 83), below the 20 an interval needs."""
+    from kronos_agent.eval.bootstrap import MIN_BLOCKS, week_blocks
+
+    decisions = pc.check_decisions_ms(FOLD)
+    blocks = np.unique(week_blocks(np.asarray(decisions), weeks=pc.BLOCK_WEEKS), return_counts=True)
+    assert blocks[1].tolist() == [1, 84, 83] and pc.BLOCK_WEEKS == 4 and MIN_BLOCKS == 20
+    reason = "the decisions touch 3 four-week blocks, fewer than the 20 an interval needs (D-035)"
+    assert pc.check_plan(R1, FOLD)["intervals"] == reason + ": point estimates only"
+    assert pc.intervals_reason(decisions[1:]).startswith("the decisions touch 2 four-week blocks")
+    assert pc.intervals_reason(decisions[:1]).startswith("the decisions touch 1 four-week block,")
+    weekly = [decisions[0] + k * 28 * 24 * HOUR_MS for k in range(20)]
+    with pytest.raises(pc.PilotCheckError, match="touch 20 four-week blocks"):
+        pc.intervals_reason(weekly)
+    assert "3 four-week blocks" in pc.__doc__
+
+
+def test_a_fan_with_a_close_that_is_not_positive_and_finite_drops_its_decision(crps_stub):
+    """Design 5.1: a decoded close <= 0 makes a fan invalid; so does one that is not finite
+    (the fair CRPS takes finite values only): its decision leaves d and is counted, instead of an
+    error once every fan is computed."""
+    generator = np.random.default_rng(11)
+    c_ref = np.full(12, 60_000.0)
+    realised = c_ref * np.exp(generator.normal(0.0, 0.01, size=12))
+    pilot = c_ref[:, None] * np.exp(generator.normal(0.0, 0.01, size=(12, 20)))
+    shipped = c_ref[:, None] * np.exp(generator.normal(0.0, 0.01, size=(12, 20)))
+    pilot[0, 3], pilot[1, 0], shipped[2, 19] = np.inf, np.nan, -1.0
+    result = pc._crps(pilot, shipped, c_ref, realised)
+    assert result["valid"].tolist() == [False, False, False] + [True] * 9
+    assert result["d"].shape == (9,) and np.isfinite(result["d"]).all()
+    bad = realised.copy()
+    bad[5] = np.inf
+    with pytest.raises(pc.PilotCheckError, match="not positive and finite"):
+        pc._crps(pilot, shipped, c_ref, bad)
+    assert "or not finite" in pc.check_plan(R1, FOLD)["statistics"]["d"]

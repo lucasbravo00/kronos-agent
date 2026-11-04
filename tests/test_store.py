@@ -481,7 +481,7 @@ def test_read_study_frame_stops_at_the_sealed_start(tmp_path, monkeypatch):
         BINGX_1H,
         start_ms=0,
         end_ms=SEALED_START_MS + 24 * HOUR_MS,
-        sealed_access=sealed_access("order-unit"),
+        sealed_access=sealed_access("order-unit", data_root=tmp_path),
         root=tmp_path,
     )
     assert len(opened) == 72

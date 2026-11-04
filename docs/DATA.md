@@ -2,8 +2,8 @@
 
 How candles reach the repository, how a decision window is defined and hashed, how forecasts are
 stored, and how the Binance-vs-BingX mismatch is measured. SPEC sections 5, 6 and 11 are the
-requirements; the defaults of the open question batch (`docs/DECISIONS.md`, questions 8, 9 and
-12) apply until the owner answers. Nothing here reads, defines or registers trading events: SPEC
+requirements; the owner confirmed the defaults of questions 8, 9 and 12 of the step-1 batch
+(`docs/DECISIONS.md`, D-051). Nothing here reads, defines or registers trading events: SPEC
 section 4 and the volume-profile and POC parts of section 5 are without effect (D-042). The design
 decisions behind this file are D-022 to D-049 of `docs/DECISIONS.md` (D-030 and D-031 withdrawn by
 D-042).
@@ -76,11 +76,15 @@ no-future-candles test):
   code as `{commit, dirty, source_tree_sha256}`. The tree hash is one sha256 fed, for every file of
   `src/kronos_agent/**/*.py`, `params.yaml`, `pyproject.toml`, `uv.lock` and `manifests/*` in sorted
   order of its relative POSIX path (`__pycache__` and `.DS_Store` excluded), with the line
-  `<path> NUL <sha256 hex of its bytes> LF`. `dirty` counts untracked files. The repository stays
-  at one commit, so the tree hash is what identifies the code.
+  `<path> NUL <sha256 hex of its bytes> LF`. `dirty` counts untracked files. Commits are made only
+  on the owner's request and every recorded result was produced from an uncommitted tree, so the
+  tree hash, not the commit, is what identifies the code (the published history was rewritten:
+  D-063 (5) maps the commit ids the records cite).
 - **Reports** go to `reports/data/<stem>.json` + `<stem>.md` with figures under
-  `reports/data/figures/`. They carry no absolute path (data paths are relative to the data root),
-  pass `kronos_agent.envinfo.assert_no_personal_data` (JSON and Markdown), and are written with
+  `reports/data/figures/` (the reports root is `reports/` by default, relocatable with
+  `KRONOS_AGENT_REPORTS_DIR`; the test suite relocates it for every test, D-057 (1)). They carry
+  no absolute path (data paths are relative to the data root), pass
+  `kronos_agent.envinfo.assert_no_personal_data` (JSON and Markdown), and are written with
   `allow_nan=False` (an undefined statistic is `null` with a reason); the Markdown is ASCII. They
   never name a BingX host outside `kronos_agent.exchange` (the writer refuses one). Per-hour series
   go to `data/studies/<stem>.csv`, with their sha256 recorded in the report. Values of candles
@@ -192,9 +196,10 @@ first download (2026-11-02) measured 45 days of 5m and 100 days of 15m and found
 unchanged: these figures are revised with the facts of D-049 (D-050). The raw chunks are
 therefore an archive: never deleted, never refetched once complete. The owner archives the 1m
 and 5m candles as insurance for their future strategy; the retraining does not use them
-(D-049). The 5m retention (six to seven weeks) means `data bingx --interval 5m` must run at least
-monthly; `data status` warns when the newest archived 1m or 5m candle opened more than a third
-of its retention ago, or when there is none, and, for every interval, lists the recorded
+(D-049). The 5m retention (six to seven weeks) meant `data bingx --interval 5m` had to run at
+least monthly; the archive no longer grows after the close (D-063 (4)); `data status` warns when
+the newest archived 1m or 5m candle opened more than a third of its retention ago, or when there
+is none, and, for every interval, lists the recorded
 revisions (below) and warns about an incomplete chunk holding archived candles its last refetch
 no longer returned (below) and about any other incomplete chunk older than the newest archived
 chunk (a backfill that stopped before refreshing it: a failed run or a `--max-chunks` bound).
@@ -339,21 +344,27 @@ validation 2026-01-22T16:00Z -> 2026-07-10T08:00Z.
   `check_embargo(max_context, horizon)` refuses any configuration with
   `max_context + horizon > 520` (Kronos-mini, or `N >= 9` with a 512 context): the embargo bounds
   the context plus the trading horizon N (SPEC section 6: embargo = context + N). Evaluation
-  horizons longer than N (the skill curve of SPEC section 8 reaches 24 candles) will be handled by
-  the horizon purge with an explicit evaluation length designed with the retraining, not by
-  recomputing the partition.
+  horizons longer than N (the skill curve of SPEC section 8 reaches 24 candles) go through the
+  horizon purge with an explicit evaluation length (`check_evaluation_length`, at most
+  `EVAL_LENGTH_MAX` = 24, built in the retraining's phase 1, D-052), not by recomputing the
+  partition.
 - **Kronos cutoff.** Kronos as shipped saw Binance up to June 2024: forecasts with the pretrained
   weights refuse `D < 2024-07-01T00:00Z` unless the caller opts in explicitly (tests).
 - **Sealed segment (gate 6), guarded by candle open time at the data-access layer.** Studies and
   window sources read candles only through `read_study_frame`, which refuses any range reaching
   `open_ms >= 2026-08-01T00:00Z` without a `SealedAccess`. `read_store` stays for integrity work
   (checksums, gaps, merges, the resample check, status), whose values never feed a study; tests
-  check that the study and window modules never call it. A `SealedAccess` can be created only from
-  the owner's order recorded in the experiment ledger (step 5); until then creating one raises, so
-  nothing in step 2 can open the sealed segment. A decision hour at or after the sealed start is
-  refused (`require_accessible`) by every command that takes one. A study that reads targets keeps
-  exactly the samples the horizon purge allows (above), so no target opens in the sealed segment;
-  a descriptive candle study stops its candles at the sealed start.
+  check that the study and window modules never call it. A `SealedAccess` is issued only by
+  `partition.sealed_access`, on the owner's order recorded in the experiment ledger
+  (`reports/ledger/experiments.jsonl`, `kronos_agent.ledger`, built in step 6: D-057 (4)), read
+  from a ledger that may open the data root (`ledger.binding_problem`: a relocated reports root
+  never opens the repository's `data/`); it records the data root it was issued for, and
+  `read_study_frame` refuses it for another (D-058 (3)(c)). No order is recorded, so today
+  creating one raises and nothing in step 2 can open the sealed segment. A decision hour at or
+  after the sealed start is refused (`require_accessible`) by every command that takes one. A
+  study that reads targets keeps exactly the samples the horizon purge allows (above), so no
+  target opens in the sealed segment; a descriptive candle study stops its candles at the sealed
+  start.
 - **Live window.** `live_decision_window` reads the server time itself and refuses unless
   `D + 90 s <= server time < D + 15 min` (SPEC section 11: no trading more than 15 minutes late),
   so it can never fetch history.
@@ -589,7 +600,8 @@ rules (the Kronos cutoff, the embargo), a changed study config, a busy lock (a s
 data run holds its job lock is refused by `forecast` and `mismatch` too). argparse usage errors
 (an invalid hour, options of the wrong mode, an approved figure that is not a finite number > 0)
 also exit 2. A command stopped by SIGTERM or SIGHUP exits through `SystemExit` (128 + the signal
-number) after its clean-up. Data go under the data root, reports under `reports/data/`.
+number) after its clean-up. Data go under the data root, reports under the reports root's
+`data/` (default `reports/data/`).
 
 - `kronos-agent data binance [--interval 1m] [--interval 1h] [--refresh <period>]
   [--record-config]`: plan every requested interval (both by default), check gate 4 once for the

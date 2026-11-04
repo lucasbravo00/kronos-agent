@@ -1,18 +1,23 @@
 """The per-fold training path, ``kronos_agent.finetune.walkforward`` (``docs/RETRAINING.md`` 3.5,
 6.1 to 6.3 and 8.1 to 8.3): the estimate and the compute choice on the timing record, its
-freshness, the layout, bundle and order rules, gate 3 and the spend cap, the pilot rule and its
-refit, the stages, the failure policy, blinding (T28) and the pilot's resolution.
+freshness, the layout, bundle and order rules (and the ledger's binding to the data root),
+gate 3, the spend cap and the deadline each figure gives, the pilot rule and its refit, the
+stages (a run registered under another ledger is never adopted), the failure policy (time
+aborts, signals, a run registered before an error), a training child left running, blinding
+(T28) and the pilot's resolution.
 
 Everything runs on the stand-ins of ``fold_fakes`` in the test's own roots: a timing record with
 the measurements of ``timing-2.json``, a tiny synthetic export, a stand-in training child that
-writes a fold record and registers a stand-in checkpoint, and a stand-in clock. Nothing trains,
-exports real candles or times anything (D-055 (6)); one test reads the real timing record
-through a read-only view of the reports root.
+writes a fold record and registers a stand-in checkpoint, a stand-in process list and a stand-in
+clock. Nothing trains, exports real candles or times anything (D-055 (6)); one test reads the
+real timing record through a read-only view of the reports root, and one scans the real process
+list for a sleeping process that carries a training child's command line.
 """
 
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 
@@ -322,9 +327,12 @@ def test_gate3_without_a_figure_is_refused_before_anything_is_written(world):
 
 
 def test_gate3_refuses_an_estimate_above_the_tolerance(world):
-    with pytest.raises(wf.FoldRefused, match="1.27 times the 3.9 MPS-hours") as excinfo:
+    with pytest.raises(wf.FoldRefused, match="1.268 times the 3.9 MPS-hours") as excinfo:
         run(world, plan(world), 3.9)
     assert "tolerance of 1.25" in str(excinfo.value)
+    assert "a figure H of at least 3.96 MPS-hours admits it" in str(excinfo.value)
+    with pytest.raises(wf.FoldRefused, match="1.254 times the 3.943 MPS-hours"):
+        run(world, plan(world), 3.943)  # a ratio of 1.2541 reads as 1.25 with 2 decimals
     assert not ledger.ledger_path().exists() and world.fits == []
     with pytest.raises(ValueError, match="finite number > 0"):
         run(world, plan(world), float("nan"))
@@ -500,53 +508,64 @@ def test_the_refit_runs_in_the_same_invocation_when_the_cap_admits_it(world):
 # -- stages ----------------------------------------------------------------------------------------
 
 
-def register_without_entries(world: fold_fakes.World, label: str, *, selected: int) -> str:
-    """A fold registered by a run killed before its ledger entries (no ledger line)."""
-    fold_plan = plan(world, label)
-    fold = fold_plan.fold
-    export = world.export_fold(fold, R1)
-    request = train.RunRequest(
-        mode="train", recipe=R1, fold=fold, export=export, compute=fold_plan.compute
-    )
-    run_dir = train.new_run_dir(fold.run_label)
-    stop = "max_epochs" if selected == 6 else "early_stop"
-    fold_fakes.write_fold_record(
-        run_dir, request, fold_fakes.Script(selected=selected, stop_reason=stop), status="completed"
-    )
-    entry = fold_fakes.register_stand_in(request, run_dir, root=None)
-    return entry.checkpoint_id
+def register_without_entries(
+    world: fold_fakes.World, monkeypatch, label: str, *, selected: int
+) -> str:
+    """A fold registered by a run of the command killed between its registration and its ``fit``
+    entry: what the command records before a child starts (the approval and, for the pilot, its
+    planned entry) is in the ledger, the child's own entries are not."""
+    stop = "max_epochs" if selected == R1.max_epochs else "early_stop"
+    world.script.append(fold_fakes.Script(selected=selected, stop_reason=stop))
+    with monkeypatch.context() as patch:
+        kill_at_the_registered_fit_entry(patch)
+        with pytest.raises(KeyboardInterrupt):
+            run(world, plan(world, label), 10.0)
+    return registry.read_registry()[-1].checkpoint_id
 
 
-def test_a_registered_pilot_without_its_entries_is_recorded_without_compute(world):
-    register_without_entries(world, wf.PILOT_LABEL, selected=4)
+def test_a_registered_pilot_without_its_entries_is_recorded_without_compute(world, monkeypatch):
+    register_without_entries(world, monkeypatch, wf.PILOT_LABEL, selected=4)
+    assert kinds() == ["gate3_approval", "exploration"]  # the approval and the planned entry
+    (approval,) = entries("gate3_approval")
     fold_plan = plan(world)
     assert (fold_plan.stage, fold_plan.first) == ("bookkeeping", None)
     assert any("bookkeeping" in line for line in wf.estimate_lines(fold_plan))
     outcome = run(world, fold_plan)
-    assert world.fits == [] and outcome.units == ()
-    assert kinds() == ["fit", "exploration"]
-    fit, done = entries("fit")[0], entries("exploration")[0]
-    assert fit.payload["checkpoint_id"] == PILOT_ID and fit.payload["approval_seq"] is None
+    assert len(world.fits) == 1 and outcome.units == ()  # no compute after the killed run
+    assert kinds() == ["gate3_approval", "exploration", "fit", "exploration"]
+    fit, done = entries("fit")[0], entries("exploration")[-1]
+    assert fit.payload["checkpoint_id"] == PILOT_ID and fit.payload["attempt"] == 1
+    assert fit.payload["approval_seq"] == approval.seq  # the planned entry names it
     assert done.payload["details"]["pilot_rule"] == "not fired"
     assert plan(world).stage == "done"
 
 
-def test_bookkeeping_that_fires_the_rule_then_needs_the_refit_figure(world):
-    register_without_entries(world, wf.PILOT_LABEL, selected=6)
+def test_bookkeeping_that_fires_the_rule_then_needs_the_refit_figure(world, monkeypatch):
+    register_without_entries(world, monkeypatch, wf.PILOT_LABEL, selected=6)
     fold_plan = plan(world)
     assert fold_plan.stage == "bookkeeping" and fold_plan.first.recipe_id == DOUBLED_ID
+    before = fold_fakes.ledger_text()
     with pytest.raises(wf.FoldRefused, match="above the 1 hour of gate 3"):
         run(world, fold_plan)
-    assert not ledger.ledger_path().exists()
+    assert fold_fakes.ledger_text() == before
     world.script.append(fold_fakes.Script(selected=2, seconds=600.0))
     run(world, fold_plan, 8.0)
-    assert kinds() == ["gate3_approval", "fit", "exploration", "exploration", "fit", "exploration"]
-    assert [call["request"].recipe for call in world.fits] == [DOUBLED]
+    assert kinds() == [
+        "gate3_approval",
+        "exploration",
+        "gate3_approval",
+        "fit",
+        "exploration",
+        "exploration",
+        "fit",
+        "exploration",
+    ]
+    assert [call["request"].recipe for call in world.fits] == [R1, DOUBLED]
     assert plan(world).stage == "done"
-    (approval,) = entries("gate3_approval")
+    pilot_approval, refit_approval = entries("gate3_approval")
     pilot_fit, refit_fit = (entry.payload for entry in entries("fit"))
-    assert pilot_fit["recipe_id"] == R1_ID and pilot_fit["approval_seq"] is None  # none recorded
-    assert refit_fit["recipe_id"] == DOUBLED_ID and refit_fit["approval_seq"] == approval.seq
+    assert pilot_fit["recipe_id"] == R1_ID and pilot_fit["approval_seq"] == pilot_approval.seq
+    assert refit_fit["recipe_id"] == DOUBLED_ID and refit_fit["approval_seq"] == refit_approval.seq
 
 
 def kill_at_the_registered_fit_entry(monkeypatch) -> None:
@@ -627,18 +646,152 @@ def test_a_done_pilot_runs_nothing(world):
     assert any("nothing to run" in line for line in outcome.lines)
 
 
-def test_a_registered_fold_after_the_pilot_is_never_trained_again(world):
+def test_a_registered_fold_after_the_pilot_is_never_trained_again(world, monkeypatch):
     fold_fakes.write_bundle(R1)
-    register_without_entries(world, FOLD2, selected=3)
+    register_without_entries(world, monkeypatch, FOLD2, selected=3)
+    (approval,) = entries("gate3_approval")
     fold_plan = plan(world, FOLD2)
     assert (fold_plan.stage, fold_plan.first) == ("bookkeeping", None)
+    assert fold_plan.recorded is not None and fold_plan.recorded.recipe_id == R1_ID
     run(world, fold_plan)
     (fit,) = entries("fit")
     entry = registry.find_entry(registry.CheckpointRef(fit.payload["checkpoint_id"]))
     assert fit.payload["blinded"] is True and fit.payload["wall_seconds"] == 0.0
     assert fit.payload["fit_record_sha256"] == entry.document["fit_record_sha256"]
+    assert (fit.payload["approval_seq"], fit.payload["attempt"]) == (approval.seq, 1)
     with pytest.raises(wf.FoldRefused, match="never trained again"):
         plan(world, FOLD2)
+
+
+# -- a run registered under another ledger --------------------------------------------------------
+
+
+def other_reports_root(monkeypatch, tmp_path) -> None:
+    """Another reports root, with its own (empty) ledger and the same timing record, over the
+    test's data and weights roots: a relocated reports root over this fine-tune root."""
+    name = f"{timing.TIMING_STEM}.json"
+    record = (fold_fakes.timing_directory() / name).read_bytes()
+    other = tmp_path / "reports-b"
+    (other / timing.FINETUNE_REPORTS_SUBDIR).mkdir(parents=True)
+    (other / timing.FINETUNE_REPORTS_SUBDIR / name).write_bytes(record)
+    monkeypatch.setenv(paths.REPORTS_DIR_ENV, str(other))
+    assert ledger.read_ledger() == ()
+
+
+def test_a_pilot_registered_under_another_ledger_is_never_adopted(world, monkeypatch, tmp_path):
+    """The reviewer's case: the pilot approved, planned, trained and recorded under ledger A;
+    ledger B, over the same fine-tune root, sees a registered pilot without its entries. B never
+    planned it, so B refuses it (at plan time, nothing recorded) instead of adopting it without
+    its planned entry and its gate-3 approval."""
+    pilot_done(world=world)
+    other_reports_root(monkeypatch, tmp_path)
+    with pytest.raises(wf.FoldRefused, match="registered under another ledger") as excinfo:
+        plan(world)
+    message = str(excinfo.value)
+    assert message.startswith(f"{PILOT_ID} was registered by run q-2024-07-")
+    assert "never planned (no pilot planned entry of its recipe) before the run started" in message
+    assert not ledger.ledger_path().exists() and len(world.fits) == 1
+    with pytest.raises(wf.FoldRefused, match="train the pilot first"):
+        wf.resolve_pilot()  # and the pilot check finds no pilot under B
+
+
+def test_a_blinded_fold_registered_under_another_ledger_is_never_adopted(
+    world, monkeypatch, tmp_path
+):
+    fold_fakes.write_bundle(R1)
+    world.script.append(fold_fakes.Script())
+    run(world, plan(world, FOLD2), 10.0)  # ledger A: the bundle, the approval, the fit
+    other_reports_root(monkeypatch, tmp_path)
+    fold_fakes.write_bundle(R1)  # B's own bundle, recorded after A's run started
+    with pytest.raises(wf.FoldRefused, match="registered under another ledger"):
+        plan(world, FOLD2)
+    assert fold_fakes.ledger_kinds() == ["preregistration"] and len(world.fits) == 1
+
+
+def test_the_trace_of_a_registered_run(world, monkeypatch, tmp_path):
+    """``_registered_unit_trace`` on a blinded fold killed after its registration: the approval
+    before its start is its trace; without it (above gate 3) or without the bundle before its
+    start, the run is another ledger's; a run this invocation started is its own."""
+    fold_fakes.write_bundle(R1)
+    register_without_entries(world, monkeypatch, FOLD2, selected=3)
+    bundle, approval = ledger.read_ledger()
+    entry = registry.find_entry(registry.CheckpointRef("ks-btc-0ee0d123-q-2024-10"))
+    fold = fold_for(FOLD2, R1)
+    trace = wf._registered_unit_trace
+    assert trace(fold, R1, entry, (bundle, approval), above_gate3=True) == (approval.seq, 1)
+    with pytest.raises(wf.FoldRefused, match="never approved .no gate-3 approval"):
+        trace(fold, R1, entry, (bundle,), above_gate3=True)
+    assert trace(fold, R1, entry, (bundle,), above_gate3=False) == (None, 1)
+    with pytest.raises(wf.FoldRefused, match="never pre-registered .no bundle of its recipe"):
+        trace(fold, R1, entry, (approval,), above_gate3=True)
+    run_id = entry.document["run_id"]
+    own = wf._Invocation(anchor=2, approval_seq=approval.seq, runs=frozenset({run_id}))
+    assert trace(fold, R1, entry, (), above_gate3=True, invocation=own) == (approval.seq, 1)
+    later = wf._Invocation(anchor=0)  # entries after the invocation's anchor are not a trace
+    with pytest.raises(wf.FoldRefused, match="never pre-registered"):
+        trace(fold, R1, entry, (bundle, approval), above_gate3=True, invocation=later)
+    failed = ledger.record_fit(  # a failure entry naming the registered run itself is ignored
+        **{
+            **lf_fit(fold, run_id),
+            "status": "failed",
+            "attempt": 1,
+            "approval_seq": approval.seq,
+        }
+    )
+    assert trace(fold, R1, entry, (bundle, approval, failed), above_gate3=True) == (
+        approval.seq,
+        1,
+    )
+    weird = replace(entry, document={**entry.document, "run_id": "q-2024-10-yesterday"})
+    with pytest.raises(wf.FoldFailed, match="its start cannot be read"):
+        trace(fold, R1, weird, (bundle, approval), above_gate3=True)
+    # a bundle and an approval recorded after the run started (another ledger's) are no trace
+    late = tmp_path / "late-ledger"
+    after = wf._run_start(run_id, fold.run_label) + timedelta(hours=1)
+    later_bundle = ledger.record_preregistration(  # the bundle file is the test's
+        bundle_relpath=bundle.payload["bundle_relpath"],
+        recipe_id=R1_ID,
+        tests=["T-A", "T-B"],
+        forecasting_code_sha256=bundle.payload["forecasting_code_sha256"],
+        training_code_sha256=bundle.payload["training_code_sha256"],
+        root=late,
+        now=after,
+    )
+    later_approval = ledger.record_gate3_approval(
+        command=wf.COMMAND,
+        subject=fold.run_label,
+        unit="mps_hours",
+        approved=10.0,
+        estimate=4.945,
+        given_at=after,
+        estimate_detail={},
+        root=late,
+        now=after,
+    )
+    with pytest.raises(wf.FoldRefused, match="never pre-registered"):
+        trace(fold, R1, entry, (later_bundle, later_approval), above_gate3=True)
+
+
+def lf_fit(fold, run_id: str) -> dict:
+    """Keyword arguments of a ``ledger.record_fit`` of ``fold`` without a checkpoint."""
+    return {
+        "checkpoint_id": None,
+        "registry_line_sha256": None,
+        "recipe_id": R1_ID,
+        "fold": fold.label,
+        "replicate": fold.replicate,
+        "run_id": run_id,
+        "status": "failed",
+        "attempt": 1,
+        "blinded": True,
+        "fit_record_sha256": None,
+        "device": "mps",
+        "threads": 2,
+        "wall_seconds": 1.0,
+        "cpu_seconds": 1.0,
+        "approval_seq": None,
+        "order_id": None,
+    }
 
 
 def test_a_state_that_moved_since_the_plan_is_refused(world):
@@ -726,6 +879,285 @@ def test_an_interrupted_child_is_recorded_before_the_interrupt_goes_on(world):
         run(world, plan(world), 10.0)
     (fit,) = entries("fit")
     assert fit.payload["status"] == "failed" and fit.payload["checkpoint_id"] is None
+    # the parent's interrupt stops the child with SIGTERM, which the child records as SystemExit
+    world.script.append(fold_fakes.Script(interrupt=True, error_type="SystemExit"))
+    with pytest.raises(KeyboardInterrupt):
+        run(world, plan(world), 10.0)
+    assert entries("fit")[-1].payload["status"] == "killed"
+
+
+@pytest.mark.parametrize("handled", [True, False])
+def test_a_child_stopped_by_the_parents_timeout_is_a_time_abort_never_retried(world, handled):
+    """``train.fit``'s timeout (the deadline + 120 s) sends SIGTERM: a child that handles it
+    records status failed with error SystemExit; one still alive 30 s later is killed and writes
+    no record. Either way the attempt reached its deadline: a time abort (design 3.5), not a
+    failure to retry, whatever the record says."""
+    status = "failed" if handled else "no_result"
+    world.script.append(fold_fakes.Script(status=status, error_type="SystemExit", timeout=True))
+    with pytest.raises(wf.FoldFailed, match="ran to its deadline of 35604 s") as excinfo:
+        run(world, plan(world), 12.0)
+    assert "is not retried: tell the owner" in str(excinfo.value)
+    (fit,) = entries("fit")
+    assert (fit.payload["status"], fit.payload["attempt"]) == ("time_abort", 1)
+    assert fit.payload["run_id"] is not None and len(world.fits) == 1
+    expected = 35_604.0 + wf.CHILD_TIMEOUT_MARGIN_SECONDS + train.KILL_GRACE_SECONDS
+    assert fit.payload["wall_seconds"] == pytest.approx(expected, abs=1.0)
+
+
+def test_a_child_a_signal_stopped_before_its_deadline_is_killed_never_retried(world):
+    world.script.append(fold_fakes.Script(status="failed", error_type="SystemExit"))
+    with pytest.raises(wf.FoldFailed, match="ended killed .fit entry #3. and is not retried"):
+        run(world, plan(world), 10.0)
+    assert [entry.payload["status"] for entry in entries("fit")] == ["killed"]
+    assert len(world.fits) == 1
+
+
+@pytest.mark.parametrize("label", [wf.PILOT_LABEL, FOLD2])
+def test_a_run_registered_before_an_interrupt_is_never_recorded_as_a_failure(world, label):
+    """``train.fit`` registers the checkpoint, then removes the run's selected/ directory: an
+    interrupt there reaches the fold command with the run registered. No failure entry is
+    recorded: its ``fit`` entry is recorded at once from the registry, registered, attempt 1,
+    under this invocation's approval and with the spend measured around the child (a blinded
+    fold's included: the next invocation could not measure it). The next invocation records the
+    pilot's done entry, and finds a blinded fold registered and recorded."""
+    if label == FOLD2:
+        fold_fakes.write_bundle(R1)
+    world.script.append(
+        fold_fakes.Script(after_registration=KeyboardInterrupt("cleaning up"), seconds=7_200.0)
+    )
+    lines: list[str] = []
+    with pytest.raises(KeyboardInterrupt):
+        wf.run_fold(
+            plan(world, label),
+            approved_hours=10.0,
+            given_at=GIVEN_AT,
+            steps=world.steps(),
+            progress=lines.append,
+        )
+    (approval,) = entries("gate3_approval")
+    (fit,) = entries("fit")  # no failed fit entry
+    assert (fit.payload["status"], fit.payload["attempt"]) == ("registered", 1)
+    assert fit.payload["approval_seq"] == approval.seq
+    assert fit.payload["wall_seconds"] == pytest.approx(7_200.0)
+    entry = registry.find_entry(registry.CheckpointRef(fit.payload["checkpoint_id"]))
+    assert fit.payload["fit_record_sha256"] == entry.document["fit_record_sha256"]
+    assert fit.payload["registry_line_sha256"] == entry.line_sha256
+    assert any(
+        "registered its checkpoint before it was stopped: no failure is recorded; fit entry "
+        f"#{fit.seq} records it from the registry" in line
+        for line in lines
+    )
+    if label == FOLD2:
+        assert kinds() == ["preregistration", "gate3_approval", "fit"]
+        with pytest.raises(wf.FoldRefused, match="never trained again"):
+            plan(world, label)
+        return
+    assert kinds() == ["gate3_approval", "exploration", "fit"]  # the approval, planned, the fit
+    fold_plan = plan(world)
+    assert fold_plan.stage == "bookkeeping" and fold_plan.first is None
+    run(world, fold_plan)  # no compute: no figure needed
+    assert kinds() == ["gate3_approval", "exploration", "fit", "exploration"]
+    assert entries("exploration")[-1].payload["stage"] == "done"
+    assert len(world.fits) == 1 and plan(world).stage == "done"
+
+
+@pytest.mark.parametrize("label", [wf.PILOT_LABEL, FOLD2])
+def test_a_run_registered_before_an_error_is_recorded_from_the_registry_at_once(world, label):
+    """The same after an error: the fit entry from the registry with the measured spend (the
+    blinded fold's too, whose record is never opened), then the pilot's done entry."""
+    if label == FOLD2:
+        fold_fakes.write_bundle(R1)
+    error = train.ChildFailed("an error after the registration")
+    world.script.append(fold_fakes.Script(after_registration=error, seconds=7_200.0))
+    outcome = run(world, plan(world, label), 10.0)
+    approval = entries("gate3_approval")[0]
+    (fit,) = entries("fit")
+    assert (fit.payload["status"], fit.payload["attempt"]) == ("registered", 1)
+    assert fit.payload["approval_seq"] == approval.seq and len(world.fits) == 1
+    assert fit.payload["wall_seconds"] == pytest.approx(7_200.0)
+    assert outcome.spent_hours == pytest.approx(2.0)
+    assert [(unit.status, unit.fit_seq) for unit in outcome.units] == [("registered", fit.seq)]
+    if label == wf.PILOT_LABEL:
+        assert kinds() == ["gate3_approval", "exploration", "fit", "exploration"]
+    else:
+        assert kinds() == ["preregistration", "gate3_approval", "fit"]
+
+
+# -- a training child left running ----------------------------------------------------------------
+
+
+def orphan(label: str = "q-2024-07-20261103T120000Z") -> tuple[int, str]:
+    """A live training child of this fine-tune root, as the process list shows it."""
+    return 4242, str(registry.runs_dir() / label)
+
+
+def test_a_training_child_left_running_refuses_the_estimate_and_the_run(world, capsys):
+    """A parent killed with SIGKILL leaves its child training (train.start_run puts it in its own
+    session): the plan is refused naming the pid and the run, and so is a run planned before."""
+    stale = plan(world)
+    world.running.append(orphan())
+    with pytest.raises(wf.FoldRefused, match="a training child is still running") as excinfo:
+        plan(world)
+    message = str(excinfo.value)
+    assert "pid 4242, run q-2024-07-20261103T120000Z (this fine-tune root)" in message
+    assert "nothing was started" in message and "/" + "Users" not in message
+    with pytest.raises(wf.FoldRefused, match="pid 4242"):
+        run(world, stale, 10.0)
+    assert not ledger.ledger_path().exists() and world.fits == []
+    world.running[:] = [(77, "/elsewhere/.runs/synthetic-x-20261103T120000Z"), (78, "")]
+    with pytest.raises(wf.FoldRefused) as excinfo:
+        plan(world)
+    assert "pid 77, run synthetic-x-20261103T120000Z (another root)" in str(excinfo.value)
+    assert "pid 78 (no run directory on its command line)" in str(excinfo.value)
+
+
+def test_a_training_child_that_appears_during_the_run_stops_the_next_child(world):
+    world.script.append(fold_fakes.Script(status="failed", seconds=120.0))
+    original = world.fit
+
+    def fit(request, **kwargs):  # another child starts while the first attempt runs
+        world.running.append(orphan("q-2024-07-20261103T130000Z"))
+        return original(request, **kwargs)
+
+    world.fit = fit
+    with pytest.raises(wf.FoldRefused, match="pid 4242, run q-2024-07-20261103T130000Z"):
+        run(world, plan(world), 10.0)
+    assert len(world.fits) == 1  # the retry did not start
+    assert [entry.payload["status"] for entry in entries("fit")] == ["failed"]
+
+
+def test_the_process_list_is_parsed_for_training_children():
+    runs = "/x/weights/finetuned/.runs"
+    text = "\n".join(
+        [
+            "    1 /sbin/launchd",
+            f"  501 /venv/bin/python3 -B -P -m kronos_agent.finetune.runner --run-dir {runs}/q-a",
+            f"  502 python -B -c import time -m kronos_agent.finetune.runner --run-dir {runs}/q b",
+            "  503 uv run kronos-agent finetune fold --fold q-2024-07",
+            "  504 python -m kronos_agent.finetune.runner",
+            "  505 python -m kronos_agent.finetune.runnerX --run-dir /y",
+            "  bad line",
+            "",
+        ]
+    )
+    assert wf.parse_training_children(text) == (
+        (501, f"{runs}/q-a"),
+        (502, f"{runs}/q b"),
+        (504, ""),
+    )
+
+
+def test_the_real_process_list_shows_a_live_training_child(tmp_path):
+    """A live process with a training child's command line (it only sleeps) is found by the real
+    ``/bin/ps`` scan, with its run directory; this process is never one."""
+    import subprocess
+    import sys
+
+    run_dir = tmp_path / ".runs" / "q-2024-07-20261103T120000Z"
+    command = [sys.executable, "-B", "-c", "import time; time.sleep(60)"]
+    command += ["-m", train.CHILD_MODULE, "--run-dir", str(run_dir)]
+    process = subprocess.Popen(command, start_new_session=True)
+    try:
+        found = wf.running_training_children()
+        assert (process.pid, str(run_dir)) in found
+        assert all(pid != os.getpid() for pid, _ in found)
+    finally:
+        process.kill()
+        process.wait()
+    assert (process.pid, str(run_dir)) not in wf.running_training_children()
+    assert wf.real_steps().running_children is wf.running_training_children
+
+
+def test_a_process_list_that_cannot_be_read_starts_nothing(monkeypatch):
+    import subprocess
+
+    def failing(*args, **kwargs):
+        return subprocess.CompletedProcess(args, 1, "", "ps: error")
+
+    monkeypatch.setattr(wf.subprocess, "run", failing)
+    with pytest.raises(train.TrainError, match="ps exit 1"):
+        wf.running_training_children()
+
+    def missing(*args, **kwargs):
+        raise FileNotFoundError("no ps")
+
+    monkeypatch.setattr(wf.subprocess, "run", missing)
+    with pytest.raises(train.TrainError, match="FileNotFoundError"):
+        wf.running_training_children()
+
+
+# -- the figure and the deadline it gives -----------------------------------------------------------
+
+
+def test_the_figure_text_states_the_deadline_each_figure_gives():
+    """The refit (9.779 MPS-hours, 35,204.3 s): 7.83 is the smallest figure the 1.25 rule and
+    the cap accept, and leaves a deadline 0.1 % above the worst case; twice the estimate (design
+    3.5) needs 15.65. In the pilot's own invocation, after the pilot's 4.945, the refit starts
+    only from 11.78 and keeps twice its estimate only from 19.61."""
+    record = fold_fakes.timing_record()
+    fold = fold_for(wf.PILOT_LABEL, R1)
+    pilot, refit = wf.fit_estimate(R1, fold, record), wf.fit_estimate(DOUBLED, fold, record)
+    text = wf.figure_text(refit)
+    assert text.startswith("a figure H of at least 7.83 MPS-hours admits it; its deadline is ")
+    assert "the smaller of 70409 s (twice the estimate, design 3.5) and 1.25 x H x 3600 s" in text
+    assert (
+        "35235 s at 7.83, 0.1% above its worst case of 35204 s; twice the estimate from 15.65"
+        in (text)
+    )
+    assert wf.unit_deadline(refit, cap=1.25 * 7.83, spent=0.0) == pytest.approx(35_235.0)
+    assert wf.unit_deadline(refit, cap=1.25 * 7.82, spent=0.0) is None
+    assert wf.unit_deadline(refit, cap=1.25 * 15.65, spent=0.0) == pytest.approx(70_408.6, abs=0.1)
+    both = wf.figure_text(refit, spent=pilot.device_hours)
+    assert both.startswith("a figure H of at least 11.78 MPS-hours admits it after the 4.945")
+    assert "(1.25 x H - 4.945) x 3600 s" in both and "twice the estimate from 19.61" in both
+    assert wf.figure_text(pilot).startswith("a figure H of at least 3.96 MPS-hours admits it")
+    cpu = wf.fit_estimate(
+        R1,
+        fold,
+        fold_fakes.timing_record(device="cpu", threads=2, theta=None, mps_watermark_ratio=None),
+    )
+    assert "1.25 x H x 3600 s / 2 threads" in wf.figure_text(cpu)
+    # the figure of the run that prints it: the deadline it would give, or that it is too small
+    assert wf.figure_text(refit, approved=10.0).endswith(
+        "; H = 10, this run's figure, would give it 45000 s, 27.8% above its worst case"
+    )
+    assert wf.figure_text(refit, approved=7.82).endswith(
+        "; H = 7.82, this run's figure, does not admit it"
+    )
+    # a quotient a hair above a hundredth, where the rounding of the hundredths lands below it:
+    # the next hundredth, which the cap and the 1.25 rule admit (never an assertion error)
+    hours = 9.775000000004
+    edge = replace(refit, device_hours=hours, wall_seconds=hours * 3600)
+    assert wf.unit_deadline(edge, cap=1.25 * 7.82, spent=0.0) is None
+    assert wf.figure_text(edge).startswith("a figure H of at least 7.83 MPS-hours admits it")
+    assert wf.figure_text(edge, spent=1.0).startswith("a figure H of at least 8.63 MPS-hours")
+
+
+def test_the_refit_refusal_and_the_estimate_lines_state_the_figures(world):
+    lines = wf.estimate_lines(plan(world))
+    text = "\n".join(lines)
+    assert "the figure for q-2024-07: a figure H of at least 3.96 MPS-hours admits it" in text
+    assert "the figure for the refit, if the pilot rule fires: in this invocation, a figure H " in (
+        text
+    )
+    assert "of at least 11.78 MPS-hours admits it after the 4.945 MPS-hours spent" in text
+    assert "own figure: a figure H of at least 7.83 MPS-hours admits it" in text
+    world.script.append(
+        fold_fakes.Script(selected=6, stop_reason="max_epochs", seconds=fold_fakes.PILOT_SECONDS)
+    )
+    with pytest.raises(wf.FoldRefused) as excinfo:
+        run(world, plan(world), 10.0)
+    message = str(excinfo.value)
+    assert "with the figure they approve for the refit: a figure H of at least 7.83" in message
+    assert "35235 s at 7.83, 0.1% above its worst case of 35204 s" in message
+    assert "twice the estimate from 15.65" in message
+    # what the figure this run had would give the refit in its own invocation
+    assert message.endswith(
+        "; H = 10, this run's figure, would give it 45000 s, 27.8% above its worst case"
+    )
+    refit_lines = "\n".join(wf.estimate_lines(plan(world)))
+    assert "stage refit" in refit_lines
+    assert "the figure for q-2024-07: a figure H of at least 7.83 MPS-hours" in refit_lines
 
 
 def test_an_error_before_the_child_starts_records_no_fit(world, monkeypatch):
@@ -823,6 +1255,52 @@ def test_a_sealed_fold_never_opens_the_repositorys_data_on_a_relocated_ledgers_o
         with pytest.raises(ledger.LedgerRefused, match="not the repository's reports/ledger"):
             plan(world, label, order_id=order_id)
     assert world.exports == [] and world.fits == []
+
+
+@pytest.fixture
+def repository(tmp_path, monkeypatch):
+    """A stand-in repository whose ``data/`` is the data root (as an unset
+    KRONOS_AGENT_DATA_DIR makes the real one), the ledger staying the test's own: a relocated
+    reports root over the repository's data (``ledger.REPO_ROOT`` points at the stand-in)."""
+    repo = tmp_path / "repo"
+    (repo / "data").mkdir(parents=True)
+    (repo / "reports" / "ledger").mkdir(parents=True)
+    monkeypatch.setattr(ledger, "REPO_ROOT", repo)
+    monkeypatch.setenv(paths.DATA_DIR_ENV, str(repo / "data"))
+    return repo
+
+
+def test_a_blinded_fold_never_trains_on_the_repositorys_data_under_a_relocated_ledger(
+    world, repository, monkeypatch, tmp_path
+):
+    """The reviewer's case: a bundle recorded in a relocated (scratch) ledger, the data root left
+    at the repository's data/. Every fold after the pilot reads validation dates (q-2024-10's
+    CSV ends 2024-09-09T16:00Z), so the bundle admits it only from a ledger that may authorize
+    reading that data root: refused at plan time and, for a plan made on other roots, under the
+    fold lock; the pilot (training-segment data) needs no authorization."""
+    fold_fakes.write_bundle(R1)
+    with pytest.raises(ledger.LedgerRefused, match="not the repository's reports/ledger") as info:
+        plan(world, FOLD2)
+    assert "a pre-registration bundle recorded in another ledger" in str(info.value)
+    assert plan(world).stage == "train"  # the pilot reads training-segment data only
+    own = tmp_path / "own-data"
+    monkeypatch.setenv(paths.DATA_DIR_ENV, str(own))  # a data root of its own: planned
+    fold2 = plan(world, FOLD2)
+    with pytest.raises(ledger.LedgerRefused, match="not the repository's reports/ledger"):
+        wf.run_fold(
+            fold2,
+            approved_hours=10.0,
+            given_at=GIVEN_AT,
+            steps=world.steps(),
+            data_root=repository / "data",
+            progress=lambda line: None,
+        )
+    assert kinds() == ["preregistration"] and world.exports == [] and world.fits == []
+    world.script.append(fold_fakes.Script())
+    run(world, fold2, 10.0)
+    assert kinds() == ["preregistration", "gate3_approval", "fit"]
+    assert export_csv.fold_export_dir(recipe8(R1), FOLD2, root=own).is_dir()
+    assert not any((repository / "data").iterdir())  # nothing exported to the repository's
 
 
 # -- the pilot for the pilot check -----------------------------------------------------------------

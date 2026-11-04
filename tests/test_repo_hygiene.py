@@ -110,6 +110,9 @@ REQUIRED_GITIGNORE = {
     "*.safetensors",
     ".claude/settings.local.json",
     ".DS_Store",
+    "/research/",
+    "/docs/SPEC.md",
+    "/docs/reference/",
 }
 REQUIRED_DENY = {
     "Read(.env)",
@@ -126,7 +129,9 @@ REQUIRED_DENY = {
     "Bash(uv run * --env-file*)",
 }
 REQUIRED_RUFF_EXCLUDES = {"third_party", "research"}
-REQUIRED_TRACKED = {"CLAUDE.md", "docs/SPEC.md", ".claude/settings.json", str(MANIFEST)}
+REQUIRED_TRACKED = {"CLAUDE.md", ".claude/settings.json", str(MANIFEST)}
+# the owner's Spanish specification and its screenshot stay on the development machine (D-063)
+NEVER_TRACKED = (str(SPEC), "docs/reference/")
 
 
 def iter_text_files() -> list[tuple[Path, str]]:
@@ -316,6 +321,7 @@ def test_git_index_has_no_secrets_weights_or_data(tracked):
         if Path(path).name.startswith(".env")
         or path.startswith(("weights/", "data/"))
         or path.endswith(".safetensors")
+        or path.startswith(NEVER_TRACKED)
     ]
     assert offenders == []
 

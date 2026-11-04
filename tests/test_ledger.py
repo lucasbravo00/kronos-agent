@@ -505,6 +505,47 @@ def test_what_may_not_be_published_is_refused(monkeypatch):
     assert entry.payload["details"] == relative
 
 
+# what the repository's hygiene scan of reports/ refuses (assembled: no literal for that scan)
+EMAIL = "owner" + "@" + "example.org"
+CLOUD_HOST = "s3." + "amazon" + "aws.com"
+HOME_AFTER_A_WORD = "x" + "/home" + "/" + "someone"
+USERS_AFTER_A_WORD = "notes" + "/Users" + "/" + "someone"
+CREDENTIAL = "BINGX_API_" + "KEY=" + "abc"
+
+
+def test_what_the_hygiene_scan_of_reports_refuses_is_refused_at_append_and_on_read(monkeypatch):
+    """The ledger is a file under reports/: a line the hygiene scan flags (an email address, a
+    personal path prefix after a word character, the cloud host fragment, a credential
+    assignment) would fail ``tests/test_repo_hygiene.py`` on every later run, because the ledger
+    is never repaired. It is refused at append, and a ledger file holding one does not verify;
+    the check is machine-independent, so it runs on read too."""
+    lf.fixed_code(monkeypatch)
+    for text, problem in [
+        (f"approved by the owner, {EMAIL}", "an email address"),
+        (f"mirror on {CLOUD_HOST}", "a cloud host name"),
+        (f"mirror on {CLOUD_HOST.upper()}", "a cloud host name"),
+        (f"notes in {HOME_AFTER_A_WORD}", "a personal path"),
+        (f"notes in {USERS_AFTER_A_WORD}", "a personal path"),
+        (f"set {CREDENTIAL}", "a credential assignment"),
+    ]:
+        with pytest.raises(LedgerRefused, match=f"^{problem} at payload.details.note: ") as info:
+            ledger.record_exploration(**lf.exploration(details={"note": text}))
+        assert "tests/test_repo_hygiene.py" in str(info.value)
+    with pytest.raises(LedgerRefused, match="an email address at payload.details.owner" + "@"):
+        ledger.record_exploration(**lf.exploration(details={"owner" + "@" + "example.org": 1}))
+    across = {"a": "BINGX_API_" + "KEY =", "b": "x"}  # flagged only on the whole line
+    with pytest.raises(LedgerRefused, match="a credential assignment across the strings"):
+        ledger.record_exploration(**lf.exploration(details=across))
+    assert not ledger.ledger_path().exists()
+    first = ledger.record_exploration(**lf.exploration(), now=lf.MONDAY)
+    seeded = json.loads(first.line)
+    seeded["payload"]["details"] = {"note": f"approved by the owner, {EMAIL}"}
+    ledger.ledger_path().write_bytes(chained(json.loads(first.line), seeded))
+    with pytest.raises(LedgerChainError, match="ledger line 2: an email address at payload"):
+        ledger.read_ledger()
+    assert ledger.ledger_status()["entries"] == 1
+
+
 def test_values_are_plain_json_with_printable_ascii_strings_and_finite_numbers():
     for details, message in [
         ({"note": NON_ASCII}, "the string at payload.details.note is not printable ASCII"),
@@ -934,6 +975,8 @@ def test_test_ids():
 
 
 def test_the_copied_patterns_equal_their_sources():
+    import test_repo_hygiene as hygiene
+
     from kronos_agent import envinfo
     from kronos_agent.finetune import folds, registry, runner, timing, train
 
@@ -941,13 +984,31 @@ def test_the_copied_patterns_equal_their_sources():
     assert ledger.CHECKPOINT_ID_RE.pattern == registry.CHECKPOINT_ID_RE.pattern
     assert ledger.CHECKPOINT_ID_MAX_LENGTH == registry.CHECKPOINT_ID_MAX_LENGTH
     assert ledger._PATH_TOKEN.pattern == timing._PATH_TOKEN.pattern == ABSOLUTE_PATH.pattern
-    assert ledger._IPV4_RE.pattern == envinfo.IPV4_RE.pattern
+    assert ledger._IPV4_RE.pattern == envinfo.IPV4_RE.pattern == hygiene.IPV4_RE.pattern
+    # the machine-independent rules of the hygiene scan of reports/, where the ledger lives
+    assert ledger._EMAIL_RE.pattern == hygiene.EMAIL_RE.pattern
+    assert ledger._PERSONAL_PATH_PREFIXES == hygiene.PERSONAL_PATH_PREFIXES
+    assert ledger._CLOUD_HOST_FRAGMENT == hygiene.CLOUD_HOST_FRAGMENT
+    assert ledger._CREDENTIAL_RE.pattern == hygiene.CREDENTIAL_RE.pattern
+    assert "reports" not in hygiene.EXCLUDED_DIRS  # the scan reads the ledger's directory
     assert (budget.TESTS_PER_ISO_WEEK, budget.TESTS_PER_QUARTER) == (3, 15)
     assert budget.TESTS_PER_ISO_WEEK is ledger.TESTS_PER_ISO_WEEK
     # every status a training child can end with, besides the completed run that registers
     assert set(runner.STATUSES) - {"completed"} <= set(ledger.FIT_STATUSES)
     assert set(train.NO_RESULT_STATUSES) <= set(ledger.FIT_STATUSES)
     assert ledger.LEDGER_NAME == "experiments.jsonl" and paths.LEDGER_SUBDIR == "ledger"
+
+
+def test_the_ledger_lock_is_ignored_by_git_and_the_ledger_is_not():
+    """The first append creates ``reports/ledger/.lock``: a lock file, never published; the
+    ledger beside it is tracked and published with the reports (SPEC section 19)."""
+    lines = {
+        line.strip()
+        for line in (REPO_ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    }
+    assert f"/reports/{paths.LEDGER_SUBDIR}/{ledger.LOCK_NAME}" in lines
+    assert not any("experiments" in line or line.rstrip("/") == "/reports" for line in lines)
 
 
 LEDGER_IMPORTS = {
@@ -1237,6 +1298,14 @@ def test_record_order_through_the_command(capsys, monkeypatch, shown):
     monkeypatch.setattr(getpass, "getuser", lambda: "zq-synthetic-user")
     code, output = run_ledger(capsys, "record-order", *other, "--text", "zq-synthetic-user said")
     assert code == 2 and "personal data (username) at payload.text" in output
+    for text, problem in [  # the hygiene scan of reports/ would flag these forever
+        (f"approved by the owner, {EMAIL}", "an email address"),
+        (f"mirror on {CLOUD_HOST}", "a cloud host name"),
+        (f"notes in {HOME_AFTER_A_WORD}", "a personal path"),
+        (f"set {CREDENTIAL}", "a credential assignment"),
+    ]:
+        code, output = run_ledger(capsys, "record-order", *other, "--text", text)
+        assert code == 2 and output.startswith(f"REFUSED: {problem} at payload.text: "), output
     with exclusive_lock(paths.ledger_dir() / ledger.LOCK_NAME):
         code, output = run_ledger(capsys, "record-order", *other, "--text", lf.ORDER_TEXT)
     assert code == 2 and output.startswith("REFUSED: ledger/.lock is locked by another run")

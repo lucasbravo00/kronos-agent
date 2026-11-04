@@ -38,8 +38,16 @@ first unit, and covers only what this invocation runs: nothing starts that could
 past 1.25 times the figure (:data:`GATE3_HOURS` without one). Before every child the spend so
 far plus the unit's estimate must fit that cap, and the child's deadline is the smaller of
 :data:`DEADLINE_FACTOR` times its estimate (design 3.5: a fold past twice its worst case is
-stopped) and what the cap leaves. Spend is the wall clock around the child on MPS and the CPU
-time of this process and its children on the CPU.
+stopped) and what the cap leaves: a figure close to the 1.25 rule's minimum leaves a deadline
+just above the worst case, so the estimate lines and the refusals state the deadline each figure
+gives (:func:`figure_text`). Spend is the wall clock around the child on MPS and the CPU time of
+this process and its children on the CPU.
+
+No training child may already run on this machine (:func:`refuse_running_children`, read with
+``/bin/ps`` at plan time, under the fold lock and before every child): ``train.start_run`` starts
+the child in its own session, so a parent killed with SIGKILL leaves it training, unsupervised
+and unrecorded, and a second child beside it would train twice. (Making the child stop when its
+parent is gone would change ``finetune/runner.py``, a training-code file: the owner's decision.)
 
 The pilot rule (design 3.2, 6.2; pre-registered as :data:`PILOT_RULE`, recorded in the pilot's
 ``planned`` entry before its result exists): if the pilot's selected pseudo-epoch is its last,
@@ -50,21 +58,32 @@ pilot, and the next invocation starts at the refit with the figure the owner app
 
 Stages, read from the fine-tune registry and the ledger: ``train`` (the fold is not registered),
 ``bookkeeping`` (registered, but its ``fit`` entry, or the pilot's ``done`` entry, is missing: a
-run killed between registration and the ledger; recorded without compute, its ``fit`` entry
-naming the approval and the attempt the run had, read from the entries recorded before it, never
-this invocation's approval), ``refit`` (the pilot rule fired and the doubled recipe's pilot is
-not registered) and ``done`` (the effective recipe's pilot is registered and recorded). A
+run killed between registration and the ledger, or an error after the registration; recorded
+without compute, its ``fit`` entry naming the approval and the attempt the run had, read from
+the trace the run left in this ledger before it started, never this invocation's approval; a
+registered run without that trace, the pilot's ``planned`` entry or another fold's bundle and
+approval, was registered under another ledger and is refused, never adopted:
+:func:`_registered_unit_trace`), ``refit`` (the pilot rule fired and the doubled recipe's pilot
+is not registered) and ``done`` (the effective recipe's pilot is registered and recorded). A
 registered fold other than the pilot is never trained again (design 3.5).
 
 Failures (design 6.3). ``finetune/train.py`` is part of the training-code hash the timing record
 is tied to, so it is used as it is: when ``train.fit`` raises ``ChildFailed`` or
-``ChildMemoryAbort``, the run's status is read from the one run directory the call created (its
-``runner_result.json`` status, ``no_result`` without the file, ``killed`` when there is no such
-directory, several, or an unreadable result). A ``fit`` entry records it. ``failed`` and
+``ChildMemoryAbort``, the run's status is read from the one run directory the call created and
+from what happened, whatever the record's status says (:meth:`_FoldRun.failed_run`): a memory
+abort as recorded; ``time_abort`` once the attempt's wall time reached its deadline (the child's
+own deadline, or the parent's timeout, which stops the child with SIGTERM, then SIGKILL);
+``killed`` when the record's error is a signal's (``SystemExit``, ``KeyboardInterrupt``), when
+there is no such directory, several, or an unreadable result; ``no_result`` without the file;
+otherwise its ``runner_result.json`` status. A ``fit`` entry records it. ``failed`` and
 ``no_result`` are retried once with the same seeds when the cap admits the retry; a second
 failure, a memory abort (not a fold failure: the owner is told), a time abort or a killed child
 is :class:`FoldFailed` (exit 1), after its entries. Any other exception once the child started
-(SIGTERM through ``SystemExit``, an interrupt) records the run's status, then propagates.
+(SIGTERM through ``SystemExit``, an interrupt) records the run's status, then propagates. A run
+that registered its checkpoint before the error or the interrupt (``train.fit`` cleans the run
+directory after the registration) is never recorded as a failure: its ``fit`` entry is recorded
+at once from the registry, with the spend measured around the child, as a registered run's is
+(the pilot's ``done`` entry follows, at the next invocation after an interrupt).
 
 Printed lines carry run ids and checkpoint ids, never a path or the child's log. Nothing here
 imports torch at module level (the real ``mps_available`` imports it lazily).
@@ -72,9 +91,13 @@ imports torch at module level (the real ``mps_available`` imports it lazily).
 
 from __future__ import annotations
 
+import itertools
 import json
 import math
+import os
+import re
 import resource
+import subprocess
 import time
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass, replace
@@ -89,7 +112,7 @@ from ..data.partition import MAX_CONTEXT, VALIDATION_START, PartitionError
 from ..data.timeutil import HOUR_MS, to_ms, utc_text
 from ..hashing import canonical_json, sha256_bytes
 from ..params import Params
-from ..paths import default_label, reports_dir
+from ..paths import LABEL_RE, default_label, reports_dir
 from ..runtime import RuntimeConfigError, require_configured
 from . import registry, runner, timing
 from .folds import FOLD_LABEL_RE, Fold, fold_for
@@ -97,11 +120,14 @@ from .recipe import R1, Recipe, recipe8, recipe_id, training_seeds
 from .registry import CheckpointRef, RegistryEntry, checkpoint_id_for
 from .timing import TimingError
 from .train import (
+    CHILD_MODULE,
+    RUN_DIR_STAMP,
     ChildFailed,
     ChildMemoryAbort,
     Compute,
     FitOutcome,
     RunRequest,
+    TrainError,
     Wrappers,
     training_code_sha256,
 )
@@ -144,6 +170,10 @@ IDLE_REMINDER = (
 )
 # every status a fit entry may record (the ledger's fit statuses)
 FAILED_RUN_STATUSES: tuple[str, ...] = ("failed", "memory_abort", "time_abort", "killed")
+# the error types a training child records when a signal stopped it (finetune.runner: SIGTERM or
+# SIGHUP raise SystemExit, SIGINT KeyboardInterrupt): it was killed, it did not fail
+SIGNAL_ERROR_TYPES: tuple[str, ...] = ("SystemExit", "KeyboardInterrupt")
+RUN_DIR_OPTION = " --run-dir "  # train.child_command: the child's last argument is its run dir
 _SECONDS_PER_HOUR = 3600.0
 _REFUSED_LAYOUTS = {
     "wf": "the walk-forward runs the quarterly layout (D-048 (1), D-056): fold labels are "
@@ -173,7 +203,9 @@ class FoldSteps:
     """The heavy work, injectable (:func:`real_steps` gives the real ones; tests pass stand-ins).
     Each is called as its real counterpart: ``export_fold(fold, recipe, root=, sealed_access=)``,
     ``fit(request, root=, timeout_seconds=, register=True)``, ``load_timing(directory=)``,
-    ``mps_available()``, ``clock()`` (seconds) and ``children_cpu_seconds()``."""
+    ``mps_available()``, ``clock()`` (seconds), ``children_cpu_seconds()`` and
+    ``running_children()`` (``(pid, run directory)`` of every live training child on this
+    machine: :func:`running_training_children`)."""
 
     export_fold: Callable[..., ExportRecord]  # finetune.export_csv.export_fold
     fit: Callable[..., FitOutcome]  # finetune.train.fit
@@ -181,6 +213,7 @@ class FoldSteps:
     mps_available: Callable[[], bool]  # torch.backends.mps.is_available
     clock: Callable[[], float]  # time.monotonic
     children_cpu_seconds: Callable[[], float]  # getrusage(RUSAGE_CHILDREN) user + system
+    running_children: Callable[[], tuple[tuple[int, str], ...]]  # running_training_children
 
 
 def _mps_available() -> bool:
@@ -194,6 +227,53 @@ def _children_cpu_seconds() -> float:
     return usage.ru_utime + usage.ru_stime
 
 
+def parse_training_children(text: str) -> tuple[tuple[int, str], ...]:
+    """``(pid, run directory)`` of every process in ``text``, the output of ``ps -o
+    pid=,command=``, whose command line runs ``-m kronos_agent.finetune.runner`` (the training
+    child of ``finetune.train``, :data:`train.CHILD_MODULE`); the run directory is the text after
+    its last ``--run-dir`` (empty without one)."""
+    found: list[tuple[int, str]] = []
+    for line in text.splitlines():
+        pid_text, _, command = line.strip().partition(" ")
+        if not pid_text.isdigit():
+            continue
+        tokens = command.split()
+        if not any(
+            first == "-m" and second == CHILD_MODULE for first, second in itertools.pairwise(tokens)
+        ):
+            continue
+        _, marker, run_dir = command.rpartition(RUN_DIR_OPTION)
+        found.append((int(pid_text), run_dir.strip() if marker else ""))
+    return tuple(found)
+
+
+def running_training_children() -> tuple[tuple[int, str], ...]:
+    """The live training children on this machine, read with ``/bin/ps`` (every process, the
+    whole command line): :func:`parse_training_children`. ``TrainError`` (exit 1) when the
+    process list cannot be read: no training child starts unchecked."""
+    command = [timing.PS, "-A", "-ww", "-o", "pid=,command="]
+    try:
+        completed = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            timeout=timing.PS_TIMEOUT_SECONDS,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise TrainError(
+            f"cannot list the processes to look for a running training child ({type(exc).__name__}"
+            "): nothing was started"
+        ) from None
+    if completed.returncode != 0:
+        raise TrainError(
+            f"cannot list the processes to look for a running training child (ps exit "
+            f"{completed.returncode}): nothing was started"
+        )
+    own = os.getpid()
+    return tuple(item for item in parse_training_children(completed.stdout) if item[0] != own)
+
+
 def real_steps() -> FoldSteps:
     """The real steps (imported here, after the runtime is configured)."""
     from . import export_csv, train
@@ -205,6 +285,7 @@ def real_steps() -> FoldSteps:
         mps_available=_mps_available,
         clock=time.monotonic,
         children_cpu_seconds=_children_cpu_seconds,
+        running_children=running_training_children,
     )
 
 
@@ -425,15 +506,19 @@ def _payload(entry: ledger.LedgerEntry) -> Mapping[str, Any]:
     return entry.payload
 
 
-def _is_pilot_done(entry: ledger.LedgerEntry, identifier: str, subject: str) -> bool:
+def _is_pilot_stage(entry: ledger.LedgerEntry, stage: str, identifier: str, subject: str) -> bool:
     payload = _payload(entry)
     return (
         entry.kind == "exploration"
         and payload.get("activity") == PILOT_ACTIVITY
-        and payload.get("stage") == "done"
+        and payload.get("stage") == stage
         and payload.get("recipe_id") == identifier
         and payload.get("subject") == subject
     )
+
+
+def _is_pilot_done(entry: ledger.LedgerEntry, identifier: str, subject: str) -> bool:
+    return _is_pilot_stage(entry, "done", identifier, subject)
 
 
 def _details(entry: ledger.LedgerEntry) -> Mapping[str, Any]:
@@ -635,6 +720,130 @@ def _fold_state(
     )
 
 
+def _run_start(run_id: object, run_label: str) -> datetime | None:
+    """The UTC start of the run ``run_id``, ``<run_label>-YYYYMMDDTHHMMSSZ[-N]`` (the name
+    ``train.new_run_dir`` gives its directory when it starts), or ``None`` for another name."""
+    if not isinstance(run_id, str):
+        return None
+    match = re.fullmatch(re.escape(run_label) + r"-([0-9]{8}T[0-9]{6}Z)(?:-[0-9]+)?", run_id)
+    if match is None:
+        return None
+    try:
+        return datetime.strptime(match.group(1), RUN_DIR_STAMP).replace(tzinfo=UTC)
+    except ValueError:
+        return None
+
+
+@dataclass(frozen=True)
+class _Invocation:
+    """What the current invocation recorded and started, so that a run it started itself is told
+    apart from a run of an earlier invocation: the ledger's last seq before its entries
+    (``None`` while planning: every entry is earlier), its approval and the run ids of its
+    children."""
+
+    anchor: int | None = None
+    approval_seq: int | None = None
+    runs: frozenset[str] = frozenset()
+
+
+def _registered_unit_trace(
+    fold: Fold,
+    recipe: Recipe,
+    entry: RegistryEntry,
+    entries: Sequence[ledger.LedgerEntry],
+    *,
+    above_gate3: bool,
+    invocation: _Invocation | None = None,
+) -> tuple[int | None, int]:
+    """``(approval_seq, attempt)`` of the run that registered ``entry`` (``recipe``'s checkpoint
+    of ``fold``) but whose ``fit`` entry is missing (killed between its registration and the
+    ledger, or an error after the registration), from the trace that run left in this ledger
+    before it started (its start is the stamp of its run id), never from what this invocation
+    recorded:
+
+    - a run this invocation started (``invocation.runs``): this invocation's approval, its
+      attempts counted from the invocation's first entry;
+    - the pilot: the latest ``planned`` entry of ``recipe`` and the run label recorded at or
+      before the run's start (a pilot child always starts after it); its details name the
+      approval the run had;
+    - another fold: the recipe's ``preregistration`` entry recorded at or before the run's start
+      and, when the fold's estimate is above gate 3, the latest ``gate3_approval`` of its run
+      label recorded at or before it.
+
+    A run without that trace was registered under another ledger (a relocated reports root over
+    this fine-tune root, or a training child started outside this command): this ledger never
+    adopts it (:class:`FoldRefused`). The run was the retry (attempt 2) when the last ``fit``
+    entry of ``recipe`` and the fold after the trace, its own entries left out, is a retried
+    failure of attempt 1."""
+    invocation = invocation or _Invocation()
+    run_id = entry.document.get("run_id")
+    label, identifier = fold.run_label, recipe_id(recipe)
+    start = _run_start(run_id, label)
+    if start is None:
+        raise FoldFailed(
+            f"the registry entry of {entry.checkpoint_id} names run {run_id!r}, which is not a "
+            f"run id of {label}: its start cannot be read"
+        )
+
+    def foreign(what: str) -> FoldRefused:
+        return FoldRefused(
+            f"{entry.checkpoint_id} was registered by run {run_id}, which this ledger never "
+            f"{what} before the run started: it was registered under another ledger (a "
+            "relocated reports root over this fine-tune root, or a training child started "
+            "outside this command), and this ledger does not adopt it; run the command with "
+            "the ledger that planned it, or tell the owner (nothing was recorded)"
+        )
+
+    if run_id in invocation.runs:
+        anchor, approval_seq = invocation.anchor or 0, invocation.approval_seq
+    else:
+        earlier = [
+            item
+            for item in entries
+            if item.moment <= start and (invocation.anchor is None or item.seq <= invocation.anchor)
+        ]
+        if is_pilot(fold):
+            planned = [
+                item for item in earlier if _is_pilot_stage(item, "planned", identifier, label)
+            ]
+            if not planned:
+                raise foreign("planned (no pilot planned entry of its recipe)")
+            anchor = planned[-1].seq
+            value = _details(planned[-1]).get("approval_seq")
+            approval_seq = value if isinstance(value, int) and not isinstance(value, bool) else None
+        else:
+            bundle = ledger.preregistration_for(identifier, entries=earlier)
+            if bundle is None:
+                raise foreign("pre-registered (no bundle of its recipe)")
+            approvals = [
+                item.seq
+                for item in earlier
+                if item.kind == "gate3_approval"
+                and _payload(item).get("command") == COMMAND
+                and _payload(item).get("subject") == label
+            ]
+            if approvals:
+                anchor = approval_seq = approvals[-1]
+            elif above_gate3:
+                raise foreign("approved (no gate-3 approval of its run label)")
+            else:
+                anchor, approval_seq = bundle.seq, None
+    fits = [
+        _payload(item)
+        for item in entries
+        if item.seq > anchor
+        and item.kind == "fit"
+        and _payload(item).get("recipe_id") == identifier
+        and _payload(item).get("fold") == fold.label
+        and _payload(item).get("replicate") == fold.replicate
+        and _payload(item).get("run_id") != run_id
+    ]
+    retried = bool(fits) and (
+        fits[-1].get("status") in RETRY_STATUSES and fits[-1].get("attempt") == 1
+    )
+    return approval_seq, 2 if retried else 1
+
+
 # -- the plan -----------------------------------------------------------------------------------
 
 
@@ -654,6 +863,9 @@ class FoldPlan:
     refit: FitEstimate | None  # pilot only: the E_max-12 unit, if the rule fires
     state_lines: tuple[str, ...] = ()  # what the stage concerns (printed with the estimate)
     history: tuple[str, ...] = ()  # the earlier fit entries of the run label and their spend
+    # a fold other than the pilot at stage bookkeeping: the estimate of the registered unit, for
+    # its gate-3 trace in the ledger (an approval when it is above gate 3)
+    recorded: FitEstimate | None = None
 
 
 def _timing_directory(reports_root: Path | None) -> Path:
@@ -723,6 +935,43 @@ def _check_order(
             f"order {order_id} opens the sealed segment for candidate {candidate}, not for "
             f"{expected}, the T-B test of recipe {recipe.name} ({recipe8(recipe)}) (gate 6)"
         )
+
+
+def _same_path(first: Path, second: Path) -> bool:
+    one, two = os.path.realpath(first), os.path.realpath(second)
+    try:
+        return os.path.samefile(one, two)
+    except OSError:
+        return os.path.normcase(one) == os.path.normcase(two)
+
+
+def refuse_running_children(steps: FoldSteps, *, ft_root: Path | None) -> None:
+    """Refuse (:class:`FoldRefused`) while a training child runs on this machine: a parent killed
+    with SIGKILL (``kill -9``, a supervisor ending its process group) leaves its child training
+    in its own session, unsupervised, its checkpoint never registered and its compute never
+    recorded; a new child beside it would train twice on the one machine. The message names each
+    child's pid and run id (never its path)."""
+    children = steps.running_children()
+    if not children:
+        return
+    runs = registry.runs_dir(ft_root)
+    shown = []
+    for pid, run_dir in children:
+        path = Path(run_dir) if run_dir else None
+        if path is None or not path.name:
+            shown.append(f"pid {pid} (no run directory on its command line)")
+            continue
+        where = "this fine-tune root" if _same_path(path.parent, runs) else "another root"
+        name = path.name if LABEL_RE.fullmatch(path.name) else "a run"
+        shown.append(f"pid {pid}, run {name} ({where})")
+    raise FoldRefused(
+        "a training child is still running on this machine ("
+        + "; ".join(shown)
+        + "): a parent killed by SIGKILL leaves its child training, unsupervised and unrecorded, "
+        "and nothing trains twice here (design 3.5): tell the owner (its compute is not in the "
+        "ledger), wait for it to end or stop it (kill -TERM -PID, its process group), then run "
+        "the command again (nothing was started)"
+    )
 
 
 def _history(fold: Fold, entries: Sequence[ledger.LedgerEntry]) -> tuple[str, ...]:
@@ -812,11 +1061,13 @@ def plan_fold(
     ``fold_for`` (its ``FoldError`` for a label it rejects, a quarterly replicate among them);
     ``--order`` with a fold that is not sealed, or missing for one that reads sealed candles, or
     read from a ledger that may not open ``data_root`` (``ledger.LedgerRefused``), or naming
-    another candidate; a fold other than the pilot without the effective recipe's
-    pre-registration bundle; a timing record that decided no device or no way to run batch 32,
+    another candidate; a fold other than the pilot whose ledger may not authorize reading
+    ``data_root`` (``ledger.LedgerRefused``) or that has no pre-registration bundle of the
+    effective recipe; a timing record that decided no device or no way to run batch 32,
     measured another batch, is stale (``timing.StaleTimingError``), or chose MPS where MPS is not
-    available; a registered fold other than the pilot. ``data_root`` is where the run will
-    export the fold (nothing is read from it here).
+    available; a registered fold other than the pilot; a training child still running on this
+    machine (``steps.running_children``). ``data_root`` is where the run will export the fold
+    (only its metadata is read here).
     """
     if not isinstance(params, Params):
         raise TypeError(f"expected Params, got {type(params).__name__}")
@@ -839,11 +1090,17 @@ def plan_fold(
             "candle boundary 2024-06-09T16:00Z"
         )
     _check_order(order_id, fold, recipe, ledger_root=ledger_root, data_root=data_root)
-    if not pilot and ledger.preregistration_for(recipe_id(recipe), entries=entries) is None:
-        raise FoldRefused(
-            f"fold {fold.run_label} trains after the pre-registration bundle (design 7.1): the "
-            f"ledger has no preregistration entry for recipe {recipe.name} ({recipe8(recipe)})"
-        )
+    if not pilot:
+        # the bundle admits the fold's reads only from a ledger that may authorize reading the
+        # data root (hard rule 7): a bundle in a scratch ledger never trains on the repository's
+        # data (its CSV reaches validation dates)
+        ledger.require_binding(root=ledger_root, data_root=data_root)
+        if ledger.preregistration_for(recipe_id(recipe), entries=entries) is None:
+            raise FoldRefused(
+                f"fold {fold.run_label} trains after the pre-registration bundle (design 7.1): "
+                f"the ledger has no preregistration entry for recipe {recipe.name} "
+                f"({recipe8(recipe)})"
+            )
     directory = _timing_directory(reports_root)
     record = steps.load_timing(directory=directory)
     compute = compute_choice(record)
@@ -866,6 +1123,7 @@ def plan_fold(
             "on the machine that was measured"
         )
     record_sha256 = _record_file_sha256(record, directory)
+    refuse_running_children(steps, ft_root=ft_root)
     state = _fold_state(fold, recipe, entries=entries, ft_root=ft_root)
 
     def estimate(unit_recipe: Recipe) -> FitEstimate:
@@ -875,6 +1133,19 @@ def plan_fold(
     refit = None
     if pilot and state.stage == "train":
         refit = estimate(doubled_recipe())
+    recorded = None
+    if state.stage == "bookkeeping":
+        records = state.records
+        if not pilot:
+            recorded = estimate(records.recipe)
+        if records.fit is None and records.entry is not None:  # this ledger must hold its trace
+            _registered_unit_trace(
+                fold,
+                records.recipe,
+                records.entry,
+                entries,
+                above_gate3=recorded is not None and recorded.device_hours > GATE3_HOURS,
+            )
     return FoldPlan(
         fold=fold,
         recipe=recipe,
@@ -888,11 +1159,89 @@ def plan_fold(
         refit=refit,
         state_lines=_state_lines(state, fold),
         history=_history(fold, entries),
+        recorded=recorded,
     )
 
 
 def _hours(value: float, unit: str) -> str:
     return f"{value:.3f} {UNIT_TEXT[unit]}"
+
+
+def _wall_divisor(estimate: FitEstimate) -> float:
+    """Device hours per wall hour of a unit: 1 on MPS (wall-hours), its threads on the CPU."""
+    return 1.0 if estimate.device == "mps" else float(estimate.threads)
+
+
+def unit_deadline(estimate: FitEstimate, *, cap: float, spent: float) -> float | None:
+    """The deadline in seconds of a child of ``estimate`` started once ``spent`` of an
+    invocation's ``cap`` is spent (both in the estimate's unit): the smaller of
+    :data:`DEADLINE_FACTOR` times its estimate and the wall seconds the cap leaves; ``None``
+    when the cap does not admit it (the spend plus the estimate would pass it)."""
+    if spent + estimate.device_hours > cap:
+        return None
+    left = (cap - spent) * _SECONDS_PER_HOUR / _wall_divisor(estimate)
+    return min(DEADLINE_FACTOR * estimate.wall_seconds, left)
+
+
+def _figure_up(hours: float) -> float:
+    """``hours`` rounded up to the next hundredth (a figure that admits what it is for)."""
+    return math.ceil(round(hours * 100.0, 6)) / 100.0
+
+
+def _admits(estimate: FitEstimate, figure: float, *, spent: float) -> bool:
+    """Whether the figure ``figure`` admits a unit of ``estimate`` started once ``spent`` is
+    spent: the cap 1.25 x figure holds the spend and the estimate, and, for the invocation's
+    first unit, the estimate passes the 1.25 rule (:func:`_gate3_cap`)."""
+    if unit_deadline(estimate, cap=APPROVAL_TOLERANCE * figure, spent=spent) is None:
+        return False
+    return bool(spent) or estimate.device_hours / figure <= APPROVAL_TOLERANCE
+
+
+def _smallest_figure(estimate: FitEstimate, *, spent: float) -> float:
+    """The smallest figure, in hundredths, that admits the unit (:func:`_admits`): the quotient
+    rounded up, and the next hundredth where that rounding lands a hair below it."""
+    figure = _figure_up((spent + estimate.device_hours) / APPROVAL_TOLERANCE)
+    while not _admits(estimate, figure, spent=spent):
+        figure = _figure_up(figure + 0.01)
+    return figure
+
+
+def figure_text(estimate: FitEstimate, *, spent: float = 0.0, approved: float | None = None) -> str:
+    """What the figure H of ``--approved-by-owner`` gives a unit above gate 3 started once
+    ``spent`` is spent in the invocation: the smallest figure that admits it (the cap 1.25 x H
+    must hold the spend and its estimate, which passes the 1.25 rule too), the deadline that
+    figure leaves the child and how far above the worst case it lies, and the figure from which
+    the deadline is twice the estimate (design 3.5). A figure near the smallest leaves a deadline
+    barely above the worst case: a unit slower than estimated is then stopped near its end. With
+    ``approved`` (the figure of the run that prints it), also the deadline that figure would give
+    the unit, or that it does not admit it."""
+    unit = UNIT_TEXT[estimate.unit]
+    lowest = _smallest_figure(estimate, spent=spent)
+    full = _figure_up((spent + DEADLINE_FACTOR * estimate.device_hours) / APPROVAL_TOLERANCE)
+    deadline = unit_deadline(estimate, cap=APPROVAL_TOLERANCE * lowest, spent=spent)
+    assert deadline is not None  # _smallest_figure admits the unit
+    divisor = _wall_divisor(estimate)
+    left = f"({APPROVAL_TOLERANCE:g} x H - {spent:.3f})" if spent else f"{APPROVAL_TOLERANCE:g} x H"
+    per = f" / {divisor:g} threads" if divisor != 1.0 else ""
+    over = deadline / estimate.wall_seconds - 1.0
+    text = (
+        f"a figure H of at least {lowest:.2f} {unit} admits it"
+        + (f" after the {spent:.3f} {unit} spent before it" if spent else "")
+        + f"; its deadline is the smaller of {DEADLINE_FACTOR * estimate.wall_seconds:.0f} s "
+        f"(twice the estimate, design 3.5) and {left} x 3600 s{per}: {deadline:.0f} s at "
+        f"{lowest:.2f}, {over:.1%} above its worst case of {estimate.wall_seconds:.0f} s; twice "
+        f"the estimate from {full:.2f}"
+    )
+    if approved is None:
+        return text
+    if not _admits(estimate, approved, spent=spent):
+        return text + f"; H = {approved:g}, this run's figure, does not admit it"
+    given = unit_deadline(estimate, cap=APPROVAL_TOLERANCE * approved, spent=spent)
+    assert given is not None  # _admits checked it
+    return text + (
+        f"; H = {approved:g}, this run's figure, would give it {given:.0f} s, "
+        f"{given / estimate.wall_seconds - 1.0:.1%} above its worst case"
+    )
 
 
 def _estimate_line(prefix: str, estimate: FitEstimate) -> str:
@@ -966,6 +1315,15 @@ def estimate_lines(plan: FoldPlan) -> list[str]:
                 f"may be at most {APPROVAL_TOLERANCE:g} times it, and nothing starts that could "
                 f"take this run's spend past {APPROVAL_TOLERANCE:g} times it"
             )
+            lines.append(f"the figure for {fold.run_label}: {figure_text(plan.first)}")
+            if plan.refit is not None:
+                lines.append(
+                    "the figure for the refit, if the pilot rule fires: in this invocation, "
+                    + figure_text(plan.refit, spent=plan.first.device_hours)
+                    + " (the pilot spending its estimate); with a smaller figure the command "
+                    "stops after the pilot, and the refit's own invocation needs its own figure: "
+                    + figure_text(plan.refit)
+                )
         else:
             lines.append(
                 f"gate 3: {_hours(hours, unit)}, not above {GATE3_HOURS:g} hour: no approval "
@@ -1039,9 +1397,11 @@ def _gate3_cap(plan: FoldPlan, approved_hours: float | None) -> float:
     ratio = hours / approved_hours
     if ratio > APPROVAL_TOLERANCE:
         raise FoldRefused(
-            f"the measured estimate {_hours(hours, unit)} is {ratio:.2f} times the "
+            f"the measured estimate {_hours(hours, unit)} is {ratio:.3f} times the "
             f"{approved_hours:g} {UNIT_TEXT[unit]} the owner approved, above the tolerance of "
-            f"{APPROVAL_TOLERANCE:g} (D-040, D-046): show the owner the estimate (nothing ran)"
+            f"{APPROVAL_TOLERANCE:g} (D-040, D-046): show the owner the estimate ("
+            + figure_text(first)
+            + "; nothing ran)"
         )
     return cap
 
@@ -1154,6 +1514,8 @@ class _FoldRun:
         self.progressed = False
         estimates = [item for item in (plan.first, plan.refit) if item is not None]
         self.estimates = {item.recipe_id: item for item in estimates}
+        self.anchor = len(self.entries())  # the ledger's last seq before this invocation's entries
+        self.started: set[str] = set()  # the run ids of this invocation's children
 
     # -- the ledger ----------------------------------------------------------------------------
 
@@ -1242,7 +1604,7 @@ class _FoldRun:
             wall = cpu = 0.0
         fit = records.fit
         if fit is None:
-            approval_seq, attempt = self.registered_unit(records.recipe)
+            approval_seq, attempt = self.registered_unit(records.recipe, entry)
             fit = self.record_fit(
                 records.recipe,
                 status="registered",
@@ -1262,57 +1624,77 @@ class _FoldRun:
             self.record_pilot_done(records.recipe, entry, record, digest, fit_seq=fit.seq)
         self.progressed = True
 
-    def registered_unit(self, recipe: Recipe) -> tuple[int | None, int]:
-        """``(approval_seq, attempt)`` of a registered run of ``recipe`` whose ``fit`` entry is
-        missing (killed between its registration and the ledger), from what was recorded before
-        it, never from this invocation: the unit's anchor is the pilot's latest ``planned`` entry
-        of ``recipe`` (its details name the approval the unit ran under) or, for another fold,
-        the latest ``gate3_approval`` of its run label recorded before this invocation's own; the
-        run was the retry (attempt 2) when the last ``fit`` entry of ``recipe`` and the run
-        label after the anchor is a retried failure of attempt 1."""
-        entries = self.entries()
-        identifier = recipe_id(recipe)
-        label = self.fold.run_label
-        anchor, approval_seq = 0, None
-        if self.plan.is_pilot:
-            planned = [
-                item
-                for item in entries
-                if item.kind == "exploration"
-                and _payload(item).get("activity") == PILOT_ACTIVITY
-                and _payload(item).get("stage") == "planned"
-                and _payload(item).get("recipe_id") == identifier
-                and _payload(item).get("subject") == label
-            ]
-            if planned:
-                anchor = planned[-1].seq
-                value = _details(planned[-1]).get("approval_seq")
-                if isinstance(value, int) and not isinstance(value, bool):
-                    approval_seq = value
-        else:
-            approvals = [
-                item.seq
-                for item in entries
-                if item.kind == "gate3_approval"
-                and _payload(item).get("command") == COMMAND
-                and _payload(item).get("subject") == label
-                and (self.approval_seq is None or item.seq < self.approval_seq)
-            ]
-            if approvals:
-                anchor = approval_seq = approvals[-1]
-        fits = [
-            _payload(item)
-            for item in entries
-            if item.seq > anchor
-            and item.kind == "fit"
-            and _payload(item).get("recipe_id") == identifier
-            and _payload(item).get("fold") == self.fold.label
-            and _payload(item).get("replicate") == self.fold.replicate
-        ]
-        retried = bool(fits) and (
-            fits[-1].get("status") in RETRY_STATUSES and fits[-1].get("attempt") == 1
+    def registered_unit(self, recipe: Recipe, entry: RegistryEntry) -> tuple[int | None, int]:
+        """``(approval_seq, attempt)`` of the run that registered ``entry`` without its ``fit``
+        entry, from its trace in this ledger (:func:`_registered_unit_trace`; a run registered
+        under another ledger is refused, never adopted)."""
+        estimate = self.plan.recorded
+        return _registered_unit_trace(
+            self.fold,
+            recipe,
+            entry,
+            self.entries(),
+            above_gate3=(
+                estimate is not None
+                and estimate.recipe_id == recipe_id(recipe)
+                and estimate.device_hours > GATE3_HOURS
+            ),
+            invocation=_Invocation(
+                anchor=self.anchor, approval_seq=self.approval_seq, runs=frozenset(self.started)
+            ),
         )
-        return approval_seq, 2 if retried else 1
+
+    def registered_run(self, recipe: Recipe, run_id: str | None) -> RegistryEntry | None:
+        """The registry entry of ``recipe``'s checkpoint of this fold when the run ``run_id``
+        registered it: ``train.fit`` installs the checkpoint, then cleans the run directory, so
+        an error or an interrupt can follow a registration. A registry that cannot be read counts
+        as not holding it (the failure is recorded; the next invocation refuses the registry)."""
+        if run_id is None:
+            return None
+        checkpoint_id = checkpoint_id_for(recipe8(recipe), self.fold.run_label)
+        try:
+            entries = registry.read_registry(self.ft_root)
+        except registry.RegistryError:
+            return None
+        for item in entries:
+            if item.checkpoint_id == checkpoint_id and item.document.get("run_id") == run_id:
+                return item
+        return None
+
+    def record_registered_run(
+        self, recipe: Recipe, entry: RegistryEntry, *, attempt: int, wall: float, cpu: float
+    ) -> ledger.LedgerEntry:
+        """The ``fit`` entry of a run of this invocation that registered its checkpoint before
+        an error or an interrupt reached this process: recorded at once from its registry entry
+        (the fold record's sha256 as the registry recorded it; a blinded fold's record is never
+        opened), with the spend this process measured around the child, this invocation's
+        approval and the attempt, as a registered run's entry is (design 3.5: every command
+        records its spend; bookkeeping at a later invocation could not measure it). The pilot's
+        ``done`` entry follows from its fold record (:meth:`bookkeeping`)."""
+        fit = self.record_fit(
+            recipe,
+            status="registered",
+            attempt=attempt,
+            run_id=str(entry.document.get("run_id")),
+            entry=entry,
+            fit_record_sha256=str(entry.document.get("fit_record_sha256")),
+            wall_seconds=wall,
+            cpu_seconds=cpu,
+            approval_seq=self.approval_seq,
+        )
+        self.units.append(
+            UnitOutcome(
+                recipe_id(recipe),
+                self.fold.run_label,
+                attempt,
+                "registered",
+                entry.checkpoint_id,
+                entry.line_sha256,
+                fit.seq,
+                None,
+            )
+        )
+        return fit
 
     def record_pilot_done(
         self,
@@ -1356,11 +1738,7 @@ class _FoldRun:
 
     def deadline(self, estimate: FitEstimate) -> float | None:
         """The next child's deadline in seconds, or ``None`` when the cap does not admit it."""
-        if self.spent + estimate.device_hours > self.cap:
-            return None
-        divisor = 1.0 if self.plan.compute.device == "mps" else float(self.plan.compute.threads)
-        left = (self.cap - self.spent) * _SECONDS_PER_HOUR / divisor
-        return min(DEADLINE_FACTOR * estimate.wall_seconds, left)
+        return unit_deadline(estimate, cap=self.cap, spent=self.spent)
 
     def over_cap(self, estimate: FitEstimate, what: str) -> str:
         if self.approved_hours is None:
@@ -1411,7 +1789,8 @@ class _FoldRun:
                         estimate, f"the pilot rule fired; the refit at E_max {recipe.max_epochs}"
                     )
                     + f": show the owner; rerun `finetune fold --fold {self.fold.run_label} "
-                    "--approved-by-owner H` with the figure they approve for the refit"
+                    "--approved-by-owner H` with the figure they approve for the refit: "
+                    + figure_text(estimate, approved=self.approved_hours)
                 )
             raise FoldRefused(
                 self.over_cap(estimate, f"fold {self.fold.run_label}")
@@ -1493,23 +1872,42 @@ class _FoldRun:
         except FileNotFoundError:
             return set()
 
-    def failed_run(self, before: set[str]) -> tuple[str, str | None]:
-        """``(status, run_id)`` of the run directory the call created: its record's status
-        (only that is read), ``no_result`` without a record, ``killed`` without exactly one new
-        directory or with an unreadable record; a run that completed but was not registered
-        counts as ``failed``."""
+    def failed_run(
+        self, before: set[str], *, wall: float, deadline: float
+    ) -> tuple[str, str | None]:
+        """``(status, run_id)`` of the run directory the call created, by what happened whatever
+        its record's status says: ``memory_abort`` when the record says so (not a fold failure);
+        ``time_abort`` once the attempt's wall time reached its deadline (the child's own
+        deadline, or the parent's timeout behind it, which stops the child with SIGTERM, then
+        SIGKILL: design 3.5, never retried); ``killed`` without exactly one new directory, with
+        an unreadable record, or when the record's error is a signal's
+        (:data:`SIGNAL_ERROR_TYPES`: the child was stopped, it did not fail); otherwise the
+        record's status, ``no_result`` without a record, and ``failed`` for a run that completed
+        but was not registered. Only the record's status and error type are read."""
         created = sorted(self.run_dirs() - before)
-        if len(created) != 1:
-            return "killed", None
-        run_id = created[0]
-        path = registry.runs_dir(self.ft_root) / run_id / runner.RESULT_JSON
-        try:
-            document = json.loads(path.read_bytes())
-        except FileNotFoundError:
-            return "no_result", run_id
-        except (OSError, ValueError):
-            return "killed", run_id
+        run_id = created[0] if len(created) == 1 else None
+        document: Any = None
+        unreadable = False
+        if run_id is not None:
+            path = registry.runs_dir(self.ft_root) / run_id / runner.RESULT_JSON
+            try:
+                document = json.loads(path.read_bytes())
+            except FileNotFoundError:
+                document = None
+            except (OSError, ValueError):
+                unreadable = True
         status = document.get("status") if isinstance(document, dict) else None
+        if status == "memory_abort":
+            return "memory_abort", run_id
+        if wall >= deadline:
+            return "time_abort", run_id
+        if run_id is None or unreadable or not isinstance(document, (dict, type(None))):
+            return "killed", run_id
+        if document is None:
+            return "no_result", run_id
+        error = document.get("error")
+        if isinstance(error, dict) and error.get("type") in SIGNAL_ERROR_TYPES:
+            return "killed", run_id
         if status == "completed":
             return "failed", run_id
         if status not in FAILED_RUN_STATUSES:
@@ -1525,9 +1923,14 @@ class _FoldRun:
         return wall, cpu
 
     def train(self, request: RunRequest, recipe: Recipe, *, attempt: int) -> bool:
-        """One child; True once registered, False after a failure that is retried."""
+        """One child; True once registered, False after a failure that is retried. A run that
+        registered its checkpoint before an error or an interrupt reached this process is never
+        recorded as a failure: its ``fit`` entry is recorded at once from the registry, with the
+        spend measured here (:meth:`record_registered_run`; the pilot's ``done`` entry by the
+        bookkeeping of this invocation, or of the next one after an interrupt)."""
         deadline = request.deadline_seconds
         assert deadline is not None
+        refuse_running_children(self.steps, ft_root=self.ft_root)
         self.say(
             f"training {self.fold.run_label} (recipe {recipe8(recipe)}, attempt {attempt} of "
             f"{MAX_ATTEMPTS}) on {self.plan.compute.device.upper()}: deadline {deadline:.0f} s"
@@ -1546,7 +1949,19 @@ class _FoldRun:
             )
         except (ChildFailed, ChildMemoryAbort) as exc:
             wall, cpu = self.charge(clock0, cpu0, own0)
-            status, run_id = self.failed_run(before)
+            self.started |= self.run_dirs() - before
+            status, run_id = self.failed_run(before, wall=wall, deadline=deadline)
+            registered = self.registered_run(recipe, run_id)
+            if registered is not None:
+                fit = self.record_registered_run(
+                    recipe, registered, attempt=attempt, wall=wall, cpu=cpu
+                )
+                self.say(
+                    f"fold {self.fold.run_label} attempt {attempt} (run {run_id}) registered its "
+                    f"checkpoint before the error ({type(exc).__name__}): no failure is recorded; "
+                    f"fit entry #{fit.seq} records it from the registry"
+                )
+                return True
             fit = self.record_failure(
                 recipe, status=status, attempt=attempt, run_id=run_id, wall=wall, cpu=cpu
             )
@@ -1563,20 +1978,49 @@ class _FoldRun:
                     f"{what}{detail}; a memory abort is not a fold failure (design 3.5): tell "
                     "the owner; the fold restarts from scratch once the machine has the memory"
                 ) from None
+            if status == "time_abort":
+                raise FoldFailed(
+                    f"{what}{detail}: it ran to its deadline of {deadline:.0f} s (design 3.5: a "
+                    "fold past twice its worst case, or past what the approval leaves, is "
+                    "stopped) and is not retried: tell the owner"
+                ) from None
             again = "after its retry" if attempt > 1 else "and is not retried"
             raise FoldFailed(f"{what} {again}{detail}: tell the owner (design 6.3)") from None
         except BaseException:
             wall, cpu = self.charge(clock0, cpu0, own0)
-            if self.run_dirs() - before:  # the child started: its status is recorded first
-                status, run_id = self.failed_run(before)
+            created = self.run_dirs() - before
+            self.started |= created
+            if created:  # the child started: its status is recorded first
                 try:
-                    fit = self.record_failure(
-                        recipe, status=status, attempt=attempt, run_id=run_id, wall=wall, cpu=cpu
-                    )
-                    self.say(
-                        f"fold {self.fold.run_label} attempt {attempt} (run {run_id or 'unknown'}) "
-                        f"stopped: {status} (fit entry #{fit.seq})"
-                    )
+                    status, run_id = self.failed_run(before, wall=wall, deadline=deadline)
+                    registered = self.registered_run(recipe, run_id)
+                    if registered is not None:
+                        fit = self.record_registered_run(
+                            recipe, registered, attempt=attempt, wall=wall, cpu=cpu
+                        )
+                        self.say(
+                            f"fold {self.fold.run_label} attempt {attempt} (run {run_id}) "
+                            "registered its checkpoint before it was stopped: no failure is "
+                            f"recorded; fit entry #{fit.seq} records it from the registry"
+                            + (
+                                " (the next invocation records the pilot's done entry)"
+                                if self.plan.is_pilot
+                                else ""
+                            )
+                        )
+                    else:
+                        fit = self.record_failure(
+                            recipe,
+                            status=status,
+                            attempt=attempt,
+                            run_id=run_id,
+                            wall=wall,
+                            cpu=cpu,
+                        )
+                        self.say(
+                            f"fold {self.fold.run_label} attempt {attempt} (run "
+                            f"{run_id or 'unknown'}) stopped: {status} (fit entry #{fit.seq})"
+                        )
                 except Exception as error:  # noqa: BLE001 - the original exception goes on
                     self.say(
                         "WARNING: the stopped run could not be recorded in the ledger "
@@ -1584,6 +2028,7 @@ class _FoldRun:
                     )
             raise
         wall, cpu = self.charge(clock0, cpu0, own0)
+        self.started.add(outcome.run_id)
         self.registered(outcome, recipe, attempt=attempt, wall=wall, cpu=cpu)
         return True
 
@@ -1686,10 +2131,12 @@ def run_fold(
 ) -> FoldOutcome:
     """Run the plan (module docstring): gate 3 on the first compute unit, before anything is
     written; the fold lock (``<fine-tune root>/.scratch/fold.lock``, a held one is
-    ``LockBusyError``) and no timing run in progress; the state read again under the lock (a
-    state that moved since the plan is refused); the approval entry (with a figure); then the
-    bookkeeping and the compute units the cap admits. Every line goes to ``progress`` as it
-    happens and into the outcome's ``lines``."""
+    ``LockBusyError``), no timing run in progress, no training child running on this machine
+    (:func:`refuse_running_children`, checked again before every child) and, for a fold other
+    than the pilot, a ledger that may authorize reading ``data_root``; the state read again
+    under the lock (a state that moved since the plan is refused); the approval entry (with a
+    figure); then the bookkeeping and the compute units the cap admits. Every line goes to
+    ``progress`` as it happens and into the outcome's ``lines``."""
     if not isinstance(plan, FoldPlan):
         raise TypeError(f"expected a FoldPlan, got {type(plan).__name__}")
     if not isinstance(steps, FoldSteps):
@@ -1710,6 +2157,9 @@ def run_fold(
                 "a timing run (`finetune timing`) is in progress on this fine-tune root: run the "
                 "fold after it"
             )
+        if not plan.is_pilot:  # the roots of this run, which may not be the plan's
+            ledger.require_binding(root=ledger_root, data_root=data_root)
+        refuse_running_children(steps, ft_root=ft_root)
         state = _fold_state(
             plan.fold, plan.recipe, entries=ledger.read_ledger(ledger_root), ft_root=ft_root
         )
@@ -1743,7 +2193,7 @@ def run_fold(
             say(
                 f"gate 3: the owner approved {approved_hours:g} {UNIT_TEXT[first.unit]} for an "
                 f"estimate of {_hours(first.device_hours, first.unit)} (ratio "
-                f"{first.device_hours / approved_hours:.2f}; --approved-by-owner given at "
+                f"{first.device_hours / approved_hours:.3f}; --approved-by-owner given at "
                 f"{_moment_text(given_at)}): approval entry #{approval.seq} (line "
                 f"{approval.line_sha256[:12]}...); this run may spend up to "
                 f"{_hours(cap, first.unit)}"
@@ -1845,7 +2295,9 @@ __all__ = [
     "PILOT_RULE",
     "PILOT_RULE_FACTOR",
     "RETRY_STATUSES",
+    "RUN_DIR_OPTION",
     "SETUP_SECONDS_PRIOR",
+    "SIGNAL_ERROR_TYPES",
     "VALIDATION_FORWARD_SHARE",
     "WALK_FORWARD_LAYOUT",
     "FitEstimate",
@@ -1860,11 +2312,16 @@ __all__ = [
     "doubled_recipe",
     "effective_recipe",
     "estimate_lines",
+    "figure_text",
     "fit_estimate",
     "is_pilot",
+    "parse_training_children",
     "pilot_rule",
     "plan_fold",
     "real_steps",
+    "refuse_running_children",
     "resolve_pilot",
     "run_fold",
+    "running_training_children",
+    "unit_deadline",
 ]

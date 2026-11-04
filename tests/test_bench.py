@@ -142,6 +142,41 @@ def test_cli_registers_bench_with_the_contract_options():
     assert args.label == default_label()
 
 
+def test_cli_prints_where_it_wrote_under_a_relocated_reports_root(capsys, monkeypatch):
+    """The reports root of a test is relocated (KRONOS_AGENT_REPORTS_DIR, outside the
+    repository): the command prints the paths it wrote (cli.display_path), where it used to
+    raise ValueError from ``relative_to(REPO_ROOT)``. The benchmark itself is a stand-in."""
+    from kronos_agent import bench, cli
+    from kronos_agent.paths import reports_dir
+
+    def stand_in(**kwargs):
+        return {"label": kwargs["label"], "stand_in": True}
+
+    written = {}
+
+    def write(result, *, label=None, directory=None):
+        base = reports_dir() / "environment"
+        base.mkdir(parents=True, exist_ok=True)
+        paths = (base / f"{label}.bench.json", base / f"{label}.bench.md")
+        for path in paths:
+            path.write_text("{}\n", encoding="ascii")
+        written["paths"] = paths
+        return paths
+
+    monkeypatch.setattr(bench, "run_benchmark", stand_in)
+    monkeypatch.setattr(bench, "write_reports", write)
+    monkeypatch.setattr(bench, "headline_lines", lambda result: ["stand-in benchmark"])
+    assert not reports_dir().is_relative_to(REPO_ROOT)
+    assert bench_cli.run(_cli_args("--label", "relocated")) == 0
+    out = capsys.readouterr().out.splitlines()
+    json_path, md_path = written["paths"]
+    assert out == [
+        "stand-in benchmark",
+        f"wrote {cli.display_path(json_path)} and {cli.display_path(md_path)}",
+    ]
+    assert "environment/relocated.bench.json and " in out[-1]
+
+
 # --- weights needed -------------------------------------------------------------------------------
 
 

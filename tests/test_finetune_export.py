@@ -294,7 +294,7 @@ def test_t7_a_csv_reading_sealed_candles_needs_the_owners_order(
         export_fold(final_fold("2026-08-02T00:00Z", R1), R1, root=store_root, out_dir=out)
     assert not out.exists()
     monkeypatch.setattr(partition, "_verify_order", lambda order_id: None)
-    access = partition.sealed_access("recorded-order-for-the-test")
+    access = partition.sealed_access("recorded-order-for-the-test", data_root=store_root)
     record = export_fold(september, R1, sealed_access=access, root=store_root, out_dir=out)
     assert record.content["last_open_ms"] == september.csv_end_ms - HOUR_MS > SEALED_START_MS
     # the first sealed fold and the model to date at 2026-08-01 read no sealed candle

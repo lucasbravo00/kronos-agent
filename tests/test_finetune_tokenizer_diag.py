@@ -154,6 +154,11 @@ def test_the_plan_holds_the_definition_and_no_data():
     assert part_b["token_mismatch_statistic"] is None
     text = json.dumps(plan)
     assert "params_version" not in text and "source_tree_sha256" not in text
+    # which statistics are shares is part of the definition (a change is a changed study)
+    shares = plan["intervals"]["shares"]
+    assert shares["statistics"] == ["saturation_windows_<channel>", "saturation_next_<channel>"]
+    assert "share=False" in shares["rule"] and "bit_margin" in shares["rule"]
+    assert part_b["intervals"]["shares"]["statistics"] == ["saturation_windows_<channel>"]
 
 
 def test_the_config_is_recorded_once_and_a_changed_one_is_refused(tmp_path, tokenizer):
@@ -192,6 +197,49 @@ def test_part_b_without_part_a_report_fails_before_reading_a_store(tmp_path, tok
     steps = steps_for(tokenizer, window_source=no_store)
     with pytest.raises(td.TokenizerDiagError, match="Part A's report"):
         td.prepare_diag("validation", params=PARAMS, steps=steps, directory=tmp_path)
+
+
+def test_part_b_never_reads_the_repositorys_data_under_another_ledger(
+    tmp_path, tokenizer, monkeypatch
+):
+    """Part B waits for the pre-registration bundle: its validation inputs are read only on a
+    data root the ledger in use may authorize (``ledger.binding_problem``). Under the test's own
+    (relocated) ledger, a stand-in repository's data/ is refused before the definition is
+    recorded or a store is read; Part A, training-segment data, is not bound."""
+    from kronos_agent import ledger
+
+    repo = tmp_path / "repo"
+    (repo / "data").mkdir(parents=True)
+    (repo / "reports" / "ledger").mkdir(parents=True)
+    monkeypatch.setattr(ledger, "REPO_ROOT", repo)
+
+    def no_store(*args, **kwargs):
+        raise AssertionError("a store was read")
+
+    steps = steps_for(tokenizer, window_source=no_store)
+    directory = tmp_path / "reports"
+    for root, ledger_root in ((repo / "data", None), (repo / "data", tmp_path / "x" / "ledger")):
+        with pytest.raises(ledger.LedgerRefused, match="not the repository's reports/ledger"):
+            td.prepare_diag(
+                "validation",
+                params=PARAMS,
+                steps=steps,
+                root=root,
+                directory=directory,
+                ledger_root=ledger_root,
+            )
+    assert not directory.exists()  # nothing recorded
+    with pytest.raises(td.TokenizerDiagError, match="Part A's report"):  # bound: its own ledger
+        td.prepare_diag(
+            "validation",
+            params=PARAMS,
+            steps=steps,
+            root=repo / "data",
+            directory=directory,
+            ledger_root=repo / "reports" / "ledger",
+        )
+    with pytest.raises(AssertionError, match="a store was read"):  # Part A is not bound
+        td.prepare_diag("training", params=PARAMS, steps=steps, root=repo / "data")
 
 
 def test_prepare_refuses_another_thread_count_or_model(tmp_path, tokenizer):
@@ -669,6 +717,22 @@ def test_intervals_with_enough_blocks(tmp_path, monkeypatch, tokenizer):
         result.report["statistics_with_intervals"] * 0.05
     )
     assert result.report["results"]["reference"]["statistics"]["rho"]["low"] is None
+    # only the per-window 0/1 indicators are shares (deff against windows; a Wilson interval
+    # at the block count for exactly 0 or 1); the per-window fractions are means of fractions
+    for name, item in statistics.items():
+        share = name.startswith(("saturation_windows_", "saturation_next_"))
+        assert (item["method"] == "wilson_blocks") <= share, name
+        if not share:
+            assert item["deff"] is None and item["n_eff"] is None, name
+    for channel in FEATURE_COLUMNS:
+        context = statistics[f"saturation_context_{channel}"]
+        if context["point"] == 0.0:  # every resample 0: no interval, never a Wilson one
+            assert context["method"] == "point_only" and "degenerate" in context["reason"]
+        windows = statistics[f"saturation_windows_{channel}"]
+        if windows["point"] == 0.0:
+            assert windows["method"] == "wilson_blocks" and windows["n"] == 24
+    for name in ("bit_margin_0.001", "bit_margin_0.01", "mismatch_r1_any", "mismatch_r1_s1"):
+        assert statistics[name]["deff"] is None, name
 
 
 def test_part_b_reads_part_a_and_compares_the_sources(tmp_path, short, tokenizer):

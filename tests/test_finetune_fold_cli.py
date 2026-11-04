@@ -191,6 +191,7 @@ class PilotCheckFakes:
         self.reading = reading
         self.stop = stop
         self.approved: list[float | None] = []
+        self.prior: list[float] = []
         for name in ("real_steps", "record_check_config", "prepare_check", "estimate_check"):
             monkeypatch.setattr(pilot_check, name, getattr(self, name))
         monkeypatch.setattr(pilot_check, "run_check", self.run_check)
@@ -225,12 +226,24 @@ class PilotCheckFakes:
         directory=None,
         progress=print,
         approved_cpu_hours=None,
+        prior_cpu_seconds=0.0,
     ):
         self.calls.append(("run_check", ledger_kinds_now()))
         self.approved.append(approved_cpu_hours)
+        self.prior.append(prior_cpu_seconds)
         if self.stop:
+            limit = pilot_check.spend_limit(approved_cpu_hours)
             raise pilot_check.PilotCheckStopped(
-                f"{PILOT_STEM}: the run's spend, 3610 CPU-seconds, passed its limit of 3600"
+                f"{PILOT_STEM}: the run's spend, {limit + 10:.0f} CPU-seconds, passed its limit of "
+                f"{limit:.0f}",
+                spend={
+                    "cpu_seconds": limit + 10.0,
+                    "run_cpu_seconds": limit + 10.0 - prior_cpu_seconds,
+                    "prior_cpu_seconds": prior_cpu_seconds,
+                    "limit_cpu_seconds": limit,
+                    "approved_cpu_hours": approved_cpu_hours,
+                    "stopped": "after 100 of the 168 pilot fans",
+                },
             )
         path = reports_dir() / "finetune" / f"{PILOT_STEM}.json"
         return pilot_check.CheckResult(
@@ -320,10 +333,54 @@ def test_a_pilot_check_its_spend_stopped_is_a_refusal_without_a_done_entry(
     before = kinds()
     fakes = PilotCheckFakes(monkeypatch, cpu_seconds=4000.0, stop=True)
     code, out = main(capsys, "pilot-check", "--approved-by-owner", "1.5")
-    assert fakes.approved == [1.5]
+    assert fakes.approved == [1.5] and fakes.prior == [0.0]
     assert "spend control: the run stops once it passes 6750 CPU-seconds" in out
     assert code == 2 and "REFUSED: pilot-check-0ee0d123: the run's spend" in out
-    assert kinds() == [*before, "gate3_approval"]  # the approval stays; no done entry
+    # the approval stays, and the stopped run is recorded with what it spent; no done entry
+    assert kinds() == [*before, "gate3_approval", "exploration"]
+    stopped = ledger.entries_of("exploration")[-1]
+    assert (stopped.payload["subject"], stopped.payload["stage"]) == (PILOT_STEM, "stopped")
+    details = stopped.payload["details"]
+    assert details["run_cpu_seconds"] == 6760.0 and details["approval_seq"] == len(kinds()) - 1
+    assert f"ledger: stopped entry #{stopped.seq} (line" in out and "6760 CPU-seconds" in out
+
+
+def test_a_rerun_after_a_stop_counts_what_the_stopped_run_spent(world, capsys, monkeypatch):
+    """Design 3.5: a lost run's compute counts against the approval. A run stopped at gate 3's
+    3,600 CPU-seconds is recorded; the rerun's estimate (3,200 for the pending fans) is shown
+    with the stopped run's 3,610: 6,810 in all, above gate 3, so it needs a figure covering the
+    total, and it runs from that spend."""
+    train_pilot(capsys, world)
+    fakes = PilotCheckFakes(monkeypatch, cpu_seconds=3200.0, stop=True)
+    code, out = main(capsys, "pilot-check")  # below gate 3: no figure, stopped at 3,600
+    assert code == 2 and fakes.prior == [0.0]
+    stopped = ledger.entries_of("exploration")[-1]
+    assert stopped.payload["details"]["run_cpu_seconds"] == 3610.0
+    fakes.stop = False
+    code, out = main(capsys, "pilot-check", "--estimate")
+    assert (
+        code == 0
+        and (
+            f"plus the 3610 CPU-seconds its stopped runs spent (ledger entry #{stopped.seq}): 6810 "
+            "CPU-seconds (1.89 CPU-hours) in all; above gate 3"
+        )
+        in out
+    )
+    code, out = main(capsys, "pilot-check")
+    assert code == 2 and "REFUSED: the batch needs about 6810 CPU-seconds" in out
+    assert fakes.prior == [0.0]  # nothing ran
+    code, out = main(capsys, "pilot-check", "--approved-by-owner", "2")
+    assert code == 0 and fakes.prior == [0.0, 3610.0] and fakes.approved[-1] == 2.0
+    approval = ledger.entries_of("gate3_approval")[-1].payload
+    assert approval["estimate"] == pytest.approx(6810.0 / 3600)
+    assert approval["estimate_detail"]["prior_cpu_seconds"] == 3610.0
+    assert "counted from the 3610 its stopped runs spent" in out
+    done = ledger.entries_of("exploration")[-1]
+    assert done.payload["stage"] == "done"
+    assert pilot_check.prior_spend(PILOT_STEM, entries=ledger.read_ledger()) == {
+        "cpu_seconds": 0.0,
+        "entries": [],
+    }
 
 
 # -- tokenizer-diag --------------------------------------------------------------------------------
@@ -431,6 +488,42 @@ def test_tokenizer_diag_part_b_runs_only_after_the_bundle(world, capsys, monkeyp
         [],
     )
     assert "ledger: 1 pre-registration bundle(s) verified" in out
+
+
+def test_part_b_and_the_blinded_folds_never_read_the_repositorys_data_under_another_ledger(
+    world, capsys, monkeypatch, tmp_path
+):
+    """The reviewer's setup: a stand-in repository whose data/ is the data root (as an unset
+    KRONOS_AGENT_DATA_DIR makes the real one) and the test's own, relocated reports root, whose
+    ledger records a bundle. Part B and a fold after the pilot are refused (exit 2) before any
+    window is built or any plan is printed; with a data root of its own, both run."""
+    repo = tmp_path / "repo"
+    (repo / "data").mkdir(parents=True)
+    (repo / "reports" / "ledger").mkdir(parents=True)
+    monkeypatch.setattr(ledger, "REPO_ROOT", repo)
+    monkeypatch.setenv(paths.DATA_DIR_ENV, str(repo / "data"))
+    diag = DiagFakes(monkeypatch)
+    fold_fakes.write_bundle(R1)
+    before = kinds()
+    code, out = main(capsys, "tokenizer-diag", "--part", "validation")
+    assert code == 2 and "\nREFUSED: the experiment ledger in use is not the repository's" in out
+    assert diag.calls == [] and kinds() == before
+    code, out = main(capsys, "fold", "--fold", "q-2024-10", "--estimate")
+    assert code == 2 and out.startswith("ledger: 1 pre-registration bundle(s) verified\nREFUSED:")
+    assert "finetune fold q-2024-10" not in out and world.exports == []
+    monkeypatch.setenv(paths.DATA_DIR_ENV, str(tmp_path / "own-data"))
+    code, out = main(capsys, "tokenizer-diag", "--part", "validation")
+    assert code == 0 and [name for name, _ in diag.calls][:1] == ["prepare_diag"]
+    code, out = main(capsys, "fold", "--fold", "q-2024-10", "--estimate")
+    assert code == 0 and "finetune fold q-2024-10: quarterly layout (D-056), blinded" in out
+
+
+def test_a_training_child_left_running_makes_the_fold_command_exit_2(world, capsys):
+    world.running.append((4242, str(runs_dir() / "q-2024-07-20261103T120000Z")))
+    code, out = main(capsys, "fold", "--fold", "q-2024-07", "--estimate")
+    assert code == 2 and out.startswith("REFUSED: a training child is still running")
+    assert "pid 4242, run q-2024-07-20261103T120000Z (this fine-tune root)" in out
+    assert not ledger.ledger_path().exists() and world.fits == []
 
 
 # -- the bundle check ------------------------------------------------------------------------------

@@ -14,8 +14,9 @@ Samples (decision hours on ``G25``; the definition is recorded before any candle
   48 rows" plus the target row; interfaces D9). Every candle read opens before
   2024-06-09T16:00Z, the training segment's candle boundary.
 - Part B, ``validation``: Binance and BingX 1h, ``D`` in ``[VALIDATION_START, VALIDATION_END)``,
-  context only (inputs only). It runs after the pre-registration bundle (the command checks it)
-  and reads Part A's report for its s1 and s2 counts.
+  context only (inputs only). It runs after the pre-registration bundle (the command checks it),
+  recorded in a ledger that may authorize reading the data root (:func:`prepare_diag` checks
+  ``ledger.binding_problem``), and reads Part A's report for its s1 and s2 counts.
 - Reference: 100 synthetic GBM windows (``features.synthetic_window(512, seed=s)``), featureless.
 
 Windows come from ``data.windows.StoreWindowSource`` (``read_study_frame`` behind the sealed
@@ -43,8 +44,11 @@ reads the share of rows with either token changed (:data:`TOKEN_MISMATCH_STATIST
 carries one s1 and one s2 token, and that share bounds the s1 share, the s2 share and the share
 of the 1,024 context tokens alike, so the owner is told whichever of those readings passes 5 %.
 Shares, means and medians get a 95 % percentile block bootstrap over 4-week blocks of ``D``
-(``eval.bootstrap``, 1,000 resamples, keys ``tokenizer-<part>/<set>/<statistic>``); p90, p99,
-maxima, comparators and codebook figures are descriptive. The reference has no decision hour
+(``eval.bootstrap``, 1,000 resamples, keys ``tokenizer-<part>/<set>/<statistic>``); only the
+per-window 0/1 indicators are shares there (:data:`SHARE_STATISTICS`, with ``deff`` and ``n_eff``
+against windows and a Wilson interval for a share of exactly 0 or 1), the per-window fractions
+(saturation of context entries, bit margins, token mismatches) are means; p90, p99, maxima,
+comparators and codebook figures are descriptive. The reference has no decision hour
 (one block): point estimates only. Flags are pre-registered and descriptive: no automatic
 action.
 
@@ -135,6 +139,15 @@ FLAG_RULES: Mapping[str, str] = MappingProxyType(
 # the flag of D-048 (5) reads this statistic: every context row carries one s1 and one s2 token,
 # so the rows with either token changed are the widest reading of "context tokens changing"
 TOKEN_MISMATCH_STATISTIC = "mismatch_r1_any"
+# the statistics whose interval treats each window as one 0/1 row (eval.bootstrap share=True):
+# per-window indicators only; the per-window fractions (saturation_context, bit_margin, mismatch)
+# are means of fractions
+SHARE_STATISTICS: Mapping[str, tuple[str, ...]] = MappingProxyType(
+    {
+        "training": ("saturation_windows_<channel>", "saturation_next_<channel>"),
+        "validation": ("saturation_windows_<channel>",),
+    }
+)
 # the columns of a variant's per-window mismatch shares: s1, s2 and either (any), overall and over
 # the last 24 context rows
 MISMATCH_COLUMNS: tuple[str, ...] = ("s1", "s1_last24", "s2", "s2_last24", "any", "any_last24")
@@ -434,7 +447,14 @@ def diag_plan(part: str) -> dict[str, Any]:
             "confidence": CONFIDENCE,
             "blocks": f"week_blocks(D_ms, weeks={BLOCK_WEEKS})",
             "key": f"{STEMS[part]}/<set>/<statistic>",
-            "shares": "share=True",
+            "shares": {
+                "statistics": list(SHARE_STATISTICS[part]),
+                "rule": "share=True only for these per-window 0/1 indicators (deff and n_eff "
+                "against windows; a share of exactly 0 or 1 gets a Wilson interval at the block "
+                "count); every other statistic, the per-window fractions of entries, coordinates "
+                "or rows included (saturation_context, bit_margin, mismatch), is a mean with "
+                "share=False",
+            },
             "descriptive": "p90, p99, maxima, comparators, codebook statistics, divergences",
         },
         "comparators": {
@@ -729,13 +749,22 @@ def prepare_diag(
     steps: TokenizerSteps,
     root: Path | None = None,
     directory: Path | None = None,
+    ledger_root: Path | None = None,
 ) -> PreparedDiag:
     """Record (or verify) the definition of ``part`` first (``ConfigChangedError`` for a changed
     one), then read Part A's report (Part B) and build every window: each source through
     ``steps.window_source`` under the data ``root``, and the reference. ``directory`` is the
-    report directory (``reports/finetune``)."""
+    report directory (``reports/finetune``). Part B reads validation inputs, which wait for the
+    pre-registration bundle: before anything, the ledger at ``ledger_root`` (default
+    ``paths.ledger_dir()``) must be one that may authorize reading the data ``root``
+    (``ledger.require_binding``, ``LedgerRefused`` otherwise: a relocated reports root never
+    admits the repository's validation inputs; the command checks the bundle itself)."""
     part = _check_part(part)
     _check_params(params)
+    if part == "validation":
+        from .. import ledger
+
+        ledger.require_binding(root=ledger_root, data_root=root)
     directory = _report_dir(directory)
     config_sha256 = record_diag_config(part, directory=directory)
     training_report = _training_report(directory) if part == "validation" else None
@@ -1207,7 +1236,8 @@ def _set_results(
 
     for column, channel in enumerate(FEATURE_COLUMNS):
         saturated = arrays["saturated"][:, column]
-        add(f"saturation_context_{channel}", [saturated / CONTEXT], _mean, share=True)
+        # a per-window fraction of 512 entries: a mean of fractions, not a share of windows
+        add(f"saturation_context_{channel}", [saturated / CONTEXT], _mean)
         add(f"saturation_windows_{channel}", [(saturated > 0).astype(float)], _mean, share=True)
         descriptive[f"max_abs_z_{channel}"] = float(arrays["max_abs_z"][:, column].max())
         if "next_z" in arrays:
@@ -1235,8 +1265,8 @@ def _set_results(
             row_blocks=return_blocks,
         )
         descriptive[f"{label}returns_dropped"] = int(er.size - int(valid.sum()))
-    for column, margin in enumerate(BIT_MARGINS):
-        add(f"bit_margin_{margin:g}", [arrays["margins"][:, column]], _mean, share=True)
+    for column, margin in enumerate(BIT_MARGINS):  # per-window fractions of coordinates
+        add(f"bit_margin_{margin:g}", [arrays["margins"][:, column]], _mean)
     mismatch: dict[str, Any] = {}
     for variant in MISMATCH_VARIANTS:
         key = f"mismatch_{variant}"
@@ -1247,8 +1277,8 @@ def _set_results(
             values = arrays[key][:, column]
             if variant == CONTROL_VARIANT:
                 descriptive[statistic] = float(values.mean())
-            else:
-                add(statistic, [values], _mean, share=True)
+            else:  # per-window fractions of the 512 (or 24) rows
+                add(statistic, [values], _mean)
         mismatch[variant] = {
             "statistics_rows": VARIANTS[variant][0],
             "rows": VARIANTS[variant][1],

@@ -2,7 +2,15 @@
 
 Read this file and `docs/SPEC.md` (the owner's full specification, in Spanish) at the start of
 EVERY session, before anything else. The SPEC is the only source of requirements; this file is the
-operational summary plus the facts that are easy to get wrong.
+operational summary plus the facts that are easy to get wrong. The SPEC stays on the development
+machine only: it is gitignored and not published (D-063 (5)), so a clone without it has this file
+and `docs/DECISIONS.md` as the record of its rules.
+
+## Status: closed (D-063)
+
+The owner closed the project on 2026-11-04 (`docs/DECISIONS.md` D-063). Nothing runs and nothing
+is scheduled. Any further work, run, download or look at data needs the owner's explicit order;
+read D-063, D-061 (6) and D-062 (8) first.
 
 ## Hard rules (SPEC section 1) - they survive every session
 
@@ -45,30 +53,31 @@ operational summary plus the facts that are easy to get wrong.
 - Talk to the owner in Spanish (conversation, summaries, questions, warnings).
 - Everything inside the repository is English: code, identifiers, file and folder names, comments,
   docstrings, logs, errors, commands, commits, README and docs. The only exception is
-  `docs/SPEC.md`, the owner's original document, which stays verbatim.
+  `docs/SPEC.md`, the owner's original document, which stays verbatim and is never published:
+  nothing published is in Spanish (D-063 (5)).
 - Design questions are collected in ONE batch at the end of step 1 (SPEC section 18); until
   answered, the initial values of `params.yaml` apply. Decisions and the owner's answers live in
   `docs/DECISIONS.md`.
 - Every step ends with a short Spanish summary with numbers. A step does not start before the
   previous one meets its "done when" (SPEC section 18).
 
-## Scope now (owner directive of 2026-11-02, D-042)
+## Scope until the close (owner directive of 2026-11-02, D-042; closed by D-063)
 
 - The owner discarded the volume-based criterion of SPEC section 4. `docs/SPEC.md` stays verbatim,
   but section 4, the volume-profile and POC parts of section 5 and every step of section 18 that
-  depends on the criterion are without effect until the owner supplies the new strategy. Never
+  depends on the criterion are without effect. Never
   build anything that only serves a trading criterion (levels, volume profile, events, order
   signals) without the owner's explicit go-ahead; when a SPEC item looks outdated, ask first.
-- The current work is SPEC section 9 in full: retrain (fine-tune) Kronos-small for BTC to date,
-  with the data, partition, reproducible forecasts and evaluation it needs, plus the Binance vs
-  BingX mismatch study without its POC part.
+- Until the close the work was SPEC section 9 in full: retrain (fine-tune) Kronos-small for BTC
+  to date, with the data, partition, reproducible forecasts and evaluation it needs, plus the
+  Binance vs BingX mismatch study without its POC part.
 
 ## Another session's folder
 
-- `research/strategy/` is where the owner, in a separate session, defines their new strategy.
-  Never read, modify or delete anything in it; it is gitignored and excluded from tests and lint.
-  Until the owner says the strategy is defined, do not register event definitions and do not
-  freeze `params.yaml[criterion]` (it still describes the discarded criterion).
+- `research/strategy/` is where the owner, in a separate session, defined their new strategy
+  (strategy v1, D-062 (1)). Never read, modify or delete anything in it; `research/` is
+  gitignored and excluded from tests and lint. This repository registers no event definition of
+  it and does not freeze `params.yaml[criterion]` (it still describes the discarded criterion).
 
 ## Secrets
 
@@ -84,7 +93,11 @@ operational summary plus the facts that are easy to get wrong.
   naming the demo host (D-011). Never log a signed request's URL, and never enable local-variable
   capture around the demo client (pytest `--showlocals`, crash reporters that record locals).
 - No IPs, hostnames, usernames, emails, account ids, balances or personal paths anywhere in the
-  repo or in generated reports (`tests/test_repo_hygiene.py` enforces it).
+  repo, in its history or in generated reports. `tests/test_repo_hygiene.py` enforces part of it,
+  on the working tree's text files only: IPv4 literals, e-mail addresses, home-directory path
+  prefixes, the running login name, hostname and home directory, and credential assignments.
+  Commit metadata, history, image metadata, account ids and balances are not scanned: check them
+  by hand before any push (D-063 (5)).
 
 ## Environment and determinism
 
@@ -114,6 +127,10 @@ operational summary plus the facts that are easy to get wrong.
   records seed, threads, torch version, model name and weight hashes; stored fans also record the
   numpy and pandas versions (in the config) and the `context_sha256` of the floats the model read.
 - Data lives in `data/` (relocatable with `KRONOS_AGENT_DATA_DIR`). Both folders are gitignored.
+  Reports live in `reports/` (tracked; relocatable with `KRONOS_AGENT_REPORTS_DIR`, which the
+  test suite sets for every test), the experiment ledger in `reports/ledger/experiments.jsonl`.
+  A scratch run relocates all three roots: with only the data or weights root relocated it
+  would append to the repository's ledger, which is never repaired (D-058 (8)).
 
 ## Kronos facts verified at the pinned commit (do not "fix" them from memory)
 
@@ -163,8 +180,9 @@ operational summary plus the facts that are easy to get wrong.
 - Real 1h history starts 2024-04-27T10:00Z; 1m starts ~2025-07-31 and 5m ~2026-09-14 (rolling
   retention of about 450 and 48 days, `RETENTION_DAYS`; the first download on 2026-11-02 measured
   45 days of 5m and 100 days of 15m and an unchanged 1m start, to be recorded with D-049, D-050):
-  run `kronos-agent data bingx --interval 5m` at least monthly (`data status` warns once the
-  newest archived 1m or 5m candle is a third of its retention old). The `raw/bingx` chunk archive
+  the archive was refreshed until the close and no longer grows (D-063 (4)); `data bingx` runs
+  only on the owner's order (`data status` warns once the newest archived 1m or 5m candle is a
+  third of its retention old). The `raw/bingx` chunk archive
   is the only copy of what rolled off: never delete it. The owner archives 1m and 5m as insurance
   for their future strategy; the retraining does not use them (D-049).
 - Backfill rules (D-027): epoch-aligned chunks of 1000 candles; `endTime` is never an exact
@@ -208,7 +226,10 @@ operational summary plus the facts that are easy to get wrong.
 
 - Studies and window sources read candles only through `read_study_frame`; nothing in step 2 can
   open the sealed segment (candles opening from 2026-08-01T00:00Z): a `SealedAccess` exists only
-  after the step-5 ledger verifies the owner's order. `read_store` is for integrity work only.
+  through `partition.sealed_access`, once the experiment ledger (`reports/ledger/experiments.jsonl`,
+  D-057 (4)) holds the owner's order and may open that data root (`ledger.binding_problem`: a
+  relocated reports root never opens the repository's `data/`); it opens only the data root it
+  was issued for (D-058 (3)(c)). `read_store` is for integrity work only.
 - Every study verifies its recorded definition (`reports/data/<stem>.config.json`) before reading
   a candle; a changed definition is refused, never overwritten (a changed study gets a new stem).
 - A stored fan that no longer matches its window (a store changed after the fan was computed) is
@@ -255,10 +276,56 @@ operational summary plus the facts that are easy to get wrong.
   1.5 GiB of swap growth without it, 3.2 GiB with it, gradients bit-identical); 8 CPU threads
   are no faster than 2 at batch 32 (10.6 against 10.4 s per step). The first MPS preflight ran
   at batch 32 without checkpointing and ran out of MPS memory during its checks (which one is
-  not recorded), so MPS is unmeasured and the measurement is repeated before any gate-3
-  estimate (D-054): M3, the MPS batch 32 and M4 start with activation checkpointing because the
-  CPU's batch 32 needs it and M2 passed; the one retry with it covers only an MPS unit that
-  aborts without it (here the MPS batches 8 and 16).
+  not recorded). The second run (D-055; `reports/finetune/timing-2.*`, D-056) started MPS at
+  batch 32 with activation checkpointing and measured 5.449 s per step (theta 1.004) against
+  8.790 s for the best CPU configuration, so training runs on MPS; every fold estimate reads
+  that record, and refuses it once a training-code file changes.
+- Never edit `finetune.train.TRAINING_CODE_FILES` (`finetune/recipe.py`, `export_csv.py`,
+  `nll.py`, `runner.py`, `train.py`, `kronos/features.py`, `data/windows.py`,
+  `manifests/kronos_source.sha256`) without the owner's decision: an edit changes the training
+  code sha256 (`f28c0f30...`), every fold estimate then refuses `timing-2.json` as stale, and
+  the measurement step must run again (a new gate-3 ask).
+- The walk-forward runs the 8 quarterly folds (D-048 (1): the monthly worst case, about 116 h,
+  passes 72 h; D-056). The pilot is fold `q-2024-07` (its CSV is `wf-2024-07`'s, training-segment
+  data only); the owner approved up to 10 h for it and its check (D-056). Its estimate was 4.945
+  MPS-hours (9.779 for the refit); at `--approved-by-owner 10` the pilot's invocation recorded
+  the pilot and refused the refit, as foreseen (the refit could start in it only if the pilot
+  spent at most 2.72 MPS-hours, 12.5 - 9.779), and the refit ran in its own invocation, the
+  same command again with `--approved-by-owner 10`, under the owner's 10 MPS-hours (D-059 (1);
+  its deadline 45,000 s, 27.8 % above its worst case). The pilot ran on 2026-11-03 (5.306
+  wall-hours, a median of 6.03 s per step on a Mac in use) and the rule fired (D-060); the refit
+  ran overnight on the idle Mac (9.262 wall-hours, 5.236 s per step, no thermal slowdown) and
+  the pilot check read GO (D-061), so the pilot is done and `E_max` is 12 for every fold. Apps
+  in use slowed a step by about 15 % on the median and by up to about 30 % over 50-step
+  intervals on this fanless Mac (the pilot's 6.03 s median and 6.8 s slowest intervals against
+  the idle refit's 5.24 s), so every fold needs an otherwise idle Mac. The pilot check took 1.17
+  times the wall its estimate implies, and its spend control stopped it at 3,622 of 3,600
+  CPU-seconds; the owner approved up to 1.1 CPU-hours for the whole check, those 3,622
+  included (D-061 (4); 3,726 in all). Start every fold so that the end of a terminal session
+  cannot kill it: a parent killed with SIGKILL leaves its child training unrecorded, and
+  `finetune fold` then refuses to start (D-058 (3)(e)).
+- The experiment ledger `reports/ledger/experiments.jsonl` (`kronos_agent.ledger`, D-057 (2) to
+  (4)) is append-only and hash-chained, verified on every read and never repaired or rewritten.
+  Appends take `reports/ledger/.lock` (gitignored; the ledger itself is tracked). A line's `ts`
+  never precedes the last one, so after a clock that ran ahead is set back, appends are refused
+  until real time passes the last entry; its last line is protected only by the line sha256 its
+  users record. Only the repository's `reports/ledger` opens the sealed segment of, spends a test
+  on, or admits the bundle-gated reads (Part B, the folds after the pilot) of the repository's
+  `data/` (`ledger.binding_problem`). Its lines refuse personal data, IPv4 literals, absolute
+  paths, BingX host names and whatever the hygiene scan of `reports/` refuses. `ledger
+  record-order` runs only after the owner's explicit order in chat (gate 6), with their words
+  translated. The test budget is `budget.spend_test`; no command spends a test yet.
+- Two readings of the owner's strategy v1 with Kronos as a filter ran outside the repository on
+  2026-11-03 (shipped) and 2026-11-04 (the pilot). They used the validation window, 166
+  decisions, and neither met the registered criterion against the strategy's floor filter
+  (D-062). They spent 2 tests the ledger does not count (2026-W45: 2 of 3; 2026-Q4: 2 of 15):
+  `ledger show` and `budget.spend_test` do not see them; how to record them lapsed at the close
+  (D-063 (4)), so a reopened project counts them by hand (at most 1 more test in 2026-W45 and 13
+  in 2026-Q4). They saw validation
+  outcomes before the bundle, so the T-A and T-B reports and the bundle must state them as a
+  deviation (`docs/RETRAINING.md` 6.3, 7.1). Another reading of strategy v1 on that window, with
+  or without Kronos, and any further statistic on the 332 fans those readings stored outside the
+  repository, needs the owner's explicit order.
 - Activation checkpointing on MPS (torch 2.14.1): `preserve_rng_state` restores only the CPU
   generator for the recomputation, so the recomputed dropout masks would differ from the
   forward's; `runner.enable_activation_checkpointing` replays the MPS generator through
@@ -276,9 +343,12 @@ operational summary plus the facts that are easy to get wrong.
 
 ## Git
 
-- Remote: a private GitHub repository (`origin`), created and pushed on 2026-11-03 on the
-  owner's request (gate 7), with a second commit holding steps 2-6. Commit and push only when
-  the owner asks; every push still needs their approval. Show `git status` in step summaries.
+- Remote: a public GitHub repository (`origin`), published on 2026-11-04 on the owner's order
+  (gate 7) with a history rewritten to the owner's GitHub no-reply address and UTC dates, without
+  `docs/SPEC.md` (D-063 (5)); the original private repository, pushed on 2026-11-03, was renamed
+  and kept private. Commit and push only when the owner asks; every push still needs their
+  approval, and before it check the commit identity (no personal e-mail). Show `git status` in
+  step summaries.
 - Code provenance does not rely on the commit: `provenance.py` records the source tree sha256,
   which identifies the code whatever the number of commits.
 
@@ -291,6 +361,16 @@ vendor-kronos | params`. The full suite peaks at about 1.75 GiB of RAM (1789 MiB
 test process tree while the two-worker batch test runs; measured 2026-11-01, step 1 was 1254 MiB):
 on the 1.9 GB server run `uv run pytest -m "not weights"` until the 4 GB swap exists.
 
+The suite never writes the real roots (D-057 (1), `tests/root_guard.py`): the autouse fixture
+`isolated_roots` points `KRONOS_AGENT_DATA_DIR`, `KRONOS_AGENT_WEIGHTS_DIR` and
+`KRONOS_AGENT_REPORTS_DIR` at each test's own temporary roots; the `weights` marker and
+`real_roots("data", "weights", "reports")` give read-only views of the real ones; a write under a
+real root is refused and fails its test; and the session fails (exit 1) when `data/`,
+`weights/` or `reports/` changed during it, also through a real command run meanwhile (the
+pilot, `data bingx`): by design, so do not run the suite while one of those writes. A test that
+calls `cli.main` uses stand-ins and temporary roots (D-055 (6)). `pytest --noconftest` bypasses
+the guard; `KRONOS_AGENT_TEST_ROOTS_LISTING=<file>` writes the start listing.
+
 Step 2: `kronos-agent data binance | bingx --interval I | status | coverage`, `forecast --source S
 --hour D [--save]` or `--from D1 --to D2 [--step-hours H] [--workers N] [--estimate]
 [--approved-by-owner CPU_HOURS]`, `mismatch [--kronos [--fallback] [--workers N] [--estimate]
@@ -298,7 +378,7 @@ Step 2: `kronos-agent data binance | bingx --interval I | status | coverage`, `f
 records a study's definition without running it. Exit codes: 0 done, 1 `ERROR:`, 2 `REFUSED:`
 (gate 3, the gate-4 budget, the sealed segment, the Kronos cutoff or embargo, a changed study
 config, a busy lock). Data under `KRONOS_AGENT_DATA_DIR` (default `data/`), reports under
-`reports/data/`.
+`reports/data/` (the reports root relocates with `KRONOS_AGENT_REPORTS_DIR`).
 
 Step 6 (`docs/RETRAINING.md`): `kronos-agent finetune timing [--estimate] [--approved-by-owner
 CPU_HOURS]`, the measurement step (synthetic candles, 0 tests; `reports/finetune/timing-2.json`
@@ -309,15 +389,56 @@ refuses to start above its budget and stops once its measured spend passes it: 3
 CPU-seconds and 45 GPU-minutes, below gate 3, or with `--approved-by-owner` a CPU limit of
 CPU_HOURS x 3600 CPU-seconds, a ceiling without tolerance (the GPU limit stays 45 minutes); a
 bare flag or a figure that is not a finite number > 0 exits 2; `--estimate` runs nothing. Pass
-the figure only after the owner's explicit go-ahead for it, as for the batch commands. With MPS
-its estimate (about 3,578 CPU-seconds) passes 3,000: the owner approved up to 1.5 CPU-hours for
-this second run only (gate 3, D-055), so it runs as `finetune timing --approved-by-owner 1.5`,
-and its record states the approval (CPU-hours, the command's start, the estimate, above gate 3).
-An unintended test run recorded `timing-2.config.json` (this plan) on 2026-11-02 and left its
-scratch and run directories under `weights/finetuned/` (D-055 (6)): do not change the plan or
-remove them without the owner's decision. Run it on an otherwise idle Mac, on power, lid open,
-under `caffeinate -i -s`. Exit codes: 0 done; 1 `ERROR:` (an M9 mismatch, a crashed training
-child or a measurement error, after the report is written; or a run that could not start); 2
-`REFUSED:` (an estimate above the budget, a run its budget stopped (after the report is
-written), a changed timing plan, a concurrent timing run). Fold exports go under
-`<data>/finetune/`; runs, scratch and checkpoints under `<weights>/finetuned/`.
+the figure only after the owner's explicit go-ahead for it, as for the batch commands. It ran
+twice; `reports/finetune/timing-2.*` (D-056: MPS, batch 32 with activation checkpointing, 5.449
+s per step, theta 1.004) is the record every fold estimate reads, and the owner's 1.5 CPU-hours
+(D-055) covered that run only: never rerun it without a new gate-3 approval (a rerun overwrites
+`timing-2.*`). Its leftovers under `weights/finetuned/` were deleted (D-056). Exit codes: 0
+done; 1 `ERROR:` (an M9 mismatch, a crashed training child or a measurement error, after the
+report is written; or a run that could not start); 2 `REFUSED:` (an estimate above the budget, a
+run its budget stopped (after the report is written), a changed timing plan, a concurrent
+timing run). Fold exports go under `<data>/finetune/`; runs, scratch and checkpoints under
+`<weights>/finetuned/`.
+
+Phase 3a (D-057, D-058); every `finetune` subcommand but `timing` first verifies every recorded
+pre-registration bundle (a changed or missing one exits 2) and records what it ran in the
+ledger. Exit codes as D-039: 0 done, 1 `ERROR:`, 2 `REFUSED:`.
+- `finetune fold --fold LABEL [--replicate K] [--estimate] [--approved-by-owner HOURS] [--order
+  ID]`: one quarterly fold (`wf-` and `final-` labels exit 2; quarterly replicates exit 1 until
+  their mapping is decided); the pilot is `--fold q-2024-07`. It prints the estimate on
+  `timing-2.json` (refused when stale), the figure lines (the smallest figure that admits each
+  unit, the deadline each figure gives) and the run label's earlier fit entries; `--estimate`
+  stops there. Gate 3 counts the chosen device's hours (MPS wall-hours, as `timing-2` chose
+  MPS): above one hour it needs `--approved-by-owner HOURS`, the figure the owner approved in
+  chat, and refuses an estimate more than 1.25 times it; the approval is recorded in the ledger
+  before the first unit, and nothing starts that could take the invocation's spend past 1.25
+  times the figure (one hour without one). Folds after the pilot need the bundle and are
+  blinded; a sealed fold needs `--order` (gate 6). Refused (exit 2) also: a training child still
+  running on the machine, a running timing step, a registered fold other than the pilot (a
+  registered and recorded pilot has nothing to run), a stage that moved since the estimate. A
+  fold whose training failed for good (a second failure, a memory or time abort, a killed child)
+  exits 1 after its `fit` entries. Run it on an otherwise idle Mac, on power, lid open, under
+  `caffeinate -i -s`, started so that the end of the terminal session cannot kill it.
+- `finetune pilot-check [--record-config] [--estimate] [--approved-by-owner CPU_HOURS]`: 504 fans
+  and the KL on the registered pilot (estimated at about 0.89 CPU-hours, below gate 3, so its
+  first run needs no figure; the run of D-061 (4) passed 3,600 charged CPU-seconds and stopped,
+  and finishing it took `--approved-by-owner 1.1`: 3,726 CPU-seconds in all); `--record-config`
+  records its definition only. Gate 3 as for the batch commands, with the approval in the
+  ledger before the first fan. It stops between fans, or before or between its two
+  teacher-forced passes, once its charged spend passes 1.25 times the figure, or 3,600
+  CPU-seconds without one (exit 2, the stored fans kept, the stopped run and its spend in the
+  ledger); a rerun counts what the stopped runs spent.
+  The reading is GO or NO-GO, both exit 0; without a registered and recorded pilot it exits 2.
+- `finetune tokenizer-diag --part training|validation [--record-config]`: no `--estimate`; it
+  prints its measured estimate and runs at once when that is within gate 3 (a few minutes of
+  CPU), and is refused above it (exit 2). Part A (`training`) records its definition at its
+  first run, and its report the sha256 of `docs/RETRAINING.md`; Part B (`validation`) runs only
+  after the bundle, in a ledger that may read the data root (exit 2 otherwise). Each raised flag
+  prints as a `WARNING:`; the `r1_token_mismatch` flag (more than 5 % of context rows with an s1
+  or s2 token changed) means telling the owner before the bundle (D-048 (5)).
+- `kronos-agent ledger show [--kind KIND] | verify | record-order --scope open_sealed --candidate
+  TEST_ID --text "<owner's words>"`: `verify` exits 1 on a broken or unreadable ledger and 2 on
+  a changed or missing bundle; `record-order` (only after the owner's explicit order in chat)
+  exits 2 for a candidate without a T-B reading, a second order, personal data in the text, a
+  clock earlier than the last entry or a busy lock, and prints the order id, the seq and the
+  line sha256.

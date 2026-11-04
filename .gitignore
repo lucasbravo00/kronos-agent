@@ -20,5 +20,11 @@ __pycache__/
 .DS_Store
 # runtime
 /logs/
-# another session defines the owner's criterion here (not part of this tree yet)
+# the experiment ledger's append lock (the ledger itself is tracked and published)
+/reports/ledger/.lock
+# another session's folder (the owner's strategy): never published
 /research/strategy/
+/research/
+# the owner's original specification (Spanish) and the screenshot it uses: never published (D-063)
+/docs/SPEC.md
+/docs/reference/

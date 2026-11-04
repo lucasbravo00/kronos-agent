@@ -18,6 +18,9 @@ verifies. The ledger lives under the reports root, which is relocatable on its o
 must also come from a ledger that may open the data root the access is for
 (``ledger.binding_problem``): a ledger other than the repository's ``reports/ledger`` (a scratch
 or test reports root) never opens the repository's ``data/`` or a data root that links into it.
+The access records the data root it was issued for, and ``data.store.read_study_frame`` refuses
+it on any other (:meth:`SealedAccess.require_root`), so an access issued for a scratch data root
+never opens the sealed candles of another.
 Without such an order every attempt raises :class:`SealedPartitionError`, so nothing can open the
 sealed segment of the repository's data before the owner orders it in its own ledger.
 
@@ -38,6 +41,7 @@ command line imports it at ``--help`` time. The ledger, itself light, is importe
 from __future__ import annotations
 
 import numbers
+import os
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -133,25 +137,72 @@ N1_PARTITION: tuple[Segment, ...] = (
 _ISSUER = object()
 
 
+def _data_root(root: Path | None) -> Path:
+    """``root``, or the data root ``paths.data_dir()`` (imported here: this module stays light)."""
+    if root is not None:
+        return Path(root)
+    from ..paths import data_dir
+
+    return data_dir()
+
+
+def _root_identity(root: Path) -> tuple[str, tuple[int, int] | None]:
+    """``(resolved path, (device, inode))`` of a data root; the identity is ``None`` while the
+    directory does not exist (it is then compared by its resolved path)."""
+    resolved = os.path.realpath(root)
+    try:
+        status = os.stat(resolved)
+    except OSError:
+        return resolved, None
+    return resolved, (status.st_dev, status.st_ino)
+
+
 @dataclass(frozen=True)
 class SealedAccess:
-    """Permission to read the sealed segment, tied to one recorded order of the owner (an
-    ``owner_order`` entry of the experiment ledger, named by its id ``order-NNNN``) in a ledger
-    that may open the data root it was issued for.
+    """Permission to read the sealed segment of one data root, tied to one recorded order of the
+    owner (an ``owner_order`` entry of the experiment ledger, named by its id ``order-NNNN``) in
+    a ledger that may open that data root.
 
     Never constructed directly: :func:`sealed_access` verifies the binding and the order and
-    issues it. A direct ``SealedAccess(...)`` raises :class:`SealedPartitionError`
-    (mistake-proofing, not security).
+    issues it, recording the data root it was issued for (resolved path, device and inode); a
+    read of another data root refuses it (:meth:`require_root`, which
+    ``data.store.read_study_frame`` calls). A direct ``SealedAccess(...)`` raises
+    :class:`SealedPartitionError` (mistake-proofing, not security).
     """
 
     order_id: str
     _issuer: object = field(default=None, repr=False, compare=False)
+    _root: tuple[str, tuple[int, int] | None] | None = field(
+        default=None, repr=False, compare=False
+    )
 
     def __post_init__(self) -> None:
-        if self._issuer is not _ISSUER:
+        if self._issuer is not _ISSUER or self._root is None:
             raise SealedPartitionError(
                 "a SealedAccess is issued only by sealed_access(order_id), which verifies the "
                 "owner's order recorded in the experiment ledger"
+            )
+
+    def opens(self, root: Path | None) -> bool:
+        """Whether this access was issued for the data root ``root`` (default
+        ``paths.data_dir()``): the same directory by device and inode, or by resolved path while
+        either does not exist."""
+        assert self._root is not None  # __post_init__ refuses an access without its root
+        resolved, identity = _root_identity(_data_root(root))
+        issued_path, issued_identity = self._root
+        if identity is not None and issued_identity is not None:
+            return identity == issued_identity
+        return os.path.normcase(resolved) == os.path.normcase(issued_path)
+
+    def require_root(self, root: Path | None) -> None:
+        """Refuse (:class:`SealedPartitionError`) a read of another data root than the one this
+        access was issued for: an order verified for one data root (and its ledger's binding)
+        never opens the sealed candles of another, the repository's included."""
+        if not self.opens(root):
+            raise SealedPartitionError(
+                f"the access to the sealed segment on order {self.order_id} was issued for "
+                "another data root than the one read (sealed_access(order_id, data_root=...) "
+                "binds it to its data root): it does not open this one (SPEC section 17, gate 6)"
             )
 
 
@@ -192,7 +243,8 @@ def sealed_access(
     """Issue a :class:`SealedAccess` for the data root ``data_root`` (default
     ``paths.data_dir()``) after checking that the ledger at ``ledger_root`` (default
     ``paths.ledger_dir()``) may open it, then verifying the owner's order recorded there
-    (gate 6). Pass the access only to reads of that data root."""
+    (gate 6). The access records that data root: a read of another one refuses it
+    (:meth:`SealedAccess.require_root`)."""
     if not isinstance(order_id, str) or not order_id.strip():
         raise ValueError("order_id must be a non-empty string naming the recorded order")
     _verify_binding(order_id, ledger_root=ledger_root, data_root=data_root)
@@ -200,7 +252,7 @@ def sealed_access(
         _verify_order(order_id)  # the one-argument form the tests' stand-ins take
     else:
         _verify_order(order_id, Path(ledger_root))
-    return SealedAccess(order_id, _issuer=_ISSUER)
+    return SealedAccess(order_id, _issuer=_ISSUER, _root=_root_identity(_data_root(data_root)))
 
 
 def _positive_int(value: object, name: str) -> int:

@@ -6,8 +6,9 @@ A test is any statistic that compares a configuration's forecasts with realised 
 reserved for evaluation (design 7.2): T-A (Kronos as shipped on validation), T-B (the recipe's
 walk-forward) and T-C (the sealed test, only on the owner's recorded order). :func:`spend_test`
 appends the ``test`` entry of the experiment ledger BEFORE any statistic on reserved hours is
-computed, so "compute, peek, abandon" still spends the test. Its checks run under the ledger's
-lock against the entries read there, and the entry is appended only if all of them pass:
+computed, so "compute, peek, abandon" still spends the test. Rule 0 is checked before the
+ledger's lock, rules 1 to 5 under it against the entries read there, and the entry is appended
+only if all of them pass:
 
 0. the ledger may authorize reading the data root whose outcomes the reading reads
    (``ledger.binding_problem``: a ledger other than the repository's ``reports/ledger`` never
@@ -201,8 +202,8 @@ def spend_test(
     data_root: Path | None = None,
     now: datetime | None = None,
 ) -> LedgerEntry:
-    """Spend one test: append the ``test`` entry of ``test`` for ``recipe_id`` once rules 0 to 5
-    of the module docstring pass under the ledger lock, and return it.
+    """Spend one test: append the ``test`` entry of ``test`` for ``recipe_id`` once rule 0 of the
+    module docstring passes (before the ledger lock) and rules 1 to 5 under it, and return it.
 
     Call it before computing any statistic on reserved hours. ``order_id`` is T-C's only (the
     owner's recorded order); ``reports_root`` holds the bundle files (default the reports root);

@@ -124,7 +124,12 @@ class Script:
     ``no_result`` (no record written) or ``killed`` (no run directory at all); ``interrupt``
     raises ``KeyboardInterrupt`` after writing a ``failed`` record. ``seconds`` and
     ``cpu_seconds`` advance the stand-in clock and CPU counter. ``lock_record`` makes the fold
-    record unreadable (mode 0): opening it raises."""
+    record unreadable (mode 0): opening it raises. ``error_type`` names the error of a record
+    that is not completed (``SystemExit``: the child stopped by a signal, as ``finetune.runner``
+    records it). ``after_registration`` raises that exception (an instance) once the stand-in
+    checkpoint is registered, as an interrupt or an error after ``train.fit``'s registration
+    would. ``timeout`` makes the call last as long as ``train.fit`` waits when its timeout fires
+    (the timeout, then the kill grace), instead of ``seconds``."""
 
     status: str = "completed"
     selected: int = 3
@@ -133,6 +138,9 @@ class Script:
     stop_reason: str = "early_stop"
     lock_record: bool = False
     interrupt: bool = False
+    error_type: str = "RunnerError"
+    after_registration: BaseException | None = None
+    timeout: bool = False
 
 
 @dataclass
@@ -145,6 +153,8 @@ class World:
     script: list[Script] = field(default_factory=list)
     fits: list[dict[str, Any]] = field(default_factory=list)
     exports: list[dict[str, Any]] = field(default_factory=list)
+    # the live training children the stand-in process list shows: (pid, run directory)
+    running: list[tuple[int, str]] = field(default_factory=list)
 
     # -- the steps ------------------------------------------------------------------------------
 
@@ -156,6 +166,7 @@ class World:
             mps_available=lambda: self.mps,
             clock=lambda: self.now,
             children_cpu_seconds=lambda: self.cpu,
+            running_children=lambda: tuple(self.running),
         )
 
     def export_fold(self, fold: Any, recipe: Any, *, root: Any = None, sealed_access: Any = None):
@@ -184,7 +195,7 @@ class World:
                 "status": script.status,
             }
         )
-        self.now += script.seconds
+        self.now += timeout_seconds + train.KILL_GRACE_SECONDS if script.timeout else script.seconds
         self.cpu += script.cpu_seconds
         if script.status == "killed":
             raise train.ChildFailed("the stand-in child was killed before its run directory")
@@ -199,6 +210,8 @@ class World:
         if script.status != "completed":
             raise train.ChildFailed(f"run {run_dir.name} ended {script.status}")
         entry = register_stand_in(request, run_dir, root=root)
+        if script.after_registration is not None:
+            raise script.after_registration
         record = run_dir / "runner_result.json"
         if script.lock_record:
             os.chmod(record, 0)
@@ -217,7 +230,14 @@ class World:
 
 
 def fold_record(
-    run_id: str, *, status: str, selected: int, max_epochs: int, stop: str, seconds: float
+    run_id: str,
+    *,
+    status: str,
+    selected: int,
+    max_epochs: int,
+    stop: str,
+    seconds: float,
+    error_type: str = "RunnerError",
 ) -> dict[str, Any]:
     """A ``runner_result.json`` with the keys the fold command reads and distinctive values."""
     last = min(max_epochs, selected + 2) if stop == "early_stop" else max_epochs
@@ -248,7 +268,7 @@ def fold_record(
         "mode": "train",
         "status": status,
         "stop_reason": stop if status == "completed" else None,
-        "error": None if status == "completed" else {"type": "RunnerError", "message": "x"},
+        "error": None if status == "completed" else {"type": error_type, "message": "x"},
         "finite": status == "completed",
         "wall_seconds": seconds,
         "cpu_seconds": seconds * 0.06,
@@ -266,6 +286,7 @@ def write_fold_record(run_dir: Path, request: Any, script: Script, *, status: st
         max_epochs=request.recipe.max_epochs,
         stop=script.stop_reason,
         seconds=script.seconds,
+        error_type=script.error_type,
     )
     path = run_dir / "runner_result.json"
     text = json.dumps(document, indent=1, sort_keys=True, ensure_ascii=True, allow_nan=False)

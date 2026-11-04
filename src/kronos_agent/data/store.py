@@ -717,9 +717,13 @@ def read_study_frame(
     """The study read path: :func:`read_store` of ``[start_ms, end_ms)`` behind the sealed guard.
 
     ``end_ms > SEALED_START_MS`` without a ``SealedAccess`` raises ``SealedPartitionError``
-    before anything is read; ``end_ms == SEALED_START_MS`` returns nothing at or after it.
+    before anything is read; ``end_ms == SEALED_START_MS`` returns nothing at or after it. A
+    ``SealedAccess`` issued for another data root than ``root`` is refused too
+    (``SealedAccess.require_root``): an order verified for one data root never opens another's.
     """
     require_study_range(start_ms, end_ms, sealed_access)
+    if isinstance(sealed_access, SealedAccess):
+        sealed_access.require_root(root)
     return read_store(
         store_id,
         numeric=numeric,

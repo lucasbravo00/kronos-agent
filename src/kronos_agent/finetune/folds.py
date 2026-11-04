@@ -5,9 +5,11 @@ Its CSV holds the Binance candles opening in ``[history_start, T - 512 h)`` (the
 embargo of D-048 (6)); the CSV's last 1,344 hours are its inner validation, where NLL4-TF early
 stops on the 4-hour grid of decisions ``D`` whose 4 targets open before the CSV end. Layouts:
 
-- ``monthly``: ``wf-YYYY-MM``, test months 2024-07 to 2026-06 (24 folds); ``wf-2024-07`` is the
-  pilot, whose CSV ends at 2024-06-09T16:00Z, the last candle a training-segment sample may read;
-- ``quarterly``: ``q-YYYY-MM``, the compute fallback over the same test decisions (8 folds);
+- ``monthly``: ``wf-YYYY-MM``, test months 2024-07 to 2026-06 (24 folds), the layout the
+  walk-forward does not run (D-056: its measured worst case passes the 72 h of D-048 (1));
+- ``quarterly``: ``q-YYYY-MM``, the compute fallback over the same test decisions (8 folds) and
+  the walk-forward's layout (D-056); ``q-2024-07`` is the pilot, whose CSV ends at
+  2024-06-09T16:00Z, the last candle a training-segment sample may read (``wf-2024-07``'s CSV);
 - ``sealed``: ``s-YYYY-MM``, test months from 2026-08 (only after the owner's recorded order);
 - ``final``: ``final-YYYY-MM-DD``, the model to date: its CSV ends at ``T_final`` (00:00Z of a
   day, from 2026-08-01) and no test follows;
@@ -221,12 +223,14 @@ def _test_fold(layout: str, test_start: datetime, recipe: Recipe) -> Fold:
 
 
 def monthly_folds(recipe: Recipe) -> tuple[Fold, ...]:
-    """The 24 monthly folds ``wf-2024-07`` .. ``wf-2026-06`` (the first is the pilot)."""
+    """The 24 monthly folds ``wf-2024-07`` .. ``wf-2026-06`` (the first has the pilot's CSV;
+    the walk-forward runs the quarterly layout, D-056)."""
     return tuple(_test_fold("monthly", start, recipe) for start in MONTHLY_TEST_STARTS)
 
 
 def quarterly_folds(recipe: Recipe) -> tuple[Fold, ...]:
-    """The 8 quarterly folds ``q-2024-07`` .. ``q-2026-04`` (the compute fallback)."""
+    """The 8 quarterly folds ``q-2024-07`` .. ``q-2026-04`` (the compute fallback, the
+    walk-forward's layout since D-056; the first is the pilot)."""
     return tuple(_test_fold("quarterly", start, recipe) for start in QUARTERLY_TEST_STARTS)
 
 

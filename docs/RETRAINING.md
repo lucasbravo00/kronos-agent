@@ -15,11 +15,24 @@ below apply them. The design decisions of this file get new numbers in `docs/DEC
 the last existing one. D-042 (3) supersedes the question-10 default "best-validation checkpoint
 instead of early stopping": this design keeps the best checkpoint AND stops early.
 
-Status (2026-11-02): design decided, implementation in progress. Nothing has been trained for it
-and no test has been spent; the measurement step ran once (D-053) and is repeated with the fix of
-D-054, under the owner's gate-3 approval of up to 1.5 CPU-hours (D-055). The step-2 data it
-reads are in place: the Binance and BingX stores, the coverage study and the mismatch study with
-its 873 fans (`docs/DATA.md`).
+Status (2026-11-04): closed on the owner's decision (D-063), with the design decided and phase 3a
+built. The pilot trained (5.306 wall-hours) and fired the pilot rule (D-060); its refit at `E_max`
+12 (9.262 wall-hours) is registered and the pilot check read GO (`A_same` 0.75; D-061); no test of
+this plan has been spent. Two readings of the owner's strategy v1 with Kronos as a filter, run
+outside the repository, spent 2 tests the ledger does not count and saw validation outcomes before
+the bundle, a deviation under 6.3 and 7.1 (D-062). The measurement step ran twice: once below gate 3
+(D-053), and again with the fix of D-054 under the owner's gate-3 approval of up to 1.5 CPU-hours
+(D-055; it spent 3,038 CPU-seconds and 27.4 GPU-minutes). Its record, `reports/finetune/timing-2.*`,
+chose MPS at 5.449 s per step at batch 32 with activation checkpointing, theta 1.004 (D-056). By
+D-048 (1) the walk-forward runs the 8 quarterly folds, and the owner approved up to 10 h for the
+pilot, fold `q-2024-07`, and its check (D-056), up to 10 more for its refit once the pilot rule
+fired (D-059) and up to 1.1 CPU-hours for the whole check, its stopped run's 3,622 CPU-seconds
+included (D-061 (4)). Phase 3a is built (D-057, completed by D-058): the experiment ledger and the
+test budget, the tokenizer diagnostic, the pilot check, the fair CRPS and `finetune fold`; the
+walk-forward loop, the rest of the evaluation and the later commands are not. Part A of the
+tokenizer diagnostic ran (D-060 (0)). The rest (6.2 step 5, the bundle, phase 3b, the remaining
+folds and T-A to T-C) was not built or run. The step-2 data it reads are in place: the Binance and
+BingX stores, the coverage study and the mismatch study with its 873 fans (`docs/DATA.md`).
 
 Step-6 "done when" (SPEC section 18; the shipped-model part is step 3's):
 - `reports/finetune/ta-<recipe8>.md` (test T-A): the SPEC 8 evaluation of Kronos as shipped,
@@ -42,12 +55,15 @@ Step-6 "done when" (SPEC section 18; the shipped-model part is step 3's):
   of the next 4 candles in the exact inference geometry, on the fold's inner validation (the
   CSV's last 1,344 hours, 336 decisions), with patience 2. The shipped weights are measured,
   never selected.
-- **Walk-forward.** 24 monthly cold-start folds, test months 2024-07 to 2026-06. Each fold's CSV
-  ends 512 h before its test month: the per-model reading of SPEC 6 (D-048 (6)), equal to the
-  partition at both ends. Quarterly folds (8, over the same test decisions) are the
-  pre-registered compute fallback, taken when the measured worst case passes 72 h (D-048 (1)).
-  Fold 1 is the pilot and uses training-segment data only. One training seed per fold, plus two
-  replicate seeds in the folds wf-2024-07, wf-2025-06 and wf-2026-06 (D-048 (4)).
+- **Walk-forward.** 8 quarterly cold-start folds, test quarters starting 2024-07 to 2026-04,
+  over the 4,380 `G4` and 701 `G25` decisions of the test months 2024-07 to 2026-06: the
+  measured worst case of the 24 monthly folds (about 116 h) passed 72 h, so the pre-registered
+  compute fallback of D-048 (1) applies (D-056). Each fold's CSV ends 512 h before its test
+  quarter: the per-model reading of SPEC 6 (D-048 (6)), equal to the partition at both ends.
+  Fold 1, `q-2024-07`, is the pilot and uses training-segment data only. One training seed per
+  fold, plus two replicate seeds in the folds holding 2024-07, 2025-06 and 2026-06 (D-048 (4);
+  under the quarterly layout `q-2024-07`, `q-2025-04` and `q-2026-04`, a mapping that waits for
+  the owner, D-057 (9)(d)).
 - **Evaluation.** BingX real windows, CPU, 2 threads, deterministic, the same seeds for both
   models. Primary statistic: `Delta_N = mean CRPS(R1) - mean CRPS(shipped)` of the N-hour log
   return, N = 4, over the 4,380 decisions of the 4-hour grid, with a 95 % block bootstrap over
@@ -62,12 +78,17 @@ Step-6 "done when" (SPEC section 18; the shipped-model part is step 3's):
 - **Tests.** T-A (shipped, SPEC 8), T-B (R1 walk-forward) and T-C (sealed, only after
   acceptance): at most 3 of the 15 per quarter. None is spent yet. The ledger and the budget are
   enforced by the commands.
-- **Compute (priors until the measurement step).** Training runs on the Mac's GPU (MPS) after
-  the measurement step (D-048 (1)). MPS at 3.2 s per step at batch 32 gives about 46 h typical
-  and 69 h worst case for 24 folds, or 15 to 23 h for 8 quarterly folds; the seed replicates add
-  at most 17.3 h. The evaluation needs 14,542 fans, 36.0 CPU-hours, plus 8,760 fans and 15.3
-  CPU-hours for the Binance copy. Every run above about one hour waits for a gate-3 approval of
-  a measured estimate.
+- **Compute (measured, D-056).** Training runs on the Mac's GPU (MPS) at 5.449 s per step at
+  batch 32 with activation checkpointing (theta 1.004): at most 4.945 MPS-hours per fold at the
+  3,072-step cap (9.779 if the pilot rule doubles it; D-057 (7)), about 39 h for the 8 quarterly
+  folds and up to 29 h for the seed replicates at that cap (both without the 300 s setup prior
+  of 8.1). The pilot rule fired (D-060 (4)), so every fold runs the 6,144-step cap: about 68.5 h
+  for the 7 remaining quarterly folds at the estimate, setup included (about 65 h at the refit's
+  9.262 h; D-061 (6)), and up to about 58 h for the 6 seed-replicate fits without the setup
+  prior. The
+  evaluation needs 14,542 fans, 36.0 CPU-hours at the prior fan time (5.2), plus 8,760 fans and
+  15.3 CPU-hours for the Binance copy. Every run above about one hour waits for a gate-3
+  approval of a measured estimate.
 
 ## Conventions
 
@@ -131,7 +152,7 @@ date); a gap only reduces them (1.6).
 
 | Fold | CSV end (excl.) | Inner validation from | Fit windows | G4 | G25 |
 | --- | --- | --- | --- | --- | --- |
-| wf-2024-07 (pilot) | 2024-06-09T16:00Z | 2024-04-14T16:00Z | 37,064 | 186 | 30 |
+| wf-2024-07 (the pilot's CSV, `q-2024-07`) | 2024-06-09T16:00Z | 2024-04-14T16:00Z | 37,064 | 186 | 30 |
 | wf-2024-08 | 2024-07-10T16:00Z | 2024-05-15T16:00Z | 37,808 | 186 | 29 |
 | wf-2024-09 | 2024-08-10T16:00Z | 2024-06-15T16:00Z | 38,552 | 180 | 29 |
 | wf-2024-10 | 2024-09-09T16:00Z | 2024-07-15T16:00Z | 39,272 | 186 | 30 |
@@ -165,17 +186,19 @@ validation windows, the sealed folds, and a final model on any day from 2026-08-
 
 ### 1.3 Other runs of the same recipe
 
-- **Pilot = fold `wf-2024-07`.** Its CSV ends at 2024-06-09T16:00Z, the last candle a
-  training-segment sample may read. Every row it fits or early-stops on is training-segment data,
-  where exploration is free and logged (SPEC 7). Its checkpoint serves as fold 1 if the recipe is
-  unchanged after the pilot.
+- **Pilot = fold `q-2024-07`**, the first quarterly fold (D-056), whose CSV is `wf-2024-07`'s:
+  it ends at 2024-06-09T16:00Z, the last candle a training-segment sample may read. Every row it
+  fits or early-stops on is training-segment data, where exploration is free and logged (SPEC
+  7). Its checkpoint serves as fold 1 if the recipe is unchanged after the pilot.
 - **Excluded tail.** 2026-07-01 to 2026-07-10T08:00Z, the rest of the validation segment, would
-  need a 25th fine-tune for 56 `G4` decisions (1.3 %). It is excluded, and the exclusion is
-  pre-registered.
-- **Quarterly fallback.** `T` in {2024-07-01, 2024-10-01, 2025-01-01, 2025-04-01, 2025-07-01,
-  2025-10-01, 2026-01-01, 2026-04-01}, each tested on its 3 months, with the same CSV and
-  inner-validation rules. It covers the same 4,380 `G4` and 701 `G25` decisions; its first fold
-  is the pilot.
+  need a 25th monthly (or a 9th quarterly) fine-tune for 56 `G4` decisions (1.3 %). It is
+  excluded, and the exclusion is pre-registered.
+- **Quarterly layout** (the walk-forward's since D-056; designed as the compute fallback of
+  D-048 (1)). `T` in {2024-07-01, 2024-10-01, 2025-01-01, 2025-04-01, 2025-07-01, 2025-10-01,
+  2026-01-01, 2026-04-01}, each tested on its 3 months, with the same CSV and inner-validation
+  rules (the CSV of `q-T` is that of `wf-T` in the table above). It covers the same 4,380 `G4`
+  and 701 `G25` decisions (552, 552, 540, 546, 552, 552, 540, 546 and 88, 88, 87, 87, 88, 89,
+  86, 88 per fold); its first fold is the pilot.
 - **Sealed folds** (only after the owner's recorded order, 6.6). One per complete calendar month
   before the order: `T` = 2026-08-01 (CSV ends 2026-07-10T16:00Z, exactly `SEALED_START - 512 h`,
   readable without a `SealedAccess`), 2026-09-01, 2026-10-01 and 2026-11-01 (their CSVs read
@@ -263,9 +286,12 @@ validation windows, the sealed folds, and a final model on any day from 2026-08-
 - The validation phase never reads a candle opening at or after 2026-07-02. Fold CSVs end by
   2026-05-10T16:00Z; BingX targets end at 2026-07-01T21:00Z (the 24-step skill-curve fan of the
   last `G25` decision, 2026-06-30T22:00Z), and at 2026-06-30T23:00Z for the 4-step primary fans.
-- Sealed folds run only with a `SealedAccess` from `sealed_access(order_id)`, which today always
-  raises. The experiment ledger of section 7 replaces `partition._verify_order` with a lookup of
-  the owner's recorded order.
+- Sealed folds run only with a `SealedAccess` from `partition.sealed_access(order_id, *,
+  ledger_root=None, data_root=None)`: it refuses a ledger that may not open that data root
+  (`ledger.binding_problem`: only the repository's `reports/ledger` opens the repository's
+  `data/`), then looks the order up in the experiment ledger (`ledger.verify_open_order`, D-057
+  (4)). The access records the data root it was issued for, and `read_study_frame` refuses it
+  for another one (D-058 (3)(c)). No order is recorded, so today it raises.
 - The model to date is trained on sealed candles only after the sealed test has used them
   (SPEC 9.5: "sealed segment included, only after it has been used").
 
@@ -303,8 +329,10 @@ validation windows, the sealed folds, and a final model on any day from 2026-08-
 - **Measured before registration.** Part A of the tokenizer diagnostic (section 4) measures the
   train/inference token mismatch on training-segment windows: the share of context rows whose
   tokens differ from the inference encoding under R1's all-row `W = 513`, the template's all-row
-  `W = 561`, and context-only `W = 513`. If R1's s1 mismatch exceeds 5 % of rows, the owner is
-  told before the pre-registration bundle is recorded (D-048 (5)).
+  `W = 561`, and context-only `W = 513`. If the share of R1's context rows whose s1 or s2 token
+  changes exceeds 5 % (the flag `r1_token_mismatch`; that share bounds the s1 share, the s2
+  share and the share of the 1,024 context tokens, all three reported; D-057 (5), (8)(f)), the
+  owner is told before the pre-registration bundle is recorded (D-048 (5)).
 - **Later variants, one variable each.** First, context-only statistics (rows 0..511 applied to
   all rows), through the same dataset subclass. Second, context-only statistics plus a loss mask
   on the positions that predict rows after the context. `DualHead.compute_loss` already has a
@@ -388,8 +416,8 @@ unused tokenizer keys, so the recipe never depends on a code default.
 | Model and tokenizer | shipped Kronos-small; shipped Kronos-Tokenizer-base, frozen (`finetuned_tokenizer` points at it; `train_tokenizer: false`) | SPEC 9.2; TS:153-171 |
 | Learning rate | `predictor_learning_rate: 1e-6` (OneCycle `max_lr`) | SPEC 9.2; CFG:25 (the code default is 4e-5, CL:147) |
 | Schedule (hard-coded) | OneCycleLR, `pct_start` 0.03, `div_factor` 10, `final_div_factor` 1e4 (torch default), cosine, stepped every batch: 1e-7 to 1e-6 over 3 % of the span, then down to 1e-11. The vendored log prints the LR as `0.000000` (FB:306), so the child records it | FB:253-260 |
-| Budget | pseudo-epochs of 512 steps; `basemodel_epochs: 6` (`E_max`), 3,072 steps, 98,304 window draws: 2.65 full passes in fold 1, 1.83 in fold 24 | 3.1 row 6 |
-| Pilot rule (once, mechanical) | if the pilot's selected pseudo-epoch is the last one, `E_max` becomes 12 for every fold and fold 1 is refit | 6.2 |
+| Budget | pseudo-epochs of 512 steps; `basemodel_epochs: 6` (`E_max`), 3,072 steps, 98,304 window draws: 2.65 full passes in fold 1 (`q-2024-07`), 1.88 in fold 8 (`q-2026-04`) | 3.1 row 6 |
+| Pilot rule (once, mechanical) | if the pilot's selected pseudo-epoch is the last one, `E_max` becomes 12 for every fold and fold 1 is refit (the doubled recipe has its own id, `56e3d2f9`, export, seeds and checkpoint id: D-057 (7)) | 6.2 |
 | Batch | 32, `drop_last` | CFG:19; FB:219 |
 | Optimizer | AdamW, betas (0.9, 0.95) configured, weight decay 0.1 on every parameter; OneCycle cycles beta1 0.95 -> 0.85 -> 0.95, so the configured 0.9 has no effect | CFG:27-29; FB:246-251 |
 | Gradient clip | max norm 3.0 (hard-coded) | FB:296 |
@@ -504,10 +532,14 @@ up to 7 times per fold.
   batch 32 with the wrap when the CPU's batch 32 needs it (D-054 (2)).
 - **Interruptions.** The vendored loop saves no optimizer or scheduler state, so a fold cannot
   resume. The fold is the unit of restart: a registered fold is never rerun and an incomplete
-  one restarts from scratch, so a lost run costs at most one fold (about 3 h on MPS at the
-  prior). Unattended runs use `caffeinate -i -s`, with the lid open, the Mac on power, Low Power
-  Mode off and system updates deferred, and never alongside the other workflow's heavy jobs. A
-  lost run's compute counts against the approved estimate.
+  one restarts from scratch, so a lost run costs at most one fold (on MPS about 4.9 h at the
+  cap, 9.8 h after the pilot rule; D-056). Unattended runs use `caffeinate -i -s`, with the lid
+  open, the Mac on power, Low Power Mode off and system updates deferred, and never alongside the
+  other workflow's heavy jobs. A lost run's compute counts against the approved estimate. The
+  child runs in its own session, so a parent killed with SIGKILL leaves it training, unrecorded:
+  `finetune fold` refuses to plan or start anything while a training child runs on the machine
+  (D-058 (3)(e)), and a run that registered its checkpoint before an error or an interrupt is
+  recorded from the registry, never as a failure (D-058 (3)(h)).
 - **Spend control.** Every command records wall and process CPU time. Before each fold the
   walk-forward projects elapsed time plus the remaining folds at the measured mean fold time; if
   the projection exceeds 1.25 times the approved hours it stops and asks the owner. A fold that
@@ -515,6 +547,16 @@ up to 7 times per fold.
   CPU-seconds pass 1.25 times the approved figure; stored fans are kept. The D-040 rule (a
   measured estimate above 1.25 times the approval goes back to the owner before anything runs)
   applies to every command.
+- **Built so far** (D-057, D-058). `finetune fold` starts a child only when the invocation's
+  spend plus the child's estimate fits 1.25 times the approved figure (one hour without one),
+  with a deadline of the smaller of twice that estimate and what the cap leaves; a child that
+  reaches its deadline is a time abort, never retried. `finetune pilot-check` stops between fans,
+  or before or between its two teacher-forced passes, once its charged CPU-seconds (the larger
+  of its CPU time and wall x threads) pass 1.25 times
+  the approved CPU-hours, or 3,600 without a figure, keeping the stored fans; a stopped run is
+  recorded in the ledger, and the next run counts what the stopped runs spent. The batch
+  layer's own stop (`kronos.batch.run_fan_batch` has none) and the walk-forward projection are
+  not built.
 
 ### 3.6 Checkpoints, registry and loading
 
@@ -576,10 +618,15 @@ tokenizer test SPEC 9.2 asks for.
 
 **Samples.** Decision windows on `G25` built by the inference window builder (512 candles,
 `amount` policy A, `volume_x_mean_ohlc`), incomplete windows dropped with their ranges.
-- Part A, before registration: Binance, training segment, `D` from 2020-01-22T08:00Z (the first
-  full context) to `TRAINING_END - 48 h` (about 1,540 windows), each with its next 48 rows.
-- Part B, after registration, inputs only: Binance and BingX, validation segment (about 700
-  windows each). It is descriptive and cannot shape the recipe.
+- Part A, before registration: Binance, training segment, the 1,534 `G25` hours from
+  2020-01-22T21:00Z (the first on the grid after the first full context, 2020-01-22T08:00Z) to
+  2024-06-06T18:00Z (the last before `TRAINING_END - 48 h`), each with its next 49 rows, so that
+  the template's `W = 561` (512 + 48 + 1) can be formed (D-057 (5)); every candle it reads opens
+  before 2024-06-09T16:00Z.
+- Part B, after registration, inputs only: Binance and BingX, validation segment, 710 windows
+  each (2024-07-01T18:00Z to 2026-07-10T07:00Z). It is descriptive and cannot shape the recipe.
+  It runs only after the pre-registration bundle, recorded in a ledger that may read the data
+  root (`ledger.binding_problem`, D-058 (3)(a)).
 - References: 100 synthetic GBM windows (`features.synthetic_window`) as a featureless reference.
 
 **Per window**, rows `j = 0..511`, channels `c` in {open, high, low, close, volume, amount}: `x`
@@ -608,19 +655,28 @@ bits alone (`z_pre`).
   normalisation, i.e. token bits a rounding difference can flip (relevant to MPS and to
   cross-machine agreement).
 - **Token mismatch** (Part A; the 5 % check of D-048 (5)): for each window, the share of its 512
-  context rows whose s1 (and s2) token differs from the inference encoding when the window is
-  normalised as R1 trains (all 513 rows), as the template trains (all 561 rows), and
-  context-only (513 rows), overall and for the last 24 rows.
+  context rows whose s1 token, whose s2 token, and whose s1 or s2 token differs from the
+  inference encoding when the window is normalised as R1 trains (all 513 rows), as the template
+  trains (all 561 rows), and context-only (513 rows; a positive control that must change no
+  token), overall and for the last 24 rows.
 
 **Flags** (pre-registered, descriptive, no automatic action): price-channel saturation above
 0.1 % of context entries or above 1 % of next rows; volume or amount saturation above 1 %;
 `rho` above 0.25; s1 normalised entropy below 0.5 or more than half the s1 codes unused; s1
-perplexity on validation below half the training value (Part B); R1's s1 token mismatch above
-5 % of rows.
+perplexity on validation below half the training value (Part B); R1's context-token mismatch
+above 5 %: the share of the context rows whose s1 or s2 token changes (`r1_token_mismatch`,
+which bounds the s1 share, the s2 share and the share of the 1,024 context tokens; D-057 (5),
+(8)(f)). The command prints each raised flag as a `WARNING:`, and the token-mismatch flag adds
+that the owner is told before the pre-registration bundle.
 
 **Intervals.** 4-week block bootstrap over `D` (D-035) for shares, means and medians; p99 and max
-descriptive. **Cost:** about 3,100 windows (each Part A window encoded three more times for the
-token mismatch), under 3 minutes on CPU.
+descriptive. Only the per-window 0/1 indicators (a window with a saturated entry, a saturated
+next row) are shares; the per-window fractions (the saturation of context entries, the bit
+margins, the token mismatches) are means (D-058 (3)(k)). **Cost:** about 3,100 windows (each
+Part A window encoded three more times for the token mismatch), under 3 minutes on CPU. The
+command, `kronos-agent finetune tokenizer-diag --part training|validation [--record-config]`,
+prints its measured estimate and runs at once when that is within gate 3; above it, it is
+refused, and it has no `--estimate` (D-057 (5)).
 
 ## 5. Evaluation
 
@@ -661,16 +717,16 @@ starts later (K:456-464), so both are computed.
 | T-B skill curve | `G25` | 701 | 24 | R1 fold models / `forecast` | 701 | 6.5 |
 | **Total** | | | | | **14,542** | **36.0** |
 | Pilot check (0 tests) | Binance, every 8 h in fold 1's inner validation | 168 | 4 | pilot, shipped / `forecast`; shipped / `forecast-aa` | 504 | 0.9 |
-| Seed replicates (D-048 (4)) | `G4` and `G25` of folds wf-2024-07, wf-2025-06, wf-2026-06 | 546 + 88 | 4, 24 | replicates r1, r2 | 1,268 | 3.5 |
+| Seed replicates (D-048 (4)) | `G4` and `G25` of the folds holding 2024-07, 2025-06 and 2026-06 (counts of the monthly folds; the quarterly mapping waits for the owner, D-057 (9)(d)) | 546 + 88 | 4, 24 | replicates r1, r2 | 1,268 | 3.5 |
 | Contingency: N = 8 | `G8` | 2,190 | 8 | both | 4,380 | 14.3 |
 | T-B secondary: Binance copy (the D-040 contingency, triggered) | Binance `G4` | 4,380 | 4 | both | 8,760 | 15.3 |
 | Optional tier 3 | the other three phases of the 4-hour grid | 13,140 | 4 | both | 26,280 | 46.0 |
 | Sealed, Aug to Oct 2026 | `G4` and `G25` | 552 + 89 | 4, 24 | both | 1,282 | 3.6 |
 
-- **Fan time** at 2 threads: `t(L) = 0.44 + 0.678 L` seconds, fitted to the two measurements on
-  this Mac (3.15 s for 20 x 4, D-040; 5.86 s for 20 x 8, the step-1 benchmark): `t(4)` = 3.15 s,
-  `t(8)` = 5.86 s, `t(24)` = 16.71 s. CPU-seconds = 2 x wall (D-033). The measurement step
-  replaces this line.
+- **Fan time** at 2 threads, measured (`timing-2` M5, D-056): `t(4)` = 3.06 s, `t(8)` = 6.03 s,
+  `t(24)` = 18.36 s (about `-0.045 + 0.766 L` seconds). CPU-seconds = 2 x wall (D-033). The
+  CPU-hours of the table above use the earlier prior, `t(L) = 0.44 + 0.678 L` (3.15, 5.86 and
+  16.71 s, fitted to D-040 and the step-1 benchmark); each gate-3 ask measures its own estimate.
 - **Reuse.** The shipped fans of T-A are the shipped half of T-B, under one forecasting-code hash.
   Step 3 shares them only because it adopts the `G4` and `G25` grids (its draft used one decision
   a day at 00:00Z). The 873 fans of the mismatch study (D-040) are not reused: about 73 of its 291
@@ -741,13 +797,13 @@ fan's length must equal `kronos.horizon_n`. The design:
 
 **T-B, R1 against shipped (decides the recipe):**
 - Primary: `d(D) = CRPS_R1(D, h=N) - CRPS_shipped(D, h=N)` on the `G4` test decisions, the R1 fan
-  coming from the fold whose test month holds `D`; `Delta_N = mean d(D)` in bp and
+  coming from the fold whose test quarter holds `D`; `Delta_N = mean d(D)` in bp and
   `RS_N = 1 - sum CRPS_R1 / sum CRPS_shipped`; the minimum detectable difference
   `(z_0.975 + z_0.80) x SE`, read from the interval (D-036).
 - Per calendar quarter: `Delta_N` for 2024Q3 to 2026Q2 (8 point estimates; 3-4 blocks each, no
   interval).
-- Fold bootstrap (sensitivity): 1,000 resamples of the 24 fold means. The fold is the unit in
-  which training randomness enters.
+- Fold bootstrap (sensitivity): 1,000 resamples of the 8 fold means (24 in the monthly layout).
+  The fold is the unit in which training randomness enters.
 - Post-cutoff sensitivity: `Delta_N` over test months 2024-10 to 2026-06, whose folds early-stop
   entirely after 2024-07-01.
 - The SPEC 8 statistics of T-A for R1, the paired `Delta_h` for h = 1..24, and the SPEC 8 tree for
@@ -797,57 +853,83 @@ the reason (per quarter, per fold, the sealed months).
   be that procedure applied at each `T`. Folds are independent: a bad fold does not propagate,
   and the fold bootstrap stays meaningful. A warm-start chain (each fold continuing the previous
   one on the new month) is a different, cheaper recipe and a later test.
-- **Frequency.** Monthly (`params.yaml`, the SPEC's initial value) when the measured worst case is
-  at most 72 h (D-048 (1)) and the measured cost is approved; otherwise the quarterly fallback
-  over the same test decisions, which then becomes the deployed frequency until monthly is tested
-  (one test). The choice uses compute only, after the pilot and before any fold beyond the first,
-  under D-048 (1), and is recorded in the bundle.
+- **Frequency.** Quarterly (D-056). The rule of D-048 (1) was monthly (`params.yaml`, the SPEC's
+  initial value) when the measured worst case is at most 72 h and the measured cost is approved,
+  otherwise the quarterly fallback over the same test decisions, which then becomes the deployed
+  frequency until monthly is tested (one test). The measured worst case of the 24 monthly folds,
+  about 116 h (`timing-2`), passes 72 h, so the walk-forward runs the 8 quarterly folds: the
+  choice used compute only and was made before the pilot (whose CSV is fold 1's in either
+  layout), and it is recorded in the bundle. `finetune fold` refuses `wf-` labels (D-057 (7)).
 
 ### 6.2 The pilot and the go/no-go
 
-1. **Train fold 1** with the recipe (gate-3 ask with the measured estimate).
+1. **Train fold 1** with the recipe (gate-3 ask with the measured estimate): `kronos-agent
+   finetune fold --fold q-2024-07` (D-057 (7)); the owner approved up to 10 h for it and its
+   check (D-056).
 2. **Pilot rule** (mechanical, once): if the selected pseudo-epoch is the last (`E_max`), set
-   `E_max = 12` for every fold and refit fold 1.
-3. **Pilot check** (`kronos-agent finetune pilot-check`, 504 fans, 0.88 CPU-hours, 0 tests). On
-   the 168 Binance decisions every 8 h of fold 1's inner validation: fans of the pilot model and of
-   shipped (stream `forecast`), and a second shipped stream (`forecast-aa`); the mean KL
-   divergence between the two models' first-step s1 distributions (deterministic); the relative
-   weight change; the NLL4-TF curve (shown: training segment). Shipped forecasts there are before
-   the cutoff, and the pilot model's are inside its own inner validation, so both run under a
-   named opt-in recorded in the report; no skill is read from them. Statistics: `A_same` = signal
-   agreement of pilot and shipped under common seeds, `A_floor` = the two shipped streams'
-   agreement, mean `|Delta p_up|`, and the paired SD and lag-1..6 autocorrelation of `d(D)`,
-   projected to the minimum detectable difference for 4,380 decisions in 27 blocks (labelled
-   approximate).
+   `E_max = 12` for every fold and refit fold 1 (the doubled recipe, with its own checkpoint id;
+   in the same invocation when the approved figure admits it, otherwise in the next one, with
+   its own figure: for the pilot the owner approved up to 10 MPS-hours for that invocation, only
+   if the rule fires, D-059 (1)).
+3. **Pilot check** (`kronos-agent finetune pilot-check [--record-config] [--estimate]
+   [--approved-by-owner CPU_HOURS]`, 504 fans and the KL, about 0.89 CPU-hours at `timing-2`'s
+   `t(4)`, 0 tests; it stops between fans, or before or between its two teacher-forced passes,
+   once its charged CPU-seconds pass 1.25 times the approved figure, or 3,600 without one,
+   keeping the stored fans, and a rerun counts what the stopped runs spent; D-057 (6), D-058
+   (3)(j); its run stopped at 3,622 and the owner's 1.1 CPU-hours finished it, D-061 (4)). On
+   the 168 Binance decisions every 8 h of fold
+   1's inner validation: fans of the pilot model and of shipped (stream `forecast`), and a
+   second shipped stream (`forecast-aa`); the mean KL divergence between the two models'
+   first-step s1 distributions (deterministic); the relative weight change; the NLL4-TF curve
+   (shown: training segment). Shipped forecasts there are before the cutoff, and the pilot
+   model's are inside its own inner validation, so both run under a named opt-in recorded in the
+   report; no skill is read from them. Statistics: `A_same` = signal agreement of pilot and
+   shipped under common seeds, `A_floor` = the two shipped streams' agreement, mean `|Delta
+   p_up|`, and the paired SD and lag-1..6 autocorrelation of `d(D)`, projected to the minimum
+   detectable difference for 4,380 decisions in 27 blocks (labelled approximate). The 168
+   decisions touch 3 four-week blocks, so every statistic is a point estimate (D-035).
 4. **Go/no-go** (pre-registered): if `A_same >= 0.98` (SPEC 12's live-against-replay success level
    for "the same system"), the fine-tune barely changed the model. The work stops and the owner
    chooses: run anyway as a measured null; the GPU with the template budget; or lr 4e-5 (the code
    default), a recipe change only the owner can make because SPEC 9.2 names 1e-6.
 5. **Compute control** and the gate-3 ask for the remaining folds, with the measured fold time,
    the thermal factor, the pilot's pseudo-epochs, the expected and worst-case totals, and the
-   projected minimum detectable difference.
+   projected minimum detectable difference (not built yet).
 
 Disclosure: fold 1 early-stops on April-June 2024, inside Kronos's pretraining period, which
-biases its curve towards the shipped weights (conservative); folds 2 and 3 are partly affected.
-The post-cutoff sensitivity of 5.4 isolates it.
+biases its curve towards the shipped weights (conservative). In the quarterly layout fold 2's
+inner validation starts on 2024-07-15, after the cutoff (in the monthly layout folds 2 and 3
+would be partly affected). The post-cutoff sensitivity of 5.4 isolates it.
 
 ### 6.3 Blinding, failures and no interim look
 
 - **Blinding.** From fold 2 on, the inner validation lies inside earlier folds' test months by
   date, and the epoch-0 value is the shipped model's NLL on those dates: reading it would preview
   the test. For folds 2 and later, every loss value (training loss, the vendored diagnostic,
-  NLL4-TF, epoch 0) and the selected pseudo-epoch go only into the fold record. The runner prints
-  only the fold label, wall time, finiteness checks and the checkpoint sha256; the child's stdout
-  and logs stay in the run directory and are not read. `finetune report --test T-B` opens them
-  after its ledger entry. Fold 1 (the pilot) is shown.
+  NLL4-TF, epoch 0) and the selected pseudo-epoch as a recorded value go only into the fold
+  record until T-B. The runner prints only the fold label, wall time, finiteness checks and the
+  checkpoint sha256; the child's stdout and logs stay in the run directory and are not read.
+  `finetune report --test T-B` opens them after its ledger entry. Fold 1 (the pilot) is shown.
+  Not blinded (the owner's amendment, D-059 (3), proposed in D-057 (9)(a)): the number of
+  pseudo-epochs a fold runs, hence its selected pseudo-epoch when it stops early (under patience
+  2, the last pseudo-epoch run minus 2), follows from its duration (its printed wall time, the
+  spend of its `fit` entry, the ledger's times, the run directories) and is not hidden; hiding
+  the wall time would hide nothing and lose the spend record of 3.5.
 - **Failures.** A fold whose training fails (NaN or infinite loss, crash) is retried once with the
   same seed. If it fails again, its test month uses the previous fold's model, mirroring SPEC 9's
   "if it fails, the previous one stays", and the substitution is reported. If fold 1 fails twice,
   the walk-forward stops and the owner is told. Memory aborts, power loss and sleep are not
-  failures (3.5).
+  failures (3.5). Built in `finetune fold` (D-057 (7), D-058 (3)(g), (h)): `failed` and
+  `no_result` are retried once when the spend cap admits it; a memory abort, a time abort (a
+  child that reached its deadline) and a killed child are not retried; a run that registered its
+  checkpoint is never recorded as a failure. The substitution belongs to the walk-forward loop,
+  not built yet.
 - **No interim look.** Fans may be computed fold by fold while later folds train (computing a fan
   is not reading it), but no statistic on test targets is computed until every checkpoint and
   every fan of the pre-registered sets exists; the report command refuses a partial sample.
+  Both readings of D-062, shipped Kronos and the pilot on strategy v1's decisions in the
+  validation window (27 of them in the pilot's own test quarter), were such looks, outside the
+  repository; the T-A and T-B reports and the bundle must state them (D-062 (7)).
 
 ### 6.4 T-A and the interaction with step 3
 
@@ -916,7 +998,8 @@ the sealed segment would need 20 four-week blocks, which it reaches only around 
 - **Always produced** (SPEC 9: "the retraining IS ALWAYS DONE"). After CONFIRMED or BETTER:
   recipe R1 at `T_final`, trained after the sealed test on the same order's access (D-048 (3)).
   Without an accepted and confirmed recipe: `T_final = 2026-08-01T00:00Z` (no sealed candle), with
-  the negative result in its card. Gate-3 ask: one fold, at most about 2.9 h on MPS.
+  the negative result in its card. Gate-3 ask: one fold, at most about 4.9 h on MPS at the
+  measured step time (9.8 h if the pilot rule fired; D-056).
 - **Binance up to the run day.** `kronos-agent data binance` first: the current month comes from
   its daily archives (yesterday is the newest). The CSV ends at the last complete day; if the
   newest Binance day is more than 3 days old, the run waits and tells the owner. A gap is handled
@@ -961,14 +1044,17 @@ the 15m timeframe; no test embargo (models 21 days fresher); a tokenizer fine-tu
 One canonical-JSON file, `reports/finetune/prereg-<recipe8>.config.json`, published once with
 `os.link` (D-024, D-034) and entered in the ledger (kind `preregistration`, 0 tests) after the
 pilot and before any fold beyond the first trains and any validation outcome is computed. Every
-`finetune` command verifies it and refuses a changed bundle (exit 2). It holds:
+`finetune` subcommand but `timing` verifies every recorded bundle first and refuses a changed or
+missing one (exit 2); `ledger verify` checks them too. A bundle admits the reads that wait for it
+(Part B of section 4, the folds after the pilot) only in a ledger that may read the data root
+(7.3). No command records one yet. It holds:
 
 - **Recipe R1** with every value of 3.2 (hard-coded vendored values included), the outcome of the
   pilot rule, the device, threads, batch and activation-checkpointing choices, and the code
   hashes: the vendored manifest, the project's training code, and the forecasting-code hash every
   compared fan must carry.
-- **Folds:** the fold table (monthly or quarterly as chosen; sealed and final rules), the
-  boundaries of 1.4, the gap policy, the failure and blinding rules.
+- **Folds:** the fold table (quarterly, D-056; sealed and final rules), the boundaries of 1.4,
+  the gap policy, the failure and blinding rules.
 - **Evaluation:** grids, streams and seeds, scores and references, every statistic of 5.4,
   bootstrap keys and blocks, the reading rules of 6.4 and 6.5, the smallest effect of interest,
   the contingencies, the sealed band rule.
@@ -983,7 +1069,13 @@ forecast `config_id`.
 recorded, the T-A and T-B reports state it as a deviation. None has been seen as of 2026-11-02:
 the step-2 studies compare sources and stores, not forecasts with outcomes (the mismatch study
 compares the fans of two sources and two seed streams with each other, and its report states that
-no validation outcome is involved).
+no validation outcome is involved). On 2026-11-03 and 2026-11-04, two readings of the owner's
+strategy v1 with Kronos as a filter, run outside the repository, compared the forecasts of shipped
+Kronos and of the pilot with the realised outcomes of 164 trades on 166 decisions of the
+validation window, 27 of them in the pilot's own test quarter (D-062 (7)). Both are deviations:
+the T-A and T-B reports and the bundle must state them. They came before the bundle, against the
+order above: the design committed in `391c565` predates them, and the bundle states which of its
+contents came after them, the choices still open among them (D-062 (7)).
 
 ### 7.2 What a test is, and what this plan spends
 
@@ -1004,26 +1096,56 @@ sealed segment.
 
 At most 3 of the 15 per quarter, with T-A and T-B read in different ISO weeks. An optional set
 added after T-B is read is a new test. If R1 is not accepted, the next one-variable test of 6.8
-costs 1.
+costs 1. Outside this plan, the two readings of D-062 spent 2 tests (2026-W45: 2 of 3; 2026-Q4:
+2 of 15). The ledger does not count them, so the budget the commands enforce does not see them:
+until the owner decides how to record them, at most 1 more test in 2026-W45 and 13 in 2026-Q4
+(D-062 (6)).
 
 ### 7.3 Ledger, budget, orders and approvals
 
-- `kronos_agent/ledger.py` (the interface of `docs/ARCHITECTURE.md`): append-only canonical JSON
-  lines in `ledger/experiments.jsonl`, tracked (SPEC 19 publishes it), each with `prev_sha256` of
-  the previous line (genesis 64 zeros), `ts`, `params_version`, code provenance and a payload;
-  `verify_chain` before every append. Kinds: `preregistration`, `exploration`, `fit` (checkpoint
-  hash and status, no values), `gate3_approval` (the estimate shown, the figure approved, the
-  owner's words translated), `owner_order`, `owner_answer`, `test`. Standard library only, because
-  `data/partition.py` imports nothing heavy. It holds no personal data (the hygiene test covers
-  it). It is built now: steps 4-5, which were to build it, depend on the discarded criterion.
-- `kronos_agent/budget.py`: `finetune report --test <id>` verifies the bundle, checks the ledger,
-  appends the `test` entry, and only then computes any statistic on reserved hours. It refuses
-  (exit 2, `REFUSED:`) a 4th test in an ISO week (UTC), a 16th in a calendar quarter (UTC), a test
-  without a matching bundle, a changed bundle, and a second reading of the same id. A test counts
-  from its first statistic, so "compute, peek, abandon" still spends it.
-- **Orders:** `ledger record-order --scope open_sealed --candidate <test id>` with the owner's
-  words, run only after the owner's explicit order in chat. `partition._verify_order` finds an
-  unused order of that scope for the candidate; the sealed commands mark it used.
+Built in step 6 (D-057 (2) to (4), D-058 (3)); steps 4-5, which were to build it, depend on the
+discarded criterion.
+
+- `kronos_agent/ledger.py`: `reports/ledger/experiments.jsonl` (`paths.ledger_dir()`, relocated
+  with the reports root by `KRONOS_AGENT_REPORTS_DIR`), tracked (SPEC 19 publishes it). One
+  canonical-JSON line per entry (ASCII, LF, at most 65,536 bytes) with exactly `schema`,
+  `schema_version`, `seq`, `ts` (UTC, never earlier than the previous line's), `prev_sha256`
+  (genesis 64 zeros), `kind`, `params_version`, `code` (`provenance.code_version()`) and the
+  kind's `payload`. Every read verifies every line (there is no separate `verify_chain`); an
+  append holds `<ledger dir>/.lock` and builds its payload from the entries read under it;
+  nothing is ever repaired or rewritten, and the last line is protected only by the line sha256
+  its users record. Kinds: `exploration` (training-segment data or inputs only, 0 tests; stage
+  `planned`, `done` or `stopped`), `fit` (one training child: checkpoint and registry line,
+  status, attempt, device, spend, approval; no loss, NLL value or selected pseudo-epoch),
+  `gate3_approval` (the figure, the estimate shown, their ratio, the command's start; the owner's
+  words stay in `docs/DECISIONS.md`), `preregistration`, `owner_order` and `test`;
+  `owner_answer` is deferred. Light imports only, because the sealed guard imports it. It holds
+  no personal data, IPv4 literal, absolute path or BingX host name, and nothing the hygiene scan
+  of `reports/` refuses (checked at append and on read; the writer's own login, host name and
+  home at append). The binding (`ledger.binding_problem`): only the repository's
+  `reports/ledger` may open the sealed segment of, spend a test on, or admit the bundle-gated
+  reads of the repository's `data/` (or a data root that links into it); another ledger (a
+  scratch run, a test) authorizes only other data roots.
+- `kronos_agent/budget.py`: `spend_test`, which the later `finetune report --test <id>` calls
+  before computing any statistic on reserved hours, appends the `test` entry and refuses (exit
+  2, `REFUSED:`) a ledger that may not read the data root, a test without a matching bundle, a
+  changed bundle, a test the bundle does not register, a second reading of the same id, T-B
+  before a T-A reading of an earlier ISO week, a T-C without the owner's order for its T-B
+  candidate or with an order another T-C reading used, and a 4th test in an ISO week or a 16th
+  in a calendar quarter (both UTC). A test counts from its first statistic, so "compute, peek,
+  abandon" still spends it. The ledger checks the counts and the order of tests again on every
+  read, and its times never decrease, so a reading cannot be dated back into a week with room.
+  No command spends a test yet.
+- **Orders:** `ledger record-order --scope open_sealed --candidate <T-B test id> --text
+  "<owner's words>"`, run only after the owner's explicit order in chat (gate 6); refused without
+  a recorded T-B reading of that id, or for a second order of the same candidate.
+  `partition.sealed_access` checks the ledger's binding to the data root, then finds the order
+  (`ledger.verify_open_order`). One order per candidate and one T-C reading per order; the order
+  also covers the sealed folds, the sealed fans and the model to date (D-048 (3)), so it is not
+  refused after T-C (D-057 (4)).
+- **Approvals:** `finetune fold` and `finetune pilot-check` record the owner's figure as a
+  `gate3_approval` entry before their first unit, after the measured estimate passed the 1.25
+  rule (D-040, D-046); `finetune timing` records its approval in its own record (D-055).
 
 ### 7.4 Multiple recipes on the same months
 
@@ -1045,16 +1167,19 @@ claim.
   batch 32 is 2.87 TFLOP (0.72 at batch 8, 1.44 at batch 16).
 - **One fold:** `C_fold = theta x E_run x 512 x t_step + (E_run + 1) x (t_nll + t_val) + t_setup`,
   with `E_run <= E_max` (6, or 12 after the pilot rule), `t_step` the measured seconds per step,
-  `theta` the thermal factor from the sustained measurement (>= 1), `t_nll` about 50 s and `t_val`
-  (the vendored diagnostic on 832 windows) about 25 s.
+  `theta` the thermal factor from the sustained measurement (>= 1), `t_nll` from M8 (52.2 s for
+  336 decisions), `t_val` a prior of a third of a training step per batch of the 832 vendored
+  validation windows (47.2 s at 5.449 s per step) and `t_setup` a prior of 300 s, neither
+  measured (D-057 (7); the design's first priors were about 50 s and 25 s).
 - **Walk-forward:** the sum of `C_fold` over the folds; the worst case puts `E_run = E_max`
   everywhere; the expected case uses the pilot's `E_run`.
-- **Fans:** `cpu_seconds = sum over sets of fans x t(L) x 2`, `t(L) = 0.44 + 0.678 L` s until
-  measured; `wall = cpu_seconds / (2 x W_eff)`, `W_eff` the measured effective worker count.
+- **Fans:** `cpu_seconds = sum over sets of fans x t(L) x 2`, `t(L)` as M5 measured it (5.2;
+  the prior was `0.44 + 0.678 L` s); `wall = cpu_seconds / (2 x W_eff)`, `W_eff` the measured
+  effective worker count.
 - **Gate-3 accounting** (D-033): CPU-hours = wall x threads for CPU work; GPU-hours = wall time on
   MPS or a cloud GPU.
 
-### 8.2 Estimates (per-step priors)
+### 8.2 Estimates (per-step priors; the measured figures follow the table)
 
 Priors per optimizer step at batch 32: MPS 3.2 s, CPU at 8 threads 5.0 s, CPU at 2 threads 6.1 s,
 A10G 0.22 s. The MPS prior assumes 0.75 times the only MPS measurement on this Mac (forward-only
@@ -1063,7 +1188,7 @@ inference, about 1.2 TFLOP/s), i.e. about 10 windows per second; the defensible 
 
 | Phase | Work | MPS | CPU 8 threads | AWS A10G |
 | --- | --- | --- | --- | --- |
-| Measurement step | section (a) | about 33 GPU-min + 3,578 CPU-s (D-054) | | |
+| Measurement step | section (a) | about 33 GPU-min + 3,578 CPU-s (D-054); it ran in 27.4 GPU-min + 3,038 CPU-s (D-056) | | |
 | Tokenizer diagnostic | about 3,100 windows | under 3 min of CPU | | |
 | Pilot (fold 1) | <= 3,072 steps | <= 2.9 h (5.7 h if the pilot rule fires) | <= 4.4 h | <= 20 min |
 | Pilot check | 504 fans | 0.88 CPU-h | | |
@@ -1080,10 +1205,25 @@ worst case of training before the thermal factor, plus about 36 CPU-hours of fan
 Binance copy) that may overlap MPS training if the measurement step allows it. The template budget
 B_T (20 full epochs) would take 185 h typical and 617 h worst case on MPS: not viable on the Mac.
 
+**Measured** (`timing-2`, D-056; D-057 (6), (7)), replacing the priors above in every gate-3 ask:
+MPS at 5.449 s per step at batch 32 with activation checkpointing, theta 1.004 (the best CPU
+configuration, 2 threads with activation checkpointing, 8.790 s). One fold takes at most 4.945
+MPS-hours at the 3,072-step cap and 9.779 at 6,144 (the pilot rule), setup included; without the
+300 s setup prior, 4.862 h per fold: about 39 h for the 8 quarterly folds, 116.7 h for the 24
+monthly ones (above the 72 h of D-048 (1), hence the quarterly layout) and 29.2 h for 6 replicate
+fits. Since the pilot rule fired (D-060 (4)), every fold runs the 6,144-step cap: 9.696 h per
+fold without the setup prior, about 77.6 h for the 8 quarterly folds and 58.2 h for 6 replicate
+fits (68.5 h for the 7 remaining folds at the estimate, setup included; D-061 (6)). The pilot
+check, estimated at about 3,194 CPU-seconds (0.89 CPU-hours) at `t(4)` = 3.062 s, spent 3,726
+charged CPU-seconds (1.04 CPU-hours, above gate 3; D-061 (4)).
+
 ### 8.3 Gate-3 asks, in order
 
-1. The pilot (fold 1), with the measured estimate.
-2. The remaining folds, monthly or quarterly, with the measured fold time, `theta`, the pilot's
+1. The pilot (fold 1), with the measured estimate: approved up to 10 h for the pilot and its
+   check (D-056), up to 10 MPS-hours for the refit's own invocation once the pilot rule fired
+   (D-059 (1)) and up to 1.1 CPU-hours for the whole pilot check after its first run stopped
+   (D-061 (4)). Done (D-060, D-061).
+2. The remaining quarterly folds (D-056), with the measured fold time, `theta`, the pilot's
    pseudo-epochs, expected and worst totals, the projected minimum detectable difference, the
    seed replicates of D-048 (4), and tier 3, which the owner may add before T-B is read.
 3. The evaluation fans (36.0 CPU-hours; 14.2 for R1 alone if the shipped fans already exist), and
@@ -1095,7 +1235,12 @@ B_T (20 full epochs) would take 185 h typical and 617 h worst case on MPS: not v
 Every command measures and prints its estimate (`--estimate` stops there), refuses above 3,600
 CPU-seconds or one GPU-hour without `--approved-by-owner <hours>` (the figure the owner approved
 in chat), refuses when the measured estimate exceeds 1.25 times that figure (D-040), and records
-the approval in the ledger.
+the approval in the ledger. One exception: `finetune tokenizer-diag`, a few minutes of CPU, has
+no `--estimate` and no approval path; it prints its measured estimate and runs at once when that
+is within gate 3, and is refused above it (D-057 (5)). `finetune fold` counts gate 3 in the
+chosen device's hours (MPS wall-hours on MPS) and also caps its invocation's spend at 1.25 times
+the figure (3.5); its estimate lines state the smallest figure that admits each unit and the
+deadline each figure gives (D-058 (3)(f)).
 
 ### 8.4 GPU option (not taken: D-048 (1))
 
@@ -1154,8 +1299,9 @@ of the price, but an interrupted fold restarts. Requirements and logistics:
    watermark and pressure abort; activation checkpointing before any batch change.
 5. **Normalisation look-ahead in R1** (2.2): measured before registration; the first follow-up
    test removes it.
-6. **Pretraining overlap:** the first three folds early-stop partly before the cutoff; the
-   cutoff check and the post-cutoff sensitivity show its effect.
+6. **Pretraining overlap:** the first fold early-stops before the cutoff (the first three of the
+   monthly layout would, partly); the cutoff check and the post-cutoff sensitivity show its
+   effect.
 7. **Binance-trained, BingX-used:** the mismatch study finds that the sources shift the signal
    beyond seed noise (5.2), so the Binance copy is in the plan as a T-B secondary.
 8. **Staleness:** the evaluated models are 21 days staler than live ones; the bias is against the
@@ -1186,7 +1332,7 @@ of the price, but an interrupted fold restarts. Requirements and logistics:
 - BingX 1h history starts 2024-04-27T10:00Z; its first full 512-hour context is at
   2024-05-18T18:00Z.
 - Kronos fan samples use 4-week bootstrap blocks (D-035), not calendar weeks.
-- Fan time at 2 threads: 3.15 s (20 x 4) and 5.86 s (20 x 8) measured; about 16.7 s for 20 x 24.
+- Fan time at 2 threads (`timing-2` M5): 3.06 s (20 x 4), 6.03 s (20 x 8) and 18.36 s (20 x 24).
 - With K = 20 members, central intervals use order statistics `[x_(i), x_(21-i)]`, nominal
   `(21 - 2i) / 21`; linear-interpolated quantiles at 0.05/0.95 cover only about 81 %.
 - An evaluation length must reach `forecast_config` and the batch (5.3); a check in
@@ -1210,7 +1356,10 @@ MPS the estimate below passes 3,000, so the second run needed the owner's gate-3
 1.5 CPU-hours, for that run only, given as `--approved-by-owner 1.5` (D-055). The flag makes the
 CPU limit a ceiling of CPU_HOURS x 3600 CPU-seconds that the spend is kept within: the estimate
 must fit, units start and the run stops against that ceiling minus a reserve of 600 CPU-seconds
-for the unit running then (5,400 and 4,800 for 1.5). The GPU limit stays 45 GPU-minutes.
+for the unit running then (5,400 and 4,800 for 1.5). The GPU limit stays 45 GPU-minutes. That
+run took place on 2026-11-03 (3,038 CPU-seconds and 27.4 GPU-minutes, within the ceiling) and
+chose MPS (D-056): `reports/finetune/timing-2.*` is the record every fold estimate reads. The
+approval is spent; a rerun would overwrite that record and needs a new gate-3 approval.
 
 | Id | Measurement | Configurations | Work | CPU-s | GPU-min |
 | --- | --- | --- | --- | --- | --- |
@@ -1267,11 +1416,11 @@ option. The answers are D-048 in `docs/DECISIONS.md`; the sections named below a
 
 | D-048 | Topic | Decided option | Applied in |
 | --- | --- | --- | --- |
-| (1) | Compute | The Mac: training runs on its GPU (MPS) after the measurement step of section (a). The walk-forward uses 24 monthly cold-start folds if the measured worst case is at most 72 h (69 h at the priors of 8.2), otherwise 8 quarterly folds over the same test decisions. Every run above about an hour waits for a gate-3 approval of a measured estimate. The rented GPU and the template budget B_T are not taken | 3.2, 3.4, 6.1, 8.2-8.4, (a) |
+| (1) | Compute | The Mac: training runs on its GPU (MPS) after the measurement step of section (a). The walk-forward uses 24 monthly cold-start folds if the measured worst case is at most 72 h (69 h at the priors of 8.2), otherwise 8 quarterly folds over the same test decisions. Every run above about an hour waits for a gate-3 approval of a measured estimate. The rented GPU and the template budget B_T are not taken. Measured: about 116 h for the monthly folds, so the quarterly folds apply (D-056) | 3.2, 3.4, 6.1, 8.2-8.4, (a) |
 | (2) | Acceptance of R1 against Kronos as shipped | The 95 % interval of `Delta_N` (the CRPS difference at N = 4) lies entirely below 0, `Delta_N < 0` in at least 5 of the 8 quarters, and the relative improvement `RS_N` is at least 1 % | Summary, 6.5 |
 | (3) | Sealed segment and model to date | The sealed segment opens once, only if R1 is accepted, on one recorded order of the owner that also covers training the model to date. Otherwise the model to date is trained up to 2026-08-01 without opening it, and its model card states the negative result | 1.3, 6.6, 6.7 |
-| (4) | Training seeds | One training seed per fold, plus two extra seeds (replicates r1 and r2) in the folds of 2024-07, 2025-06 and 2026-06 | 3.4, 5.2, 5.4, 8.2 |
-| (5) | Normalisation of the first test | The vendored script's normalisation unchanged, with windows of 513 rows (lookback 512, predict 0), so one future row enters it. If the measurement before registration (Part A of section 4) shows more than 5 % of context tokens changing, the owner is told first. Context-only normalisation is the second test | 2.2, 4, 6.8 |
+| (4) | Training seeds | One training seed per fold, plus two extra seeds (replicates r1 and r2) in the folds of 2024-07, 2025-06 and 2026-06 (under the quarterly layout, the mapping waits for the owner: D-057 (9)(d)) | 3.4, 5.2, 5.4, 8.2 |
+| (5) | Normalisation of the first test | The vendored script's normalisation unchanged, with windows of 513 rows (lookback 512, predict 0), so one future row enters it. If the measurement before registration (Part A of section 4) shows more than 5 % of context tokens changing, the owner is told first. Context-only normalisation is the second test. The flag `r1_token_mismatch` reads the share of context rows whose s1 or s2 token changes, which bounds the s1, the s2 and the per-token shares (D-057 (5), (8)(f)) | 2.2, 4, 6.8 |
 | (6) | Embargo | 512 h between the end of each fold's training data and its test month: the per-model reading of SPEC section 6 | 1.2, 1.4 |
 
 ## (c) Implementation plan
@@ -1283,7 +1432,10 @@ config `b2723b9626339a08`, `reports/data/mismatch.md`). The `kronos/decision.py`
 `FORECASTING_FILES` member) can therefore land; it lands before any evaluation fan. Nothing in
 `third_party/` or `research/` is touched.
 
-**New modules** (`kronos_agent/finetune/`, the name `docs/ARCHITECTURE.md` reserves):
+**New modules** (`kronos_agent/finetune/`, the name `docs/ARCHITECTURE.md` reserves). Built so
+far: phase 1 (D-052: recipe, folds, export, runner, NLL4-TF, train, registry, timing) and phase
+3a (D-057, D-058: the ledger and the budget, the tokenizer diagnostic, the pilot check, the
+per-fold path of `walkforward.py` and `eval/crps.py` without the spread recalibration):
 
 | Module | Content |
 | --- | --- |
@@ -1302,7 +1454,7 @@ config `b2723b9626339a08`, `reports/data/mismatch.md`). The `kronos/decision.py`
 | `eval/crps.py` | Fair ensemble CRPS, Gaussian closed form, lazy, spread recalibration |
 | `eval/skill.py` | Skill curves, simultaneous band, order-statistic coverage, PIT, reliability, direction, agreement |
 | `eval/finetune_report.py` | T-A, T-B and T-C statistics, reading rules, fold bootstrap, quarters, A/A, manipulation check, sealed band, reality check, reports and figures (D-034, D-037) |
-| `ledger.py`, `budget.py` | Section 7.3; `partition._verify_order` delegates to the ledger |
+| `ledger.py`, `budget.py` | Section 7.3; `partition._verify_order` delegates to the ledger (built: D-057 (2) to (4)) |
 | `cli/finetune.py`, `cli/ledger.py` | The commands below, registered in the strict registry (D-018) |
 
 **Changes to existing modules** (additive; governed defaults unchanged):
@@ -1312,22 +1464,28 @@ config `b2723b9626339a08`, `reports/data/mismatch.md`). The `kronos/decision.py`
   `require_model_period` in place of `require_kronos_period`.
 - `kronos/batch.py`: `evaluation_length` and `checkpoint` through `prepare_tasks`,
   `timing_window`, `measure_seconds_per_fan`, `run_fan_batch` and the worker initialiser;
-  `registry_config(kronos, checkpoint=None)`; spend control during a batch.
+  `registry_config(kronos, checkpoint=None)`; spend control during a batch (not built: the
+  pilot check stops between fans itself, 3.5).
 - `data/partition.py`: `EVAL_LENGTH_MAX`, `check_evaluation_length`, `require_model_period`;
-  `_verify_order` through the ledger.
+  `_verify_order` through the ledger (built: `sealed_access` checks the ledger's binding to the
+  data root, then the order, D-057 (4); the access is tied to its data root, D-058 (3)(c)).
 - `params.yaml`: `kronos.finetune_recipe` written when the bundle is recorded; `params.py`
   validates it through `finetune/recipe.py`.
 - `provenance.py` and `data/forecast_store.py`: no change (`CONFIG_KEYS` and `META_KEYS` stay).
 
 **Commands** (exit codes as D-039: 0 done, 1 `ERROR:`, 2 `REFUSED:`):
-- `kronos-agent finetune timing`
-- `kronos-agent finetune tokenizer-diag --part training|validation [--record-config]`
+- `kronos-agent finetune timing [--estimate] [--approved-by-owner CPU_HOURS]` (built, D-052,
+  D-055)
+- `kronos-agent finetune tokenizer-diag --part training|validation [--record-config]` (built,
+  D-057 (5): no `--estimate`; refused above gate 3)
 - `kronos-agent finetune fold --fold <label> [--replicate K] [--estimate] [--approved-by-owner H]
-  [--order ID]` (the pilot is `--fold wf-2024-07`)
-- `kronos-agent finetune pilot-check [--record-config]`
+  [--order ID]` (built, D-057 (7); the pilot is `--fold q-2024-07`; `wf-` and `final-` labels are
+  refused)
+- `kronos-agent finetune pilot-check [--record-config] [--estimate] [--approved-by-owner
+  CPU_HOURS]` (built, D-057 (6))
 - `kronos-agent finetune register [--record-config]` (the bundle and its ledger entry)
-- `kronos-agent finetune walk-forward --layout monthly|quarterly [--estimate]
-  [--approved-by-owner H]` (folds 2 onwards, blinded output, resumable)
+- `kronos-agent finetune walk-forward [--estimate] [--approved-by-owner H]` (the quarterly folds
+  2 onwards, D-056; blinded output, resumable)
 - `kronos-agent finetune evaluate --set ta|tb|g8|binance|tier3|replicates|sealed [--workers N]
   [--estimate] [--approved-by-owner H] [--order ID]` (fans only, no statistic)
 - `kronos-agent finetune report --test T-A|T-B|T-C` (ledger entry and budget, then statistics,
@@ -1335,8 +1493,8 @@ config `b2723b9626339a08`, `reports/data/mismatch.md`). The `kronos/decision.py`
 - `kronos-agent finetune sealed --order ID [--estimate] [--approved-by-owner H]`
 - `kronos-agent finetune final [--order ID] [--estimate] [--approved-by-owner H]`
 - `kronos-agent finetune card --checkpoint ID`
-- `kronos-agent ledger show | verify | record-order --scope open_sealed --candidate ID --text
-  "<owner's words>"`
+- `kronos-agent ledger show [--kind KIND] | verify | record-order --scope open_sealed
+  --candidate ID --text "<owner's words>"` (built, D-057 (4))
 
 **Tests** (pytest; the `weights` and `network` markers as today; tiny random Kronos models keep
 most tests fast and weight-free):
@@ -1387,7 +1545,7 @@ Registry, fans and governance:
   the sealed band); T26 reality check on synthetic recipes.
 - T27 Ledger and budget (a 4th test in an ISO week and a 16th in a quarter refused; a missing or
   changed bundle refused; a second reading refused; the chain detects an edited line; an order is
-  found by id and scope and used once).
+  found by id and scope; one order per candidate and one T-C reading per order, D-057 (4)).
 - T28 Blinding (the walk-forward's printed output and logs it shows contain no loss value or
   selected pseudo-epoch for folds 2 onwards); T29 hygiene (reports carry no absolute path from the
   vendored logs, no personal data).
@@ -1405,16 +1563,20 @@ template.
    only).
 2. The measurement step (P0): the first run below gate 3 (D-053), the second above it under the
    owner's approval of up to 1.5 CPU-hours (`--approved-by-owner 1.5`, D-055). Device, threads,
-   batch and memory choices recorded.
+   batch and memory choices recorded. Done: MPS, batch 32 with activation checkpointing (D-056).
 3. The rest of the code and tests: ledger and budget, tokenizer diagnostic, pilot check,
-   walk-forward, evaluation and reports, model card.
+   walk-forward, evaluation and reports, model card. Phase 3a, what the pilot needs, is done
+   (D-057, D-058); the walk-forward loop, the evaluation, the reports and the model card are
+   not.
 4. Data in place (step 2, done on 2026-11-02): the Binance and BingX stores, the coverage study
    (no gap in `binance/1h` or `bingx/1h` before the sealed start, so no walk-forward fold loses a
    window to a gap), the mismatch report (it triggered the D-040 contingency: 5.2).
-5. Tokenizer diagnostic, Part A.
+5. Tokenizer diagnostic, Part A: done (D-060 (0)).
 6. The owner's answers: received on 2026-11-02 (D-048).
-7. Pilot (gate 3), pilot rule, pilot check, go/no-go, compute control (gate 3 for the remaining
-   folds).
+7. Pilot (gate 3: approved up to 10 h, D-056, up to 10 more for its refit, D-059, and up to 1.1
+   CPU-hours for the check, D-061 (4)), pilot rule, pilot check, go/no-go, compute control (gate
+   3 for the remaining folds). Done up to the go/no-go: the rule fired, the refit is registered
+   and the check read GO (D-060, D-061); the compute control is not built.
 8. Pre-registration bundle for T-A and T-B; tokenizer diagnostic Part B.
 9. Folds 2 onwards (blinded) and the evaluation fans (gate 3), overlapping only if P0 allows it.
 10. `finetune report --test T-A`; the N rule; `G8` fans if needed (gate 3); `finetune report

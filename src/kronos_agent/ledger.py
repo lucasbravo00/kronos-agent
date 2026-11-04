@@ -9,8 +9,10 @@ each terminated by LF and at most :data:`MAX_LINE_BYTES` bytes long, with exactl
 line's bytes without its LF; :data:`GENESIS_SHA256` for line 1), ``kind`` (:data:`KINDS`),
 ``params_version``, ``code`` (:func:`kronos_agent.provenance.code_version`) and the kind's
 ``payload`` (exactly its :data:`PAYLOAD_KEYS`). The file is tracked and published with the
-reports (SPEC section 19), so no line holds personal data, an IPv4 literal, an absolute path or
-a BingX host name; every string is printable ASCII and every number finite.
+reports (SPEC section 19), so no line holds personal data, an IPv4 literal, an absolute path, a
+BingX host name or anything else the repository's hygiene scan of reports/ refuses (an email
+address, a personal path prefix, the cloud host name fragment, a credential assignment); every
+string is printable ASCII and every number finite.
 
 Append-only and hash-chained, as the fine-tune registry: an edited, removed or reordered line
 breaks the chain at the line after it, every reader verifies every line (:func:`read_ledger`) and
@@ -57,15 +59,20 @@ the ledger run at append alone: the bundle files (``budget.spend_test``,
 :func:`record_preregistration`) and the personal data of the machine that writes the line (its
 login, host name and home directory, which only the writer knows: a line written on one machine
 must verify on every other, whatever its login). The checks that do not depend on the machine
-(printable ASCII, finite numbers, IPv4 literals, absolute paths, the BingX host name) run on
-read too.
+(printable ASCII, finite numbers, IPv4 literals, absolute paths, the BingX host name, the
+hygiene scan's email, personal-path, cloud-host and credential rules) run on read too.
 
 Which ledger may authorize a read of which data (:func:`binding_problem`): the reports root, and
 the ledger with it, is relocatable (``KRONOS_AGENT_REPORTS_DIR``), and the data root on its own
-(``KRONOS_AGENT_DATA_DIR``). A ledger other than the repository's ``reports/ledger`` never opens
-the sealed candles of, nor spends a test on, the repository's ``data/`` or a data root that links
-into it (a view): an order or a reading recorded in a scratch ledger stays in its scratch world
-(gate 6, hard rule 7).
+(``KRONOS_AGENT_DATA_DIR``). A ledger other than the repository's ``reports/ledger`` never
+authorizes a read of the repository's ``data/`` or of a data root that links into it (a view):
+its owner's order does not open the sealed candles (``data.partition.sealed_access``), its
+readings spend no test there (``budget.spend_test``), and its pre-registration bundle does not
+admit the reads that wait for one (Part B of the tokenizer diagnostic, the folds after the
+pilot: ``finetune.tokenizer_diag.prepare_diag``, ``finetune.walkforward.plan_fold``). An order,
+a reading or a bundle recorded in a scratch ledger stays in its scratch world (gate 6, hard rule
+7). Reads that need no authorization (the training segment: the pilot, Part A of the tokenizer
+diagnostic) are not bound.
 
 At load this module imports only the standard library and light project modules, because
 ``data.partition`` imports it (lazily) for the sealed guard: :mod:`kronos_agent.params` (the
@@ -73,8 +80,8 @@ params version) and :mod:`kronos_agent.envinfo` (personal data) are imported whe
 needs them, reading imports neither, and :mod:`kronos_agent.exchange.public_market` (the BingX
 domain; host literals live only in the exchange package) is imported where a line is checked.
 It keeps its own copies of the fold-label and checkpoint-id patterns (``finetune.folds`` and
-``finetune.registry`` import heavier modules) and of the IPv4 pattern (``envinfo``); the tests
-assert that they are equal.
+``finetune.registry`` import heavier modules), of the IPv4 pattern (``envinfo``) and of the
+hygiene scan's patterns (``tests/test_repo_hygiene.py``); the tests assert that they are equal.
 """
 
 from __future__ import annotations
@@ -189,7 +196,9 @@ PAYLOAD_KEYS: Mapping[str, tuple[str, ...]] = types.MappingProxyType(
 )
 CODE_KEYS: tuple[str, ...] = ("commit", "dirty", "source_tree_sha256")
 EXPLORATION_ACTIVITIES: tuple[str, ...] = ("pilot-fold", "pilot-check", "tokenizer-diag")
-EXPLORATION_STAGES: tuple[str, ...] = ("planned", "done")
+# "stopped": a run its spend control stopped (design 3.5), with what it spent, so that a lost
+# run's compute counts against the next run of the same study
+EXPLORATION_STAGES: tuple[str, ...] = ("planned", "done", "stopped")
 SEGMENTS: tuple[str, ...] = ("training", "validation", "sealed")
 # what an exploration may read: these segments' candles as inputs, and these segments' outcomes
 # (realised candles after a decision hour); reading validation or sealed outcomes is a test
@@ -239,6 +248,14 @@ _PATH_TOKEN = re.compile(r"(?<![\w.~/-])(?:~/|/)[^\s'\"`<>,;:()\[\]{}]+")
 # a copy of envinfo.IPV4_RE (asserted equal by the tests): reading the ledger never imports the
 # personal-data check, which depends on the machine that runs it
 _IPV4_RE = re.compile(r"(?<![\d.])(?:\d{1,3}\.){3}\d{1,3}(?![\d.])")
+# copies of the machine-independent rules of the repository's hygiene scan of every file under
+# reports/ (tests/test_repo_hygiene.py; asserted equal by the tests), assembled the same way so
+# that this file passes that scan: a ledger line it flags would fail it on every later run, and
+# the ledger is never repaired
+_EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
+_PERSONAL_PATH_PREFIXES: tuple[str, ...] = ("/Users" + "/", "/home" + "/")
+_CLOUD_HOST_FRAGMENT = "amazon" + "aws"
+_CREDENTIAL_RE = re.compile("BINGX_API_" + r"(?:KEY|SECRET)\s*=\s*\S+")
 # how deep below a data root a link into the repository's data/ is looked for: the stores are
 # candles/<source>/<interval>.csv, and a view (tests/root_guard.py) links its top-level entries
 DATA_LINK_DEPTH = 3
@@ -404,8 +421,9 @@ def _reach(data: Path, repository_data: Path) -> str | None:
 def binding_problem(*, root: Path | None = None, data_root: Path | None = None) -> str | None:
     """Why the ledger at ``root`` (default :func:`kronos_agent.paths.ledger_dir`) may not
     authorize reading the data root ``data_root`` (default :func:`kronos_agent.paths.data_dir`):
-    the sealed segment it would open (gate 6) or the outcomes a test it records would read (SPEC
-    rule 8); ``None`` when it may.
+    the sealed segment it would open (gate 6), the outcomes a test it records would read (SPEC
+    rule 8) or the reads its pre-registration bundle would admit (hard rule 7: Part B of the
+    tokenizer diagnostic, the folds after the pilot); ``None`` when it may.
 
     The repository's own ledger, ``reports/ledger`` (also through a relocated reports root that
     links to it), authorizes any data root. Another ledger (``KRONOS_AGENT_REPORTS_DIR`` pointing
@@ -422,10 +440,10 @@ def binding_problem(*, root: Path | None = None, data_root: Path | None = None) 
         return None
     return (
         "the experiment ledger in use is not the repository's reports/ledger (a relocated "
-        f"reports root, KRONOS_AGENT_REPORTS_DIR, or another ledger root), and {reach}: an order "
-        "or a test recorded in another ledger never opens or reads the repository's data (gate "
-        "6, hard rule 7); run with the repository's reports root, or relocate the data root too "
-        "(KRONOS_AGENT_DATA_DIR)"
+        f"reports root, KRONOS_AGENT_REPORTS_DIR, or another ledger root), and {reach}: an "
+        "order, a test or a pre-registration bundle recorded in another ledger never opens or "
+        "reads the repository's data (gate 6, hard rule 7); run with the repository's reports "
+        "root, or relocate the data root too (KRONOS_AGENT_DATA_DIR)"
     )
 
 
@@ -531,12 +549,33 @@ def _strings(value: Any, where: str) -> Iterator[tuple[str, str]]:
             yield from _strings(item, f"{where}[{index}]")
 
 
+def _hygiene_problem(text: str) -> str | None:
+    """What the repository's hygiene scan of reports/ would flag in ``text`` (an email address,
+    a personal path prefix, the cloud host name fragment, a credential assignment, an IPv4
+    literal), or ``None``."""
+    if _EMAIL_RE.search(text):
+        return "an email address"
+    if any(prefix in text for prefix in _PERSONAL_PATH_PREFIXES):
+        return "a personal path"
+    if _CLOUD_HOST_FRAGMENT in text.lower():
+        return "a cloud host name"
+    if _CREDENTIAL_RE.search(text):
+        return "a credential assignment"
+    if _IPV4_RE.search(text):
+        return "an IPv4 literal"
+    return None
+
+
 def _check_publishable(document: Mapping[str, Any], *, personal: bool) -> None:
-    """Refuse an IPv4 literal, a BingX host name or an absolute path anywhere in a line (keys
-    included), and with ``personal`` (at append: the writer's machine) the login, host name and
-    home directory of this process (``envinfo.assert_no_personal_data``): the ledger is published
-    with the reports. The personal check depends on the machine that runs it, so it runs only
-    where the line is written; the others are the same on every machine and run on read too."""
+    """Refuse an IPv4 literal, a BingX host name, an absolute path, an email address, a personal
+    path prefix (the home directories of macOS and Linux, anywhere in a string), the cloud host
+    name fragment or a credential assignment anywhere in a line (keys included; the last four are
+    the rules of the repository's hygiene scan of reports/, also checked on the whole canonical
+    line, which is what that scan reads), and with ``personal`` (at append: the writer's
+    machine) the login, host name and home directory of this process
+    (``envinfo.assert_no_personal_data``): the ledger is published with the reports. The personal
+    check depends on the machine that runs it, so it runs only where the line is written; the
+    others are the same on every machine and run on read too."""
     from .exchange.public_market import PUBLIC_HOST  # the host literals live in exchange/
 
     if personal:
@@ -562,6 +601,18 @@ def _check_publishable(document: Mapping[str, Any], *, personal: bool) -> None:
                 f"an absolute path at {where}: the ledger is published, so it records paths "
                 "relative to a root"
             )
+        problem = _hygiene_problem(text)
+        if problem is not None:
+            raise LedgerRefused(
+                f"{problem} at {where}: the ledger is published with the reports, whose "
+                "hygiene scan refuses it (tests/test_repo_hygiene.py)"
+            )
+    problem = _hygiene_problem(canonical_json(dict(document)).decode("ascii"))
+    if problem is not None:
+        raise LedgerRefused(
+            f"{problem} across the strings of the line: the ledger is published with the "
+            "reports, whose hygiene scan reads whole lines (tests/test_repo_hygiene.py)"
+        )
 
 
 # -- the rules of each kind ------------------------------------------------------------------------
